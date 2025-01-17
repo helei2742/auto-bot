@@ -1,0 +1,15 @@
+depin:
+  openledger:
+    browserEnvPoolConfig: browser-env.yaml
+    networkPoolConfig: network-proxy.yaml
+
+    wsBaseUrl: wss://apitn.openledger.xyz/ws/v1/orch
+    origin: chrome-extension://ekbbplmjjgoobhdlffmgeokalelnmjjc
+    openLedgerAccounts:
+      - name: 914577981@qq.com
+        token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyZXNzIjoiMHgzMmVhZDg0NWRkNGQyY2U0NWQ1ZmFiODFiZDBmOTdjMWI0M2U4OTY0IiwiaWQiOjAsImV4cCI6MTc2ODY3MzUwM30.t1RjJbh225Ljixm9O_KQixNXIK2elz_JDh36u-gI8Uw
+        proxyId: 2
+        browserEnvId: 1
+        identity: MHgzMmVBRDg0NURkNGQyQ2U0NUQ1ZkFCODFiRDBGOTdjMWI0M0U4OTY0
+        ownerAddress: 0x32eAD845Dd4d2Ce45D5fAB81bD0F97c1b43E8964
+

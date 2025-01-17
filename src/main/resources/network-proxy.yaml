@@ -1,0 +1,54 @@
+depin:
+  network:
+    proxy:
+      pool:
+        - host: 150.241.112.100
+          id: 1
+          password: 545n41b7z20x
+          port: 6104
+          username: hldjmuos
+        - host: 192.46.190.132
+          id: 2
+          password: 545n41b7z20x
+          port: 6725
+          username: hldjmuos
+        - host: 46.203.60.50
+          id: 3
+          password: 545n41b7z20x
+          port: 7050
+          username: hldjmuos
+        - host: 82.140.180.190
+          id: 4
+          password: 545n41b7z20x
+          port: 7150
+          username: hldjmuos
+        - host: 159.148.236.175
+          id: 5
+          password: 545n41b7z20x
+          port: 6381
+          username: hldjmuos
+        - host: 82.140.180.97
+          id: 6
+          password: 545n41b7z20x
+          port: 7057
+          username: hldjmuos
+        - host: 159.148.236.163
+          id: 7
+          password: 545n41b7z20x
+          port: 6369
+          username: hldjmuos
+        - host: 82.140.180.210
+          id: 8
+          password: 545n41b7z20x
+          port: 7170
+          username: hldjmuos
+        - host: 179.61.172.202
+          id: 9
+          password: 545n41b7z20x
+          port: 6753
+          username: hldjmuos
+        - host: 82.140.180.94
+          id: 10
+          password: 545n41b7z20x
+          port: 7054
+          username: hldjmuos

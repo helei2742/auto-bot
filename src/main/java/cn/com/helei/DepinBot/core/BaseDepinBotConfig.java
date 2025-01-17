@@ -1,0 +1,36 @@
+package cn.com.helei.DepinBot.core;
+
+
+import cn.com.helei.DepinBot.core.dto.DepinClientAccount;
+import lombok.Data;
+
+import java.util.List;
+
+@Data
+public abstract class BaseDepinBotConfig {
+
+
+    /**
+     * 并发数量
+     */
+    private int concurrentCount = 20;
+
+
+    /**
+     * 网络代理池配置文件名
+     */
+    private String networkPoolConfig = "network-proxy.yaml";
+
+    /**
+     * 浏览器环境池配置文件名
+     */
+    private String browserEnvPoolConfig = "browser-env.yaml";
+
+    /**
+     * 连接url
+     */
+    private String wsBaseUrl;
+
+
+    public abstract List<DepinClientAccount> getAccountList();
+}
