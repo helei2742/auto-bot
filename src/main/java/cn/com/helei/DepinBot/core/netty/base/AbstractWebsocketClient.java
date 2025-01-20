@@ -13,7 +13,6 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.handler.proxy.HttpProxyHandler;
-import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
@@ -27,7 +26,6 @@ import javax.net.ssl.SSLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.*;
@@ -175,8 +173,7 @@ public abstract class AbstractWebsocketClient<P, T> {
                         ChannelPipeline p = ch.pipeline();
                         if (proxy != null) {
                             // 添加 HttpProxyHandler 作为代理
-//                            p.addLast(new HttpProxyHandler(proxy.getAddress(),  proxy.getUsername(), proxy.getPassword()));
-//                            p.addLast(new Socks5ProxyHandler(proxy.getAddress(), proxy.getUsername(), proxy.getPassword()));
+                            p.addLast(new HttpProxyHandler(proxy.getAddress(), proxy.getUsername(), proxy.getPassword()));
                         }
 
                         if (sslCtx != null) {
@@ -262,7 +259,7 @@ public abstract class AbstractWebsocketClient<P, T> {
 
         return CompletableFuture.supplyAsync(() -> {
             //Step 1 重连次数超过限制，关闭
-            if (reconnectTimes.get() > NettyConstants.RECONNECT_LIMIT) {
+            if (reconnectTimes.get() >= NettyConstants.RECONNECT_LIMIT) {
                 log.error("reconnect times out of limit [{}], close websocket client", NettyConstants.RECONNECT_LIMIT);
                 close();
                 return false;
@@ -295,7 +292,7 @@ public abstract class AbstractWebsocketClient<P, T> {
 
 
                 //Step 4 链接服务器
-                while (reconnectTimes.incrementAndGet() <= NettyConstants.RECONNECT_LIMIT) {
+                if (reconnectTimes.incrementAndGet() <= NettyConstants.RECONNECT_LIMIT) {
 
                     //Step 4.1 每进行重连都会先将次数加1并设置定时任务将重连次数减1
                     eventLoopGroup.schedule(() -> {
@@ -320,6 +317,7 @@ public abstract class AbstractWebsocketClient<P, T> {
                             isSuccess.set(true);
                         } catch (Exception e) {
                             log.error("connect client [{}], url[{}] error, times [{}]", name, url, reconnectTimes.get(), e);
+                            isSuccess.set(false);
                         } finally {
                             latch.countDown();
                         }
@@ -329,16 +327,7 @@ public abstract class AbstractWebsocketClient<P, T> {
                     try {
                         latch.await();
                     } catch (InterruptedException e) {
-                        log.error("connect client [{}], url[{}] error, times [{}]", name, url, reconnectTimes.get(), e);
-                    }
-
-                    //Step 4.6 链接成功则跳出循环
-                    if (isSuccess.get()) {
-                        log.info("connect client [{}], url[{}] success, current times [{}]", name, url, reconnectTimes.get());
-
-                        updateClientStatus(WebsocketClientStatus.RUNNING);
-                        reconnectTimes.set(0);
-                        break;
+                        log.error("connect client [{}], url[{}] interrupted, times [{}]", name, url, reconnectTimes.get(), e);
                     }
                 }
             } catch (Exception e) {
@@ -351,14 +340,19 @@ public abstract class AbstractWebsocketClient<P, T> {
                 reconnectLock.unlock();
             }
 
-            //Step 6 未成功启动，关闭并抛出异常
+            //Step 6 未成功启动，关闭
             if (!isSuccess.get()) {
-                log.error("reconnect times out of limit [{}], close websocket client", NettyConstants.RECONNECT_LIMIT);
+                log.info("connect client [{}], url[{}] fail, current times [{}]", name, url, reconnectTimes.get());
+
                 close();
-                throw new RuntimeException("reconnect times out of limit");
+            } else {
+                log.info("connect client [{}], url[{}] success, current times [{}]", name, url, reconnectTimes.get());
+
+                updateClientStatus(WebsocketClientStatus.RUNNING);
+                reconnectTimes.set(0);
             }
 
-            return true;
+            return isSuccess.get();
         }, callbackInvoker);
     }
 
@@ -368,7 +362,11 @@ public abstract class AbstractWebsocketClient<P, T> {
      */
     public void close() {
         synchronized (closeHandlerList) {
-            log.info("closing websocket client [{}]", name);
+            if (clientStatus.equals(WebsocketClientStatus.STOP)) return;
+
+            updateClientStatus(WebsocketClientStatus.STOP);
+
+            log.info("closing websocket client [{}], [{}]", name, channel.hashCode());
             if (channel != null) {
                 channel.close();
             }
@@ -376,21 +374,18 @@ public abstract class AbstractWebsocketClient<P, T> {
             if (eventLoopGroup != null) {
                 eventLoopGroup.shutdownGracefully();
             }
-            reconnectTimes.set(0);
 
-            updateClientStatus(WebsocketClientStatus.STOP);
 
             //执行关闭回调
             Iterator<WSCloseHandler> iterator = closeHandlerList.iterator();
             while (iterator.hasNext()) {
                 WSCloseHandler closeHandler = iterator.next();
                 iterator.remove();
-
                 CompletableFuture.runAsync(closeHandler::onClosed, callbackInvoker);
             }
-
-            log.warn("web socket client [{}] closed", name);
         }
+
+        log.warn("web socket client [{}] closed", name);
     }
 
     /**

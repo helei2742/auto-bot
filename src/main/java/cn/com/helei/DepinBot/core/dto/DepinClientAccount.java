@@ -31,7 +31,11 @@ public abstract class DepinClientAccount {
     private Integer browserEnvId;
 
 
-    public HttpHeaders getHeaders() {
+    public HttpHeaders getWSHeaders() {
+        return new DefaultHttpHeaders();
+    }
+
+    public HttpHeaders getRestHeaders() {
         return new DefaultHttpHeaders();
     }
 

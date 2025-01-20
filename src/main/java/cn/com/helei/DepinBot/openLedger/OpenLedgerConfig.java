@@ -93,18 +93,24 @@ public class OpenLedgerConfig extends BaseDepinBotConfig {
         }
 
         @Override
-        public HttpHeaders getHeaders() {
+        public HttpHeaders getWSHeaders() {
             HttpHeaders headers = new DefaultHttpHeaders();
+
             headers.add("Upgrade", "websocket")
-                    .add("accept-encoding", "gzip, deflate, br, zstd")
-                    .add("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
                     .add("Origin", openLedgerConfig.origin)
-                    .add("Cache-Control", "no-cache")
                     .add("Host", "apitn.openledger.xyz")
-                    .add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
-                    .add("Pragma", "no-cache")
-                    .add("Connection", "Upgrade");
+                    .add("Connection", "Upgrade")
+            ;
             return headers;
+        }
+
+        @Override
+        public HttpHeaders getRestHeaders() {
+            HttpHeaders restHeaders = super.getRestHeaders();
+
+            restHeaders.add("authorization", "Bearer " + token);
+
+            return restHeaders;
         }
 
         @Override

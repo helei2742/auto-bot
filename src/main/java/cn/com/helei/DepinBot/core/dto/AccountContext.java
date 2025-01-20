@@ -8,8 +8,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Map;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -41,9 +39,17 @@ public class AccountContext {
      */
     private final ConnectStatusInfo connectStatusInfo = new ConnectStatusInfo();
 
-    public HttpHeaders getHeaders() {
+    /**
+     * 分数信息
+     */
+    private final RewordInfo rewordInfo = new RewordInfo();
 
+    public HttpHeaders getWSHeaders() {
+        return clientAccount.getWSHeaders();
+    }
 
-        return clientAccount.getHeaders();
+    public HttpHeaders getRestHeaders() {
+
+        return clientAccount.getRestHeaders();
     }
 }

@@ -4,11 +4,15 @@ import cn.com.helei.DepinBot.core.AbstractDepinWSClient;
 import cn.com.helei.DepinBot.core.BaseDepinBotConfig;
 import cn.com.helei.DepinBot.core.CommandLineDepinBot;
 import cn.com.helei.DepinBot.core.dto.AccountContext;
+import cn.com.helei.DepinBot.core.dto.AccountPrintDto;
 import cn.com.helei.DepinBot.core.dto.DepinClientAccount;
+import cn.com.helei.DepinBot.core.dto.RewordInfo;
 import cn.com.helei.DepinBot.core.env.BrowserEnvPool;
 import cn.com.helei.DepinBot.core.exception.DepinBotInitException;
 import cn.com.helei.DepinBot.core.network.NetworkProxy;
 import cn.com.helei.DepinBot.core.network.NetworkProxyPool;
+import cn.com.helei.DepinBot.core.util.NamedThreadFactory;
+import cn.com.helei.DepinBot.core.util.table.CommandLineTablePrintHelper;
 import com.jakewharton.fliptables.FlipTable;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -17,12 +21,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+
+/**
+ * 账户上下文管理器
+ */
 @Slf4j
 public class AccountContextManager {
 
-    private final String[] ACCOUNT_PRINT_TABLE_HEADER = {"row", "name", "proxy", "browser env","usable", "start time", "update time", "heartbeat", "status"};
+    /**
+     * 异步操作线程池
+     */
+    private final ExecutorService executorService;
 
     /**
      * 代理池
@@ -42,7 +56,12 @@ public class AccountContextManager {
     /**
      * 创建AbstractDepinWSClient的Function
      */
-    private final Function<AccountContext, AbstractDepinWSClient<?,?>> clientCreator;
+    private final Function<AccountContext, AbstractDepinWSClient<?, ?>> clientCreator;
+
+    /**
+     * 账户成功链接后的回调
+     */
+    private final BiConsumer<AccountContext, Boolean> accountConnectedHandler;
 
     /**
      * 账号列表
@@ -57,6 +76,10 @@ public class AccountContextManager {
         this.baseDepinBotConfig = commandLineDepinBot.getBaseDepinBotConfig();
 
         this.clientCreator = commandLineDepinBot::buildAccountWSClient;
+        this.accountConnectedHandler = commandLineDepinBot::whenAccountConnected;
+
+        this.executorService = Executors
+                .newThreadPerTaskExecutor(new NamedThreadFactory(baseDepinBotConfig.getName() + "-account"));
     }
 
 
@@ -114,10 +137,13 @@ public class AccountContextManager {
                             clientCreator
                                     .apply(accountContext)
                                     .connect()
-                                    .exceptionally(throwable -> {
-                                        log.error("账户[{}]连接失败", accountContext.getClientAccount().getName());
-                                        return null;
-                                    })
+                                    .whenCompleteAsync((success, throwable) -> {
+                                        if (throwable != null || !success) {
+                                            log.error("账户[{}]连接失败, ", accountContext.getClientAccount().getName(), throwable);
+                                        }
+
+                                        accountConnectedHandler.accept(accountContext, success);
+                                    }, executorService)
                     )
                     .toList();
 
@@ -128,7 +154,7 @@ public class AccountContextManager {
             } catch (InterruptedException | ExecutionException e) {
                 log.error("账户建立连接发生异常", e);
             }
-        });
+        }, executorService);
     }
 
     /**
@@ -137,28 +163,39 @@ public class AccountContextManager {
      * @return String
      */
     public String printAccountList() {
+        List<AccountPrintDto> list = accounts.stream().map(accountContext -> {
+            NetworkProxy proxy = accountContext.getProxy();
+            return AccountPrintDto
+                    .builder()
+                    .name(accountContext.getClientAccount().getName())
+                    .proxyInfo(proxy.getId() + "-" + proxy.getAddress())
+                    .browserEnvInfo(String.valueOf(accountContext.getBrowserEnv().getId()))
+                    .usable(accountContext.isUsable())
+                    .startDateTime(accountContext.getConnectStatusInfo().getStartDateTime())
+                    .updateDateTime(accountContext.getConnectStatusInfo().getUpdateDateTime())
+                    .heartBeatCount(accountContext.getConnectStatusInfo().getHeartBeatCount().get())
+                    .connectStatus(accountContext.getConnectStatusInfo().getConnectStatus())
+                    .build();
+        }).toList();
+
+        return "账号列表:\n" +
+                CommandLineTablePrintHelper.generateTableString(list, AccountPrintDto.class) +
+                "\n";
+    }
+
+    /**
+     * 打印账号收益
+     *
+     * @return String
+     */
+    public String printAccountReward() {
         StringBuilder sb = new StringBuilder();
 
+        List<RewordInfo> list = accounts.stream().map(AccountContext::getRewordInfo).toList();
 
-        String[][] table = new String[accounts.size()][ACCOUNT_PRINT_TABLE_HEADER.length];
-
-        for (int i = 0; i < accounts.size(); i++) {
-            AccountContext accountContext = accounts.get(i);
-            DepinClientAccount clientAccount = accountContext.getClientAccount();
-            table[i] = new String[]{
-                    String.valueOf(i),
-                    clientAccount.getName(),
-                    accountContext.getProxy().getHost() + ":" + accountContext.getProxy().getPort(),
-                    String.valueOf(clientAccount.getBrowserEnvId()),
-                    String.valueOf(accountContext.isUsable()),
-                    String.valueOf(accountContext.getConnectStatusInfo().getStartDateTime()),
-                    String.valueOf(accountContext.getConnectStatusInfo().getUpdateDateTime()),
-                    String.valueOf(accountContext.getConnectStatusInfo().getHeartBeatCount()),
-                    String.valueOf(accountContext.getConnectStatusInfo().getConnectStatus())
-            };
-        }
-
-        sb.append("账号列表:\n").append(FlipTable.of(ACCOUNT_PRINT_TABLE_HEADER, table)).append("\n");
+        sb.append("收益列表:\n")
+                .append(CommandLineTablePrintHelper.generateTableString(list, RewordInfo.class))
+                .append("\n");
 
         return sb.toString();
     }

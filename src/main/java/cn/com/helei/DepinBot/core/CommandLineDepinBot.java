@@ -1,7 +1,6 @@
 package cn.com.helei.DepinBot.core;
 
 import cn.com.helei.DepinBot.core.commandMenu.CommandMenuNode;
-import cn.com.helei.DepinBot.core.commandMenu.DefaultCommandMenuBuilder;
 import cn.com.helei.DepinBot.core.constants.DepinBotStatus;
 import cn.com.helei.DepinBot.core.dto.AccountContext;
 import cn.com.helei.DepinBot.core.env.BrowserEnvPool;
@@ -9,6 +8,7 @@ import cn.com.helei.DepinBot.core.exception.DepinBotStartException;
 import cn.com.helei.DepinBot.core.exception.DepinBotStatusException;
 import cn.com.helei.DepinBot.core.network.NetworkProxyPool;
 import cn.com.helei.DepinBot.core.supporter.AccountContextManager;
+import cn.com.helei.DepinBot.core.util.NamedThreadFactory;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jline.reader.LineReader;
@@ -20,8 +20,7 @@ import org.jline.terminal.TerminalBuilder;
 import java.io.IOException;
 import java.util.List;
 import java.util.Stack;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
@@ -31,6 +30,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 @Getter
 public abstract class CommandLineDepinBot<Req, Resp> {
+
+    private final ExecutorService executorService;
+
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     /**
      * 代理池
@@ -57,10 +60,15 @@ public abstract class CommandLineDepinBot<Req, Resp> {
      */
     private DepinBotStatus status = DepinBotStatus.NEW;
 
-    private volatile AtomicBoolean accountConnected = new AtomicBoolean(false);
+    /**
+     * 是否开始过链接所有账号
+     */
+    private final AtomicBoolean isStartAccountConnected = new AtomicBoolean(false);
+
 
     public CommandLineDepinBot(BaseDepinBotConfig baseDepinBotConfig) {
         this.baseDepinBotConfig = baseDepinBotConfig;
+        this.executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory(baseDepinBotConfig.getName() + "-executor"));
 
         this.proxyPool = NetworkProxyPool.loadYamlNetworkPool(baseDepinBotConfig.getNetworkPoolConfig());
         this.browserEnvPool = BrowserEnvPool.loadYamlBrowserEnvPool(baseDepinBotConfig.getBrowserEnvPoolConfig());
@@ -83,6 +91,16 @@ public abstract class CommandLineDepinBot<Req, Resp> {
      * @return AbstractDepinWSClient
      */
     public abstract AbstractDepinWSClient<Req, Resp> buildAccountWSClient(AccountContext accountContext);
+
+
+    /**
+     * 当账户链接时调用
+     *
+     * @param accountContext accountContext
+     * @param success        是否成功
+     */
+    public abstract void whenAccountConnected(AccountContext accountContext, Boolean success);
+
 
     /**
      * 初始化方法
@@ -124,6 +142,18 @@ public abstract class CommandLineDepinBot<Req, Resp> {
             updateState(DepinBotStatus.SHUTDOWN);
             throw new DepinBotStartException("启动CommandLineDepinBot发生错误", e);
         }
+    }
+
+
+    /**
+     * 添加定时任务
+     *
+     * @param runnable runnable
+     * @param delay    delay
+     * @param timeUnit timeUnit
+     */
+    public void addTimer(Runnable runnable, long delay, TimeUnit timeUnit) {
+        scheduler.scheduleAtFixedRate(runnable, 0, delay, timeUnit);
     }
 
     /**
@@ -219,8 +249,13 @@ public abstract class CommandLineDepinBot<Req, Resp> {
      * @return String 打印的消息
      */
     public String startAccountDepinClient() {
-        if (accountConnected.compareAndSet(false, true)) {
-            accountContextManager.allAccountConnectExecute();
+        if (isStartAccountConnected.compareAndSet(false, true)) {
+            accountContextManager
+                    .allAccountConnectExecute()
+                    .exceptionally(throwable -> {
+                        log.error("开始所有账户连接时发生异常", throwable);
+                        return null;
+                    });
             return "已开始账号链接任务";
         }
 
@@ -290,4 +325,5 @@ public abstract class CommandLineDepinBot<Req, Resp> {
 
         return sb.toString();
     }
+
 }

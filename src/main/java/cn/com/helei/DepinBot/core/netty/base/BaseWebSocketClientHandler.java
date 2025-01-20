@@ -52,16 +52,16 @@ public abstract class BaseWebSocketClientHandler<P, T> extends SimpleChannelInbo
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        log.warn("WebSocket Client [{}] disconnected!", ctx.channel().attr(NettyConstants.CLIENT_NAME).get());
-
-        websocketClient.close();
+        log.warn("WebSocket Client [{}] disconnected!, start reconnect", ctx.channel().attr(NettyConstants.CLIENT_NAME).get());
+        websocketClient.reconnect();
+//        websocketClient.close();
     }
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-        log.warn("WebSocket Client [{}] unregistered!, start reconnect", ctx.channel().attr(NettyConstants.CLIENT_NAME).get());
+        log.warn("WebSocket Client [{}] unregistered!", ctx.channel().attr(NettyConstants.CLIENT_NAME).get());
 
-        websocketClient.reconnect();
+
     }
 
     @Override

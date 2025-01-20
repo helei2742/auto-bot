@@ -1,7 +1,6 @@
-package cn.com.helei.DepinBot.core.commandMenu;
+package cn.com.helei.DepinBot.core;
 
-import cn.com.helei.DepinBot.core.CommandLineDepinBot;
-
+import cn.com.helei.DepinBot.core.commandMenu.CommandMenuNode;
 
 
 /**
@@ -43,9 +42,9 @@ public class DefaultCommandMenuBuilder {
     }
 
     /**
-     * 构建查看代理列表的菜单节点
+     * 构建查看浏览器环境列表的菜单节点
      *
-     * @return 查看代理列表菜单节点
+     * @return 查看浏览器环境列表菜单节点
      */
     private CommandMenuNode buildBrowserListMenuNode() {
         return new CommandMenuNode(
@@ -61,10 +60,25 @@ public class DefaultCommandMenuBuilder {
      * @return 账户列表节点
      */
     private CommandMenuNode buildAccountListMenuNode() {
-        return new CommandMenuNode(
+        CommandMenuNode accountListMenuNode = new CommandMenuNode(
                 "查看账号",
                 "当前账户详情列表:",
                 commandLineDepinBot.getAccountContextManager()::printAccountList
+        );
+
+        return accountListMenuNode.addSubMenu(buildAccountRewardMenuNode());
+    }
+
+    /**
+     * 查看账户收益菜单节点
+     *
+     * @return 账户收益节点
+     */
+    private CommandMenuNode buildAccountRewardMenuNode() {
+        return new CommandMenuNode(
+                "查看账号收益",
+                "账号收益详情列表:",
+                commandLineDepinBot.getAccountContextManager()::printAccountReward
         );
     }
 

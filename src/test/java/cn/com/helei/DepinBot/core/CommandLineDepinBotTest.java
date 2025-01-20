@@ -4,9 +4,15 @@ import cn.com.helei.DepinBot.core.commandMenu.CommandMenuNode;
 import cn.com.helei.DepinBot.core.dto.AccountContext;
 import cn.com.helei.DepinBot.core.exception.DepinBotStartException;
 import cn.com.helei.DepinBot.openLedger.OpenLedgerConfig;
+import okhttp3.Credentials;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 
 class CommandLineDepinBotTest {
 
@@ -36,8 +42,43 @@ class CommandLineDepinBotTest {
             public AbstractDepinWSClient<String, String> buildAccountWSClient(AccountContext accountContext) {
                 return null;
             }
+
+            @Override
+            public void whenAccountConnected(AccountContext accountContext, Boolean success) {
+
+            }
         };
 
         commandLineDepinBot.start();
+    }
+
+
+    @Test
+    public void testReward() {
+
+
+        OkHttpClient client = new OkHttpClient();
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        builder.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("179.61.172.202", 6753)))
+                .proxyAuthenticator((route, response) -> {
+                    String credential = Credentials.basic("hldjmuos", "545n41b7z20x");
+                    return response.request().newBuilder()
+                            .header("Proxy-Authorization", credential)
+                            .build();
+                });
+
+        client = builder.build();
+        Request request = new Request.Builder()
+                .url("https://rewardstn.openledger.xyz/api/v1/reward")
+                .header("authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyZXNzIjoiMHgzMmVhZDg0NWRkNGQyY2U0NWQ1ZmFiODFiZDBmOTdjMWI0M2U4OTY0IiwiaWQiOjAsImV4cCI6MTc2ODY3MzUwM30.t1RjJbh225Ljixm9O_KQixNXIK2elz_JDh36u-gI8Uw")
+                .header("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+            System.out.println(response.body().string());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

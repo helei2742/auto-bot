@@ -1,6 +1,6 @@
 package cn.com.helei.DepinBot.core.network;
 
-import com.jakewharton.fliptables.FlipTable;
+import cn.com.helei.DepinBot.core.util.table.CommandLineTablePrintHelper;
 import lombok.Getter;
 import lombok.Setter;
 import org.yaml.snakeyaml.Yaml;
@@ -12,8 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class NetworkProxyPool {
-
-    private static final String[] PROXY_LIST_PRINT_TABLE_HEADER = new String[]{"ID", "Host", "Port", "Username", "Password"};
 
     private static final Map<String, NetworkProxyPool> LOADED_POOL_MAP = new ConcurrentHashMap<>();
 
@@ -118,14 +116,6 @@ public class NetworkProxyPool {
      * @return String
      */
     public String printPool() {
-        String[][] table = new String[pool.size()][PROXY_LIST_PRINT_TABLE_HEADER.length];
-
-        List<NetworkProxy> list = pool.stream().toList();
-        for (int i = 0; i < list.size(); i++) {
-            NetworkProxy proxy = list.get(i);
-            table[i] = new String[]{String.valueOf(proxy.getId()), proxy.getHost(), String.valueOf(proxy.getPort()), proxy.getUsername(), proxy.getPassword()};
-        }
-
-        return FlipTable.of(PROXY_LIST_PRINT_TABLE_HEADER, table);
+        return CommandLineTablePrintHelper.generateTableString(pool.stream().toList(), NetworkProxy.class);
     }
 }

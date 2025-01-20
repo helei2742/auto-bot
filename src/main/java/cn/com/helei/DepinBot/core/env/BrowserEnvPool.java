@@ -1,6 +1,7 @@
 package cn.com.helei.DepinBot.core.env;
 
 
+import cn.com.helei.DepinBot.core.util.table.CommandLineTablePrintHelper;
 import com.jakewharton.fliptables.FlipTable;
 import lombok.Getter;
 import lombok.Setter;
@@ -56,14 +57,8 @@ public class BrowserEnvPool {
     }
 
     public String printPool() {
-        String[][] table = new String[envs.size()][BROWSER_ENV_LIST_PRINT_TABLE_HEADER.length];
-
         List<BrowserEnv> list = envs.stream().toList();
-        for (int i = 0; i < list.size(); i++) {
-            BrowserEnv env = list.get(i);
-            table[i] = new String[]{String.valueOf(env.getId()), env.getHeaders().toString()};
-        }
 
-        return FlipTable.of(BROWSER_ENV_LIST_PRINT_TABLE_HEADER, table);
+        return CommandLineTablePrintHelper.generateTableString(list, BrowserEnv.class);
     }
 }
