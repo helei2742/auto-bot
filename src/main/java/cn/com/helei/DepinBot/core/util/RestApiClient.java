@@ -17,7 +17,7 @@ import java.util.concurrent.ExecutorService;
 @Slf4j
 public class RestApiClient {
 
-    private static final int RETRY_TIMES = 3;
+    private static final int RETRY_TIMES = 1;
 
     private final OkHttpClient okHttpClient;
 
@@ -73,15 +73,10 @@ public class RestApiClient {
                 if (!queryString.isEmpty()) {
                     queryString.deleteCharAt(queryString.length() - 1);
                 }
-                requestUrl = url + "?" + queryString;;
+                requestUrl = url + "?" + queryString;
+                ;
             }
 
-
-            FormBody.Builder bodyBuilder = new FormBody.Builder();
-
-            if (body != null) {
-                body.forEach((k, v) -> bodyBuilder.add(k, String.valueOf(v)));
-            }
 
             Request.Builder builder = new Request.Builder();
 
@@ -89,6 +84,12 @@ public class RestApiClient {
                 for (Map.Entry<String, String> header : headers) {
                     builder.addHeader(header.getKey(), header.getValue());
                 }
+            }
+            MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+
+            RequestBody requestBody = null;
+            if (body != null) {
+                requestBody  = RequestBody.create(body.toJSONString(), JSON);
             }
 
 
@@ -98,29 +99,37 @@ public class RestApiClient {
             if (upperCase.equals("GET")) {
                 builder.get();
             } else {
-                builder.method(upperCase, bodyBuilder.build());
+                builder.method(upperCase, requestBody);
             }
 
             Request request = builder.build();
 
             log.debug("创建请求 url[{}], method[{}]成功，开始请求服务器", url, method);
 
+            String bodyMsg = null;
             for (int i = 0; i < RETRY_TIMES; i++) {
+                bodyMsg = null;
+
                 // 发送请求并获取响应
                 try (Response response = okHttpClient.newCall(request).execute()) {
                     if (response.isSuccessful()) {
                         return response.body() == null ? "{}" : response.body().string();
                     } else {
-                        log.error("请求url [{}] 失败， code [{}]， {}",
-                                url, response.code(), response.body() != null ? response.body().string() : null);
+
+                        bodyMsg = response.body() != null ? response.body().string() : null;
+                        log.warn("请求url [{}] 失败， code [{}]， {}",
+                                url, response.code(), bodyMsg);
                         break;
                     }
                 } catch (SocketTimeoutException e) {
-                    log.warn("请求[{}]超时，尝试重新请求 [{}/{}],", url, i, RETRY_TIMES, e);
+                    log.error("请求[{}]超时，尝试重新请求 [{}/{}],", url, i, RETRY_TIMES, e);
                 } catch (IOException e) {
-                    log.error("请求url [{}] 失败", url, e);
-                    throw new RuntimeException(e);
+                    throw new RuntimeException("请求url [" + url + "] 失败", e);
                 }
+            }
+
+            if (bodyMsg != null) {
+                throw new RuntimeException("请求失败：" + bodyMsg);
             }
 
             return null;

@@ -8,8 +8,9 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+        import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class NetworkProxyPool {
 
@@ -30,6 +31,10 @@ public class NetworkProxyPool {
     private final Map<Integer, Integer> useCount = new HashMap<>();
 
 
+    public static void main(String[] args) {
+        System.out.println(loadYamlNetworkPool("network-proxy.yaml"));
+    }
+
     public static NetworkProxyPool loadYamlNetworkPool(String classpath) {
         return LOADED_POOL_MAP.compute(classpath, (k, pool) -> {
             if (pool == null) {
@@ -42,9 +47,11 @@ public class NetworkProxyPool {
 
                     NetworkProxyPool networkProxyPool = yaml.loadAs(yaml.dump(proxy), NetworkProxyPool.class);
 
+                    AtomicInteger id = new AtomicInteger();
                     networkProxyPool.pool.forEach(networkProxy -> {
-                        networkProxyPool.idMapProxy.put(networkProxy.getId(), networkProxy);
-                        networkProxyPool.useCount.put(networkProxy.getId(), 0);
+                        networkProxy.setId(id.getAndIncrement());
+                        networkProxyPool.idMapProxy.put(id.get(), networkProxy);
+                        networkProxyPool.useCount.put(id.get(), 0);
                     });
 
                     networkProxyPool.configClassPath = classpath;

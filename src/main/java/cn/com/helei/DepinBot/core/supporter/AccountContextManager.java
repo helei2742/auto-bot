@@ -7,6 +7,7 @@ import cn.com.helei.DepinBot.core.dto.AccountContext;
 import cn.com.helei.DepinBot.core.dto.AccountPrintDto;
 import cn.com.helei.DepinBot.core.dto.DepinClientAccount;
 import cn.com.helei.DepinBot.core.dto.RewordInfo;
+import cn.com.helei.DepinBot.core.env.BrowserEnv;
 import cn.com.helei.DepinBot.core.env.BrowserEnvPool;
 import cn.com.helei.DepinBot.core.exception.DepinBotInitException;
 import cn.com.helei.DepinBot.core.network.NetworkProxy;
@@ -117,7 +118,7 @@ public class AccountContextManager {
                 for (int i = 0; i < notUsableAccounts.size(); i++) {
                     notUsableAccounts.get(i).setProxy(lessUsedProxy.get(i));
                     notUsableAccounts.get(i).setUsable(true);
-                    log.error("账号:{},将使用代理:{}", notUsableAccounts.get(i).getClientAccount().getName(), lessUsedProxy.get(i));
+                    log.warn("账号:{},将使用代理:{}", notUsableAccounts.get(i).getClientAccount().getPrintName(), lessUsedProxy.get(i));
                 }
             }
         } catch (Exception e) {
@@ -165,11 +166,12 @@ public class AccountContextManager {
     public String printAccountList() {
         List<AccountPrintDto> list = accounts.stream().map(accountContext -> {
             NetworkProxy proxy = accountContext.getProxy();
+            BrowserEnv browserEnv = accountContext.getBrowserEnv();
             return AccountPrintDto
                     .builder()
                     .name(accountContext.getClientAccount().getName())
                     .proxyInfo(proxy.getId() + "-" + proxy.getAddress())
-                    .browserEnvInfo(String.valueOf(accountContext.getBrowserEnv().getId()))
+                    .browserEnvInfo(String.valueOf(browserEnv == null ? "NO_ENV" : browserEnv.getId()))
                     .usable(accountContext.isUsable())
                     .startDateTime(accountContext.getConnectStatusInfo().getStartDateTime())
                     .updateDateTime(accountContext.getConnectStatusInfo().getUpdateDateTime())

@@ -12,12 +12,23 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public abstract class DepinClientAccount {
+public class DepinClientAccount {
 
     /**
      * 账户名
      */
     private String name;
+
+    /**
+     * 邮箱
+     */
+    private String email;
+
+    /**
+     * 密码
+     */
+    private String password;
+
 
     /**
      * 代理id
@@ -30,6 +41,16 @@ public abstract class DepinClientAccount {
      */
     private Integer browserEnvId;
 
+
+    public DepinClientAccount(String emailAndPassword) {
+        String[] split = emailAndPassword.split(", ");
+        email = split[0];
+        password = split[1];
+    }
+
+    public String getPrintName() {
+        return name == null ? email : name;
+    }
 
     public HttpHeaders getWSHeaders() {
         return new DefaultHttpHeaders();

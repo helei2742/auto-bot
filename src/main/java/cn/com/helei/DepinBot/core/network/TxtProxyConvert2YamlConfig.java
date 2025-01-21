@@ -4,7 +4,7 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
-import java.util.ArrayList;
+        import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -24,7 +24,6 @@ public class TxtProxyConvert2YamlConfig {
                 String[] split = line.split(":");
 
                 NetworkProxy networkProxy = new NetworkProxy();
-                networkProxy.setId(id++);
                 networkProxy.setHost(split[0]);
                 networkProxy.setPort(Integer.parseInt(split[1]));
                 networkProxy.setUsername(split[2]);

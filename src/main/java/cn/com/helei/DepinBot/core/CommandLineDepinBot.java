@@ -190,7 +190,7 @@ public abstract class CommandLineDepinBot<Req, Resp> {
         //Step 2 不断监听控制台输入
         while (true) {
             //Step 2.1 获取输入
-            String choice = reader.readLine("\n<\n" + getMenuNodePrintStr(currentMenuNode) + "请选择>");
+            String choice = reader.readLine("\n<\n" + getInvokeActionAndMenuNodePrintStr(currentMenuNode) + "请选择>");
             try {
                 //Step 2.2 退出
                 if ("exit".equals(choice)) {
@@ -215,6 +215,7 @@ public abstract class CommandLineDepinBot<Req, Resp> {
 
                 //终点节点，不进入，直接返回
                 if (currentMenuNode.isEnd()) {
+                    System.out.println(getInvokeActionAndMenuNodePrintStr(currentMenuNode));
                     currentMenuNode = menuNodeStack.pop();
                 }
             } catch (Exception e) {
@@ -302,12 +303,12 @@ public abstract class CommandLineDepinBot<Req, Resp> {
     }
 
     /**
-     * 获取当前菜单打印的字符串
+     * 执行Action回调，获取当前菜单打印的字符串
      *
      * @param currentMenuNode currentMenuNode
      * @return String
      */
-    public String getMenuNodePrintStr(CommandMenuNode currentMenuNode) {
+    public String getInvokeActionAndMenuNodePrintStr(CommandMenuNode currentMenuNode) {
         StringBuilder sb = new StringBuilder();
         sb.append(currentMenuNode.getDescribe()).append("\n");
 

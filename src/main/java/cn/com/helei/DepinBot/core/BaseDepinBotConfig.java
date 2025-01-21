@@ -17,7 +17,7 @@ public abstract class BaseDepinBotConfig {
     /**
      * 并发数量
      */
-    private int concurrentCount = 20;
+    private int concurrentCount = 5;
 
 
     /**

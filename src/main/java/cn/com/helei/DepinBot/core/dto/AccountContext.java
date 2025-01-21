@@ -8,6 +8,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -43,6 +46,16 @@ public class AccountContext {
      * 分数信息
      */
     private final RewordInfo rewordInfo = new RewordInfo();
+
+    private final Map<String, String> params = new HashMap<>();
+
+    public String getParam(String key) {
+        return params.get(key);
+    }
+
+    public void setParam(String key, String value) {
+        params.put(key, value);
+    }
 
     public HttpHeaders getWSHeaders() {
         return clientAccount.getWSHeaders();
