@@ -1,7 +1,9 @@
-package cn.com.helei.DepinBot.core.dto;
+package cn.com.helei.DepinBot.core.dto.account;
 
-import cn.com.helei.DepinBot.core.env.BrowserEnv;
-import cn.com.helei.DepinBot.core.network.NetworkProxy;
+import cn.com.helei.DepinBot.core.pool.account.DepinClientAccount;
+import cn.com.helei.DepinBot.core.pool.env.BrowserEnv;
+import cn.com.helei.DepinBot.core.pool.network.NetworkProxy;
+import cn.com.helei.DepinBot.core.dto.RewordInfo;
 import io.netty.handler.codec.http.HttpHeaders;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -62,7 +64,10 @@ public class AccountContext {
     }
 
     public HttpHeaders getRestHeaders() {
-
         return clientAccount.getRestHeaders();
+    }
+
+    public String getName() {
+        return clientAccount.getName() == null ? clientAccount.getEmail() : clientAccount.getName();
     }
 }

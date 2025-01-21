@@ -12,23 +12,23 @@ import java.time.LocalDateTime;
 
 @Slf4j
 @Getter
-public class AbstractDepinWSClient<Req, Resp> extends AbstractWebsocketClient<Req, Resp> {
+public abstract class BaseDepinWSClient<Req, Resp> extends AbstractWebsocketClient<Req, Resp> {
+
 
     /**
      * client对应的账号
      */
     private final AccountContext accountContext;
 
-    public AbstractDepinWSClient(
+    public BaseDepinWSClient(
             AccountContext accountContext,
-            AbstractDepinWSClientHandler<Req, Resp> handler
+            BaseDepinWSClientHandler<Req, Resp> handler
     ) {
         super(accountContext.getClientAccount().getConnectUrl(), handler);
+
         super.setName(accountContext.getClientAccount().getName());
         super.setHeaders(accountContext.getWSHeaders());
-
         super.setProxy(accountContext.getProxy());
-
         super.setClientStatusChangeHandler(this::whenClientStatusChange);
 
         this.accountContext = accountContext;
@@ -36,6 +36,12 @@ public class AbstractDepinWSClient<Req, Resp> extends AbstractWebsocketClient<Re
         updateClientStatus(WebsocketClientStatus.NEW);
     }
 
+
+    public abstract Req getHeartbeatMessage(BaseDepinWSClient<Req, Resp> wsClient);
+
+    public abstract void whenAccountReceiveResponse(BaseDepinWSClient<Req, Resp> wsClient, String id, Resp response) ;
+
+    public abstract void whenAccountReceiveMessage(BaseDepinWSClient<Req, Resp> wsClient, Resp message);
     /**
      * ws客户端状态改变，同步更新账户状态
      *

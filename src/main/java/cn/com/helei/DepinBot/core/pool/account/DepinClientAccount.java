@@ -1,4 +1,4 @@
-package cn.com.helei.DepinBot.core.dto;
+package cn.com.helei.DepinBot.core.pool.account;
 
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
@@ -46,10 +46,6 @@ public class DepinClientAccount {
         String[] split = emailAndPassword.split(", ");
         email = split[0];
         password = split[1];
-    }
-
-    public String getPrintName() {
-        return name == null ? email : name;
     }
 
     public HttpHeaders getWSHeaders() {

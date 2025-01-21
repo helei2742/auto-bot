@@ -1,4 +1,4 @@
-package cn.com.helei.DepinBot.core.network;
+package cn.com.helei.DepinBot.core.pool.network;
 
 public enum ProxyType {
 

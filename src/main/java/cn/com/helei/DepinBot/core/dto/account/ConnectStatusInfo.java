@@ -1,4 +1,4 @@
-package cn.com.helei.DepinBot.core.dto;
+package cn.com.helei.DepinBot.core.dto.account;
 
 import cn.com.helei.DepinBot.core.constants.ConnectStatus;
 import lombok.Data;
@@ -25,7 +25,12 @@ public class ConnectStatusInfo {
     /**
      * 心跳数
      */
-    private volatile AtomicInteger heartBeatCount = new AtomicInteger(0);
+    private final AtomicInteger heartBeatCount = new AtomicInteger(0);
+
+    /**
+     * 错误的心跳数
+     */
+    private final AtomicInteger errorHeartBeatCount = new AtomicInteger(0);
 
     /**
      * 连接状态

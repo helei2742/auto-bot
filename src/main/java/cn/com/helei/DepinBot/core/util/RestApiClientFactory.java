@@ -1,6 +1,6 @@
 package cn.com.helei.DepinBot.core.util;
 
-import cn.com.helei.DepinBot.core.network.NetworkProxy;
+import cn.com.helei.DepinBot.core.pool.network.NetworkProxy;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.ConcurrentHashMap;

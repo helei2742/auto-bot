@@ -1,32 +1,50 @@
 package cn.com.helei.DepinBot.core;
 
-import cn.com.helei.DepinBot.core.dto.AccountContext;
+import cn.com.helei.DepinBot.core.bot.CommandLineDepinBot;
+import cn.com.helei.DepinBot.core.dto.account.AccountContext;
 import com.alibaba.fastjson.JSONObject;
+import lombok.Getter;
+import lombok.Setter;
 
-public class SimpleDepinWSClient extends AbstractDepinWSClient<JSONObject, JSONObject> {
 
-    public SimpleDepinWSClient(AccountContext accountContext) {
+public class SimpleDepinWSClient extends BaseDepinWSClient<JSONObject, JSONObject> {
+
+    private final CommandLineDepinBot<JSONObject, JSONObject> bot;
+
+    public SimpleDepinWSClient(
+            CommandLineDepinBot<JSONObject, JSONObject> bot,
+            AccountContext accountContext
+    ) {
         super(accountContext, new SimpleDepinWSClientHandler());
+        this.bot = bot;
+        ((SimpleDepinWSClient.SimpleDepinWSClientHandler) handler).setWsClient(this);
+    }
+
+    @Override
+    public JSONObject getHeartbeatMessage(BaseDepinWSClient<JSONObject, JSONObject> wsClient) {
+        return bot.getHeartbeatMessage(wsClient);
+    }
+
+    @Override
+    public void whenAccountReceiveResponse(BaseDepinWSClient<JSONObject, JSONObject> wsClient, String id, JSONObject response) {
+        bot.whenAccountReceiveResponse(wsClient, id, response);
+    }
+
+    @Override
+    public void whenAccountReceiveMessage(BaseDepinWSClient<JSONObject, JSONObject> wsClient, JSONObject message) {
+        bot.whenAccountReceiveMessage(wsClient, message);
     }
 
 
+    @Setter
+    @Getter
+    private static class SimpleDepinWSClientHandler extends BaseDepinWSClientHandler<JSONObject, JSONObject> {
 
-
-    public static class SimpleDepinWSClientHandler extends AbstractDepinWSClientHandler<JSONObject, JSONObject> {
-
-        @Override
-        protected JSONObject heartBeatMessage() {
-            return null;
-        }
-
-        @Override
-        protected void handleOtherMessage(JSONObject message) {
-
-        }
+        private SimpleDepinWSClient wsClient;
 
         @Override
         public JSONObject convertMessageToRespType(String message) {
-            return null;
+            return JSONObject.parseObject(message);
         }
     }
 }

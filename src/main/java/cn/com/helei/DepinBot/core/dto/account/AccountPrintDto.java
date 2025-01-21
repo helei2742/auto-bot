@@ -1,4 +1,4 @@
-package cn.com.helei.DepinBot.core.dto;
+package cn.com.helei.DepinBot.core.dto.account;
 
 import cn.com.helei.DepinBot.core.constants.ConnectStatus;
 import lombok.AllArgsConstructor;

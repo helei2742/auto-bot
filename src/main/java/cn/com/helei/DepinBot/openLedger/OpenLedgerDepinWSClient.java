@@ -1,10 +1,10 @@
 package cn.com.helei.DepinBot.openLedger;
 
 
-import cn.com.helei.DepinBot.core.dto.AccountContext;
-import cn.com.helei.DepinBot.core.dto.ConnectStatusInfo;
-import cn.com.helei.DepinBot.core.AbstractDepinWSClient;
-import cn.com.helei.DepinBot.core.AbstractDepinWSClientHandler;
+import cn.com.helei.DepinBot.core.dto.account.AccountContext;
+import cn.com.helei.DepinBot.core.dto.account.ConnectStatusInfo;
+import cn.com.helei.DepinBot.core.BaseDepinWSClient;
+import cn.com.helei.DepinBot.core.BaseDepinWSClientHandler;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
@@ -17,17 +17,32 @@ import java.util.Random;
  * OpenLedgerDepinClient
  */
 @Slf4j
-public class OpenLedgerDepinWSClient extends AbstractDepinWSClient<String, String> {
+public class OpenLedgerDepinWSClient extends BaseDepinWSClient<String, String> {
 
     public OpenLedgerDepinWSClient(AccountContext accountContext) {
         super(accountContext, new OpenLedgerDepinClientHandler(accountContext));
+    }
+
+    @Override
+    public String getHeartbeatMessage(BaseDepinWSClient<String, String> wsClient) {
+        return "";
+    }
+
+    @Override
+    public void whenAccountReceiveResponse(BaseDepinWSClient<String, String> wsClient, String id, String response) {
+
+    }
+
+    @Override
+    public void whenAccountReceiveMessage(BaseDepinWSClient<String, String> wsClient, String message) {
+
     }
 
 
     /**
      * OpenLedgerDepinClient 的 Netty Handler
      */
-    public static class OpenLedgerDepinClientHandler extends AbstractDepinWSClientHandler<String, String> {
+    public static class OpenLedgerDepinClientHandler extends BaseDepinWSClientHandler<String, String> {
 
         private final Random random = new Random();
 
@@ -48,7 +63,6 @@ public class OpenLedgerDepinWSClient extends AbstractDepinWSClient<String, Strin
         }
 
 
-        @Override
         protected String heartBeatMessage() {
             //发送心跳时更新状态
             ConnectStatusInfo statusInfo = accountContext.getConnectStatusInfo();

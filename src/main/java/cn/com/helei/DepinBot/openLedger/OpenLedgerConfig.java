@@ -1,7 +1,7 @@
 package cn.com.helei.DepinBot.openLedger;
 
 import cn.com.helei.DepinBot.core.BaseDepinBotConfig;
-import cn.com.helei.DepinBot.core.dto.DepinClientAccount;
+import cn.com.helei.DepinBot.core.pool.account.DepinClientAccount;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import lombok.Data;

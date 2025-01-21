@@ -1,7 +1,7 @@
 package cn.com.helei.DepinBot.oasis;
 
 import cn.com.helei.DepinBot.core.BaseDepinBotConfig;
-import cn.com.helei.DepinBot.core.dto.DepinClientAccount;
+import cn.com.helei.DepinBot.core.pool.account.DepinClientAccount;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +44,6 @@ public class OasisBotConfig extends BaseDepinBotConfig {
             throw new RuntimeException(String.format("加载配置文件[%s]发生错误", classpath));
         }
     }
-
 }
 
 

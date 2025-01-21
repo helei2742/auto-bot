@@ -1,6 +1,6 @@
 package cn.com.helei.DepinBot.oasis;
 
-import cn.com.helei.DepinBot.core.network.NetworkProxy;
+import cn.com.helei.DepinBot.core.pool.network.NetworkProxy;
 import cn.com.helei.DepinBot.core.util.RestApiClient;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;

@@ -1,7 +1,7 @@
 package cn.com.helei.DepinBot.core;
 
 
-import cn.com.helei.DepinBot.core.dto.DepinClientAccount;
+import cn.com.helei.DepinBot.core.pool.account.DepinClientAccount;
 import lombok.Data;
 
 import java.util.List;
@@ -28,12 +28,12 @@ public abstract class BaseDepinBotConfig {
     /**
      * 网络代理池配置文件名
      */
-    private String networkPoolConfig = "network-proxy.yaml";
+    private String networkPoolConfig = "bot/network-proxy.yaml";
 
     /**
      * 浏览器环境池配置文件名
      */
-    private String browserEnvPoolConfig = "browser-env.yaml";
+    private String browserEnvPoolConfig = "bot/browser-env.yaml";
 
     /**
      * 连接url

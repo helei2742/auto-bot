@@ -2,9 +2,9 @@ package cn.com.helei.DepinBot.core.netty.base;
 
 import cn.com.helei.DepinBot.core.netty.constants.NettyConstants;
 import io.netty.channel.*;
-import io.netty.handler.codec.http.FullHttpResponse;
+        import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.websocketx.*;
-import io.netty.handler.timeout.IdleStateEvent;
+        import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -60,8 +60,6 @@ public abstract class BaseWebSocketClientHandler<P, T> extends SimpleChannelInbo
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
         log.warn("WebSocket Client [{}] unregistered!", ctx.channel().attr(NettyConstants.CLIENT_NAME).get());
-
-
     }
 
     @Override
@@ -74,6 +72,8 @@ public abstract class BaseWebSocketClientHandler<P, T> extends SimpleChannelInbo
                     handshaker.finishHandshake(ch, response);
                     log.info("WebSocket client [{}] Handshake complete!", ch.attr(NettyConstants.CLIENT_NAME).get());
                     handshakeFuture.setSuccess();
+
+                    connectCompleteHandler(ch);
                 } catch (WebSocketHandshakeException e) {
                     log.info("WebSocket client [{}] Handshake failed!", ch.attr(NettyConstants.CLIENT_NAME).get());
                     handshakeFuture.setFailure(e);
@@ -134,6 +134,14 @@ public abstract class BaseWebSocketClientHandler<P, T> extends SimpleChannelInbo
         }
     }
 
+    /**
+     * 连接完成
+     *
+     * @param ch ch
+     */
+    protected void connectCompleteHandler(Channel ch) {
+        log.debug("websocket active");
+    }
 
     /**
      * 处理close消息

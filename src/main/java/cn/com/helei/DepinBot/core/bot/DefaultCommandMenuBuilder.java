@@ -1,4 +1,4 @@
-package cn.com.helei.DepinBot.core;
+package cn.com.helei.DepinBot.core.bot;
 
 import cn.com.helei.DepinBot.core.commandMenu.CommandMenuNode;
 
@@ -63,7 +63,7 @@ public class DefaultCommandMenuBuilder {
         CommandMenuNode accountListMenuNode = new CommandMenuNode(
                 "查看账号",
                 "当前账户详情列表:",
-                commandLineDepinBot.getAccountContextManager()::printAccountList
+                commandLineDepinBot::printAccountList
         );
 
         return accountListMenuNode.addSubMenu(buildAccountRewardMenuNode());
@@ -78,7 +78,7 @@ public class DefaultCommandMenuBuilder {
         return new CommandMenuNode(
                 "查看账号收益",
                 "账号收益详情列表:",
-                commandLineDepinBot.getAccountContextManager()::printAccountReward
+                commandLineDepinBot::printAccountReward
         );
     }
 
@@ -92,14 +92,15 @@ public class DefaultCommandMenuBuilder {
                 "启动账号",
                 "启动账号界面，",
                 () -> commandLineDepinBot.startAccountDepinClient() + "\n"
-                        + commandLineDepinBot.getAccountContextManager().printAccountList()
+                        + commandLineDepinBot.printAccountList()
         );
 
         CommandMenuNode refresh = new CommandMenuNode(true,"刷新", "当前账户列表",
-                commandLineDepinBot.getAccountContextManager()::printAccountList);
+                commandLineDepinBot::printAccountList);
 
         menuNode.addSubMenu(refresh);
         return menuNode;
     }
 
 }
+

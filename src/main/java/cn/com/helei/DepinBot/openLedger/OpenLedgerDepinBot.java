@@ -1,9 +1,9 @@
 package cn.com.helei.DepinBot.openLedger;
 
-import cn.com.helei.DepinBot.core.AbstractDepinWSClient;
-import cn.com.helei.DepinBot.core.CommandLineDepinBot;
+import cn.com.helei.DepinBot.core.BaseDepinWSClient;
+import cn.com.helei.DepinBot.core.bot.CommandLineDepinBot;
 import cn.com.helei.DepinBot.core.commandMenu.CommandMenuNode;
-import cn.com.helei.DepinBot.core.dto.AccountContext;
+import cn.com.helei.DepinBot.core.dto.account.AccountContext;
 import cn.com.helei.DepinBot.core.dto.RewordInfo;
 import cn.com.helei.DepinBot.core.util.RestApiClient;
 import cn.com.helei.DepinBot.core.util.RestApiClientFactory;
@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 
@@ -49,19 +48,33 @@ public class OpenLedgerDepinBot extends CommandLineDepinBot<String, String> {
     }
 
     @Override
-    public AbstractDepinWSClient<String, String> buildAccountWSClient(AccountContext accountContext) {
+    public BaseDepinWSClient<String, String> buildAccountWSClient(AccountContext accountContext) {
         return new OpenLedgerDepinWSClient(accountContext);
     }
 
     @Override
-    public void whenAccountConnected(AccountContext accountContext, Boolean success) {
-
+    public void whenAccountConnected(BaseDepinWSClient<String, String> depinWSClient, Boolean success) {
         if (BooleanUtil.isTrue(success)) {
             //Step 1 1 设置定时刷新奖励信息设置
             addTimer(() -> {
-                updateRewardInfo(accountContext);
+                updateRewardInfo(depinWSClient.getAccountContext());
             }, openLedgerConfig.getAccountRewardRefreshIntervalSeconds(), TimeUnit.SECONDS);
         }
+    }
+
+    @Override
+    public void whenAccountReceiveResponse(BaseDepinWSClient<String, String> depinWSClient, String id, String response) {
+
+    }
+
+    @Override
+    public void whenAccountReceiveMessage(BaseDepinWSClient<String, String> depinWSClient, String message) {
+
+    }
+
+    @Override
+    public String getHeartbeatMessage(BaseDepinWSClient<String, String> depinWSClient) {
+        return "";
     }
 
     /**

@@ -1,17 +1,17 @@
-package cn.com.helei.DepinBot.core.network;
+package cn.com.helei.DepinBot.core.pool.network;
 
+import cn.com.helei.DepinBot.core.pool.AbstractYamlLineItem;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.net.SocketAddress;
 
+@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Data
-public class NetworkProxy {
-
-    private Integer id;
+public class NetworkProxy extends AbstractYamlLineItem {
 
     private ProxyType proxyType;
 

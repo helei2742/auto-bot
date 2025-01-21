@@ -2,7 +2,7 @@ package cn.com.helei.DepinBot.core.netty.base;
 
 
 import cn.com.helei.DepinBot.core.netty.handler.WSCloseHandler;
-import cn.com.helei.DepinBot.core.network.NetworkProxy;
+import cn.com.helei.DepinBot.core.pool.network.NetworkProxy;
 import cn.com.helei.DepinBot.core.netty.constants.NettyConstants;
 import cn.com.helei.DepinBot.core.netty.constants.WebsocketClientStatus;
 import com.alibaba.fastjson.JSON;

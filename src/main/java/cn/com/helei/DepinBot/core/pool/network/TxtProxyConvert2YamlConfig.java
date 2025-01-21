@@ -1,11 +1,10 @@
-package cn.com.helei.DepinBot.core.network;
+package cn.com.helei.DepinBot.core.pool.network;
 
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
         import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
 public class TxtProxyConvert2YamlConfig {
@@ -41,7 +40,7 @@ public class TxtProxyConvert2YamlConfig {
             // 写入 YAML 文件
             try (FileWriter writer = new FileWriter(fileName1)) {
                 NetworkProxyPool data = new NetworkProxyPool();
-                data.setPool(set);
+                data.setList(set);
                 yaml.dump(data, writer);  // 将对象写入 YAML 文件
                 System.out.println("YAML 文件写入成功！");
             } catch (IOException e) {

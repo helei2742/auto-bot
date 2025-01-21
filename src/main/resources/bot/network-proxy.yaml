@@ -1,7 +1,7 @@
-depin:
+bot:
   network:
     proxy:
-      pool:
+      list:
         - http://hldjmuos:545n41b7z20x@198.145.103.86:6343
         - http://hldjmuos:545n41b7z20x@216.98.249.148:7129
         - http://hldjmuos:545n41b7z20x@46.203.161.123:5620
