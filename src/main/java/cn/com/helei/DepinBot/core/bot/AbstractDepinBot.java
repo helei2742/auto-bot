@@ -4,6 +4,7 @@ import cn.com.helei.DepinBot.core.BaseDepinBotConfig;
 import cn.com.helei.DepinBot.core.BaseDepinWSClient;
 import cn.com.helei.DepinBot.core.constants.DepinBotStatus;
 import cn.com.helei.DepinBot.core.dto.account.AccountContext;
+import cn.com.helei.DepinBot.core.pool.account.AccountPool;
 import cn.com.helei.DepinBot.core.pool.env.BrowserEnvPool;
 import cn.com.helei.DepinBot.core.exception.DepinBotInitException;
 import cn.com.helei.DepinBot.core.exception.DepinBotStartException;
@@ -40,6 +41,11 @@ public abstract class AbstractDepinBot<Req, Resp> {
     private final BrowserEnvPool browserEnvPool;
 
     /**
+     * 账户池
+     */
+    private final AccountPool accountPool;
+
+    /**
      * 配置
      */
     private final BaseDepinBotConfig baseDepinBotConfig;
@@ -55,13 +61,18 @@ public abstract class AbstractDepinBot<Req, Resp> {
 
         this.proxyPool = NetworkProxyPool.loadYamlPool(
                 baseDepinBotConfig.getNetworkPoolConfig(),
-                "bot.browser.list",
+                "bot.network.proxy",
                 NetworkProxyPool.class
         );
         this.browserEnvPool = BrowserEnvPool.loadYamlPool(
                 baseDepinBotConfig.getBrowserEnvPoolConfig(),
-                "bot.network.proxy.list",
+                "bot.browser",
                 BrowserEnvPool.class
+        );
+        this.accountPool = AccountPool.loadYamlPool(
+                baseDepinBotConfig.getAccountPoolConfig(),
+                "bot.account",
+                AccountPool.class
         );
 
     }

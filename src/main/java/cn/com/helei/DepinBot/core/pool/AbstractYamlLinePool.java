@@ -6,8 +6,10 @@ import cn.com.helei.DepinBot.core.util.table.CommandLineTablePrintHelper;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+        import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -18,7 +20,7 @@ public class AbstractYamlLinePool<T extends AbstractYamlLineItem> {
 
     @Getter
     @Setter
-    private List<T> list;
+    private List<Object> list;
 
     @Setter
     private String configClassPath;
@@ -41,17 +43,27 @@ public class AbstractYamlLinePool<T extends AbstractYamlLineItem> {
         C pool = YamlConfigLoadUtil.load(classpath, Arrays.stream(path.split("\\.")).toList(), cClass);
 
         AtomicInteger id = new AtomicInteger();
-        pool.getList().forEach(item -> {
+        List<Object> list1 = pool.getList();
+        for (Object rawLine : list1) {
+            AbstractYamlLineItem item;
+
+            try {
+                item = pool.buildTInstanceFromLineStr(rawLine);
+            } catch (NoSuchMethodException | InvocationTargetException | InstantiationException |
+                     IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
 
             item.setId(id.getAndIncrement());
             pool.getIdMapItem().put(id.get(), item);
             pool.getUseCountMap().put(id.get(), 0);
-        });
+        }
 
         pool.setConfigClassPath(classpath);
 
         return pool;
     }
+
 
     /**
      * 获取代理
@@ -73,7 +85,6 @@ public class AbstractYamlLinePool<T extends AbstractYamlLineItem> {
         });
         return (T) compute;
     }
-
 
 
     /**
@@ -106,6 +117,15 @@ public class AbstractYamlLinePool<T extends AbstractYamlLineItem> {
         return res;
     }
 
+    /**
+     * 获取全部
+     *
+     * @return List<T>
+     */
+    public List<T> getAllItem() {
+        return getIdMapItem().values().stream().map(e -> (T) e).toList();
+    }
+
 
     /**
      * 打印池
@@ -113,6 +133,14 @@ public class AbstractYamlLinePool<T extends AbstractYamlLineItem> {
      * @return String
      */
     public String printPool() {
-        return CommandLineTablePrintHelper.generateTableString(list, tClass);
+        return CommandLineTablePrintHelper.generateTableString(new ArrayList<>(idMapItem.values()), tClass);
     }
+
+
+    public T buildTInstanceFromLineStr(Object originLine)
+            throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        Constructor<T> constructor = getTClass().getConstructor(Object.class);
+        return constructor.newInstance(originLine);
+    }
+
 }

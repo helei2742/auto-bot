@@ -45,7 +45,11 @@ public class OasisDepinBot extends CommandLineDepinBot<JSONObject, JSONObject> {
                 "开始重发验证邮件", this::resendCode);
 
 
-        return main.addSubMenu(register).addSubMenu(takeToken).addSubMenu(resendCode);
+
+        return main
+                .addSubMenu(register)
+                .addSubMenu(takeToken)
+                .addSubMenu(resendCode);
     }
 
 

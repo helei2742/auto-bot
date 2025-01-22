@@ -10,6 +10,7 @@ import cn.com.helei.DepinBot.core.exception.DepinBotInitException;
 import cn.com.helei.DepinBot.core.exception.DepinBotStatusException;
 import cn.com.helei.DepinBot.core.netty.constants.WebsocketClientStatus;
 import cn.com.helei.DepinBot.core.pool.network.NetworkProxy;
+import cn.com.helei.DepinBot.core.supporter.persistence.AccountPersistenceManager;
 import cn.com.helei.DepinBot.core.util.NamedThreadFactory;
 import cn.com.helei.DepinBot.core.util.table.CommandLineTablePrintHelper;
 import lombok.Getter;
@@ -17,8 +18,10 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
         import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 @Slf4j
 public abstract class AccountAutoManageDepinBot<Req, Resp> extends AbstractDepinBot<Req, Resp> {
@@ -37,6 +40,9 @@ public abstract class AccountAutoManageDepinBot<Req, Resp> extends AbstractDepin
      */
     private final ConcurrentMap<AccountContext, BaseDepinWSClient<Req, Resp>> accountWSClientMap = new ConcurrentHashMap<>();
 
+
+    private final AccountPersistenceManager persistenceManager = new AccountPersistenceManager();
+
     /**
      * 账号列表
      */
@@ -54,6 +60,10 @@ public abstract class AccountAutoManageDepinBot<Req, Resp> extends AbstractDepin
 
     @Override
     protected void doInit() throws DepinBotInitException {
+        // Step 1 初始化保存的线程
+        persistenceManager.init();
+
+        // Step 2 初始化账户
         initAccounts();
     }
 
@@ -61,44 +71,111 @@ public abstract class AccountAutoManageDepinBot<Req, Resp> extends AbstractDepin
     /**
      * 初始化账号方法
      */
-    public void initAccounts() throws DepinBotInitException {
+    private void initAccounts() throws DepinBotInitException {
         try {
-            //Step 1 初始化账号
-            List<AccountContext> notUsableAccounts = new ArrayList<>();
-            getBaseDepinBotConfig()
-                    .getAccountList()
-                    .forEach(depinClientAccount -> {
-                        AccountContext.AccountContextBuilder builder = AccountContext.builder().clientAccount(depinClientAccount);
+            // Step 1 获取持久化的
+            Map<Integer, AccountContext> accountContextMap = persistenceManager.loadAccountContexts();
 
-                        //账号没有配置代理，则将其设置为不可用
-                        if (depinClientAccount.getProxyId() == null) {
-                            builder.usable(false);
-                        } else {
-                            builder.browserEnv(getBrowserEnvPool().getItem(depinClientAccount.getBrowserEnvId()))
-                                    .usable(true)
-                                    .proxy(getProxyPool().getItem(depinClientAccount.getProxyId()))
-                                    .build();
-                        }
+            // Step 2 没有保存的数据，加载新的
+            List<AccountContext> accountContexts;
+            if (accountContextMap == null || accountContextMap.isEmpty()) {
+                log.info("bot[{}]加载新账户数据", getBaseDepinBotConfig().getName());
+                // Step 2.1 加载新的
+                accountContexts = loadNewAccountContexts();
 
-                        AccountContext build = builder.build();
-                        if (!build.isUsable()) notUsableAccounts.add(build);
-
-                        accounts.add(build);
-                    });
-
-            //Step 2 账号没代理的尝试给他设置代理
-            if (!notUsableAccounts.isEmpty()) {
-                log.warn("以下账号没有配置代理，将随机选择一个代理进行使用");
-                List<NetworkProxy> lessUsedProxy = getProxyPool().getLessUsedItem(notUsableAccounts.size());
-                for (int i = 0; i < notUsableAccounts.size(); i++) {
-                    notUsableAccounts.get(i).setProxy(lessUsedProxy.get(i));
-                    notUsableAccounts.get(i).setUsable(true);
-                    log.warn("账号:{},将使用代理:{}", notUsableAccounts.get(i).getName(), lessUsedProxy.get(i));
-                }
+                // Step 2.2 持久化
+                persistenceManager.persistenceAccountContexts(accountContexts);
+            } else {
+                log.info("bot[{}]使用历史账户数据", getBaseDepinBotConfig().getName());
+                accountContexts = new ArrayList<>(accountContextMap.values());
             }
+
+            // Step 3 加载到bot
+            registerAccountsInBot(accountContexts, AccountPersistenceManager::getAccountContextPersistencePath);
+
+            accounts.addAll(accountContexts);
         } catch (Exception e) {
             throw new DepinBotInitException("初始化账户发生错误", e);
         }
+    }
+
+    /**
+     * 将账户加载到bot， 会注册监听，当属性发生改变时自动刷入磁盘
+     *
+     * @param accountContexts accountContexts
+     */
+    private void registerAccountsInBot(List<AccountContext> accountContexts, Function<AccountContext, String> getSavePath) {
+        persistenceManager.registerPersistenceListener(accountContexts, getSavePath);
+    }
+
+
+    /**
+     * 加载新的账户上下文列表，从配置文件中
+     *
+     * @return List<AccountContext>
+     */
+    private List<AccountContext> loadNewAccountContexts() {
+        // Step 1 初始化账号
+
+        List<AccountContext> newAccountContexts = new ArrayList<>();
+
+        List<AccountContext> noProxyIds = new ArrayList<>();
+        List<AccountContext> noBrowserEnvIds = new ArrayList<>();
+
+        getAccountPool()
+                .getAllItem()
+                .forEach(depinClientAccount -> {
+                    AccountContext accountContext = AccountContext.builder()
+                            .clientAccount(depinClientAccount).build();
+
+                    Integer id = depinClientAccount.getId();
+
+                    // 账号没有配置代
+                    if (depinClientAccount.getProxyId() == null) {
+                        noProxyIds.add(accountContext);
+                    } else {
+                        accountContext.setProxy(getProxyPool().getItem(depinClientAccount.getProxyId()));
+                    }
+
+                    // 账号没有配置浏览器环境
+                    if (depinClientAccount.getBrowserEnvId() == null) {
+                        noBrowserEnvIds.add(accountContext);
+                    } else {
+                        accountContext.setBrowserEnv(getBrowserEnvPool().getItem(depinClientAccount.getBrowserEnvId()));
+                    }
+
+                    newAccountContexts.add(accountContext);
+                });
+
+        // Step 2 账号没代理的尝试给他设置代理
+        if (!noProxyIds.isEmpty()) {
+            log.warn("以下账号没有配置代理，将随机选择一个代理进行使用");
+            List<NetworkProxy> lessUsedProxy = getProxyPool().getLessUsedItem(noProxyIds.size());
+            for (int i = 0; i < noProxyIds.size(); i++) {
+                AccountContext accountContext = noProxyIds.get(i);
+
+                NetworkProxy proxy = lessUsedProxy.get(i);
+                accountContext.setProxy(proxy);
+
+                log.warn("账号:{},将使用代理:{}", accountContext.getName(), proxy);
+            }
+        }
+
+        // Step 3 账号没浏览器环境的尝试给他设置浏览器环境
+        if (!noBrowserEnvIds.isEmpty()) {
+            log.warn("以下账号没有配置浏览器环境，将随机选择一个浏览器环境使用");
+            List<BrowserEnv> lessUsedBrowserEnv = getBrowserEnvPool().getLessUsedItem(noBrowserEnvIds.size());
+            for (int i = 0; i < noBrowserEnvIds.size(); i++) {
+                AccountContext accountContext = noBrowserEnvIds.get(i);
+
+                BrowserEnv browserEnv = lessUsedBrowserEnv.get(i);
+                accountContext.setBrowserEnv(browserEnv);
+
+                log.warn("账号:{},将使用浏览器环境:{}", accountContext.getName(), browserEnv);
+            }
+        }
+
+        return newAccountContexts;
     }
 
     /**
@@ -163,7 +240,7 @@ public abstract class AccountAutoManageDepinBot<Req, Resp> extends AbstractDepin
                             case STARTING, RUNNING: // 正在建立连接，直接返回
                                 CompletableFuture.completedFuture(null);
                             case SHUTDOWN: // 被禁止使用，抛出异常
-                                throw new DepinBotStatusException("cannot start ws client when it shutdown, "  + accountName);
+                                throw new DepinBotStatusException("cannot start ws client when it shutdown, " + accountName);
                         };
                     })
                     .toList();

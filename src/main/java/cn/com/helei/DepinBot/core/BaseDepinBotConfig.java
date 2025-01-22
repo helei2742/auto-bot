@@ -1,7 +1,6 @@
 package cn.com.helei.DepinBot.core;
 
 
-import cn.com.helei.DepinBot.core.pool.account.DepinClientAccount;
 import lombok.Data;
 
 import java.util.List;
@@ -36,10 +35,12 @@ public abstract class BaseDepinBotConfig {
     private String browserEnvPoolConfig = "bot/browser-env.yaml";
 
     /**
+     * 账户配置文件名
+     */
+    private String accountPoolConfig = "bot/account.yaml";
+
+    /**
      * 连接url
      */
     private String wsBaseUrl;
-
-
-    public abstract List<DepinClientAccount> getAccountList();
 }

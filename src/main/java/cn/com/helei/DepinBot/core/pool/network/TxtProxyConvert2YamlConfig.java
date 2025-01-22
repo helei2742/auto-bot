@@ -4,7 +4,7 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
-        import java.util.ArrayList;
+import java.util.ArrayList;
 import java.util.List;
 
 public class TxtProxyConvert2YamlConfig {
@@ -14,7 +14,7 @@ public class TxtProxyConvert2YamlConfig {
         String fileName = "/Users/helei/develop/ideaworkspace/depinbot/DepinBot/src/main/resources/proxy.txt";
         String fileName1 = "/Users/helei/develop/ideaworkspace/depinbot/DepinBot/src/main/resources/build-proxy.yaml";
 
-        try (BufferedReader fr = new BufferedReader(new FileReader(fileName))){
+        try (BufferedReader fr = new BufferedReader(new FileReader(fileName))) {
 
             List<NetworkProxy> set = new ArrayList<>();
             String line;
@@ -40,7 +40,7 @@ public class TxtProxyConvert2YamlConfig {
             // 写入 YAML 文件
             try (FileWriter writer = new FileWriter(fileName1)) {
                 NetworkProxyPool data = new NetworkProxyPool();
-                data.setList(set);
+                data.getList().addAll(set);
                 yaml.dump(data, writer);  // 将对象写入 YAML 文件
                 System.out.println("YAML 文件写入成功！");
             } catch (IOException e) {

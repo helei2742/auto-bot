@@ -1,43 +1,52 @@
 package cn.com.helei.DepinBot.core.dto.account;
 
+import cn.com.helei.DepinBot.core.supporter.propertylisten.PropertyChangeListenClass;
+import cn.com.helei.DepinBot.core.supporter.propertylisten.PropertyChangeListenField;
 import cn.com.helei.DepinBot.core.pool.account.DepinClientAccount;
 import cn.com.helei.DepinBot.core.pool.env.BrowserEnv;
 import cn.com.helei.DepinBot.core.pool.network.NetworkProxy;
 import cn.com.helei.DepinBot.core.dto.RewordInfo;
 import io.netty.handler.codec.http.HttpHeaders;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@PropertyChangeListenClass(isDeep = true)
 public class AccountContext {
 
     /**
      * 账户是否可用
      */
+    @PropertyChangeListenField
     private boolean usable = true;
 
     /**
      * client 账户
      */
+    @PropertyChangeListenField
     private DepinClientAccount clientAccount;
 
     /**
      * 代理
      */
+    @PropertyChangeListenField
     private NetworkProxy proxy;
 
     /**
      * 浏览器环境
      */
+    @PropertyChangeListenField
     private BrowserEnv browserEnv;
+
+    private LocalDateTime saveDatetime;
+
 
     /**
      * 连接状态
@@ -47,8 +56,10 @@ public class AccountContext {
     /**
      * 分数信息
      */
+    @PropertyChangeListenField
     private final RewordInfo rewordInfo = new RewordInfo();
 
+    @PropertyChangeListenField
     private final Map<String, String> params = new HashMap<>();
 
     public String getParam(String key) {

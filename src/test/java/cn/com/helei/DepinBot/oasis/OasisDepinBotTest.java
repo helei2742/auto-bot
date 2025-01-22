@@ -12,7 +12,7 @@ class OasisDepinBotTest {
     @BeforeAll
     static void setUp() throws DepinBotStartException {
         oasisDepinBot = new OasisDepinBot("app/oasis.yaml");
-
+        oasisDepinBot.init();
     }
 
 

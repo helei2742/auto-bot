@@ -16,8 +16,6 @@ public class DepinedConfig extends BaseDepinBotConfig {
 
     private String inviteCode;
 
-    private List<DepinClientAccount> accountList;
-
     public static void main(String[] args) {
         System.out.println(loadYamlConfig("app/oasis.yaml"));
     }
@@ -27,7 +25,7 @@ public class DepinedConfig extends BaseDepinBotConfig {
         DepinedConfig oasisBotConfig = YamlConfigLoadUtil
                 .load(classpath, List.of("depin", "app", "oasis"), DepinedConfig.class);
 
-        log.info("OasisBot配置信息加载完毕: 共{}个账号", oasisBotConfig.accountList.size());
+        log.info("OasisBot配置信息加载完毕,{}", oasisBotConfig);
         return oasisBotConfig;
     }
 }

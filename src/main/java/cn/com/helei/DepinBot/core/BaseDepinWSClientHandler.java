@@ -30,8 +30,7 @@ public abstract class BaseDepinWSClientHandler<Req, Resp> extends AbstractWebSoc
                     }
 
                     // 心跳计数
-                    connectStatusInfo
-                            .getHeartBeatCount()
+                    connectStatusInfo.getHeartBeatCount()
                             .getAndIncrement();
                 }, depinWSClient.getCallbackInvoker());
     }

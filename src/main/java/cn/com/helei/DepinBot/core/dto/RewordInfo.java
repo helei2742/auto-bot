@@ -1,10 +1,12 @@
 package cn.com.helei.DepinBot.core.dto;
 
+import cn.com.helei.DepinBot.core.supporter.propertylisten.PropertyChangeListenClass;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
+@PropertyChangeListenClass
 public class RewordInfo {
 
     /**

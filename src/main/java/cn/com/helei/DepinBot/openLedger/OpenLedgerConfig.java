@@ -62,10 +62,6 @@ public class OpenLedgerConfig extends BaseDepinBotConfig {
         }
     }
 
-    @Override
-    public List<DepinClientAccount> getAccountList() {
-        return openLedgerAccounts.stream().map(openLedgerAccount -> (DepinClientAccount) openLedgerAccount).toList();
-    }
 
 
     @EqualsAndHashCode(callSuper = true)

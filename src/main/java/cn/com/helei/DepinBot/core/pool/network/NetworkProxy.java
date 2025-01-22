@@ -1,16 +1,14 @@
 package cn.com.helei.DepinBot.core.pool.network;
 
 import cn.com.helei.DepinBot.core.pool.AbstractYamlLineItem;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-import java.net.InetSocketAddress;
+        import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-@EqualsAndHashCode(callSuper = true)
+@Getter
+@Setter
 @NoArgsConstructor
-@Data
 public class NetworkProxy extends AbstractYamlLineItem {
 
     private ProxyType proxyType;
@@ -23,7 +21,9 @@ public class NetworkProxy extends AbstractYamlLineItem {
 
     private String password;
 
-    public NetworkProxy(String proxyUrl) {
+    public NetworkProxy(Object originLine) {
+        String proxyUrl = (String) originLine;
+
         String[] split = proxyUrl.split("://");
         String protocol = split[0];
 

@@ -1,15 +1,19 @@
 package cn.com.helei.DepinBot.core.pool.env;
 
 import cn.com.helei.DepinBot.core.pool.AbstractYamlLineItem;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Map;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
+@Getter
+@Setter
 public class BrowserEnv extends AbstractYamlLineItem {
 
     private Map<String, String> headers;
 
+    public BrowserEnv(Object originLine) {
+        headers = (Map<String, String>) originLine;
+    }
 }

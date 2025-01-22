@@ -19,8 +19,6 @@ public class OasisBotConfig extends BaseDepinBotConfig {
 
     private String inviteCode;
 
-    private List<DepinClientAccount> accountList;
-
     public static void main(String[] args) {
         System.out.println(loadYamlConfig("app/oasis.yaml"));
     }
@@ -37,7 +35,7 @@ public class OasisBotConfig extends BaseDepinBotConfig {
             //Step 1 基础配置文件
             OasisBotConfig oasisBotConfig = yaml.loadAs(yaml.dump(oasis), OasisBotConfig.class);
 
-            log.info("OasisBot配置信息加载完毕: 共{}个账号", oasisBotConfig.accountList.size());
+            log.info("OasisBot配置信息加载完毕");
 
             return oasisBotConfig;
         } catch (IOException e) {
@@ -45,5 +43,3 @@ public class OasisBotConfig extends BaseDepinBotConfig {
         }
     }
 }
-
-
