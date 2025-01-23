@@ -30,9 +30,8 @@ public abstract class CommandLineDepinBot<Req, Resp> extends AccountAutoManageDe
     /**
      * 构建command菜单
      *
-     * @return 主菜单节点
      */
-    protected abstract CommandMenuNode buildMenuNode();
+    protected abstract void buildMenuNode(CommandMenuNode mainManu);
 
 
     /**
@@ -51,8 +50,10 @@ public abstract class CommandLineDepinBot<Req, Resp> extends AccountAutoManageDe
 
         //Step 2 不断监听控制台输入
         while (true) {
+            boolean inputAccept = true;
+
             //Step 2.1 获取输入
-            String choice = reader.readLine("\n<\n" + getInvokeActionAndMenuNodePrintStr(currentMenuNode) + "请选择>");
+            String choice = reader.readLine("\n<\n" + getInvokeActionAndMenuNodePrintStr(currentMenuNode) + "请选择>").trim();
             try {
                 //Step 2.2 退出
                 if ("exit".equals(choice)) {
@@ -72,7 +73,7 @@ public abstract class CommandLineDepinBot<Req, Resp> extends AccountAutoManageDe
                     menuNodeStack.push(currentMenuNode);
                     currentMenuNode = currentMenuNode.getSubNodeList().get(option - 1);
                 } else {
-                    System.out.println("输入无效，请重新输入");
+                    inputAccept = false;
                 }
 
                 //终点节点，不进入，直接返回
@@ -81,8 +82,17 @@ public abstract class CommandLineDepinBot<Req, Resp> extends AccountAutoManageDe
                     currentMenuNode = menuNodeStack.pop();
                 }
             } catch (Exception e) {
-                System.out.println("输入无效，请重新输入");
+                inputAccept = false;
             }
+
+            try {
+                if (!inputAccept && currentMenuNode.getResolveInput() != null) {
+                    currentMenuNode.getResolveInput().accept(choice);
+                }
+            } catch (Exception e) {
+                System.out.println("系统异常");
+            }
+
         }
     }
 
@@ -93,11 +103,19 @@ public abstract class CommandLineDepinBot<Req, Resp> extends AccountAutoManageDe
      * @return CommandMenuNode
      */
     private CommandMenuNode getMenuNode() {
-        CommandMenuNode menuNode = buildMenuNode();
+        CommandMenuNode mainManu = new CommandMenuNode(
+                "主菜单",
+                String.format("欢迎使用[%s]-bot", getBaseDepinBotConfig().getName()),
+                this::printBanner
+        );
 
-        //获取到子类菜单后，给子类菜单添加新的菜单选项
-        return new DefaultCommandMenuBuilder(this)
-                .addDefaultMenuNode(menuNode);
+        buildMenuNode(mainManu);
+
+        return mainManu;
+    }
+
+    private String printBanner() {
+        return "";
     }
 
     /**
@@ -121,6 +139,8 @@ public abstract class CommandLineDepinBot<Req, Resp> extends AccountAutoManageDe
         if (currentMenuNode.getAction() != null) {
             sb.append(currentMenuNode.getAction().get()).append("\n");
         }
+
+        if (currentMenuNode.isEnd()) return sb.toString();
 
         sb.append("选项:\n");
         List<CommandMenuNode> menuNodeList = currentMenuNode.getSubNodeList();

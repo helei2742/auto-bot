@@ -2,5 +2,4 @@ bot:
   network:
     proxy:
       list:
-        - proxy line str
-
+        -

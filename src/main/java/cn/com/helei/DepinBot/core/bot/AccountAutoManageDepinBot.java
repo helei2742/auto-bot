@@ -20,8 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
-        import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
+        import java.util.function.Function;
 
 @Slf4j
 public abstract class AccountAutoManageDepinBot<Req, Resp> extends AbstractDepinBot<Req, Resp> {
@@ -31,16 +30,13 @@ public abstract class AccountAutoManageDepinBot<Req, Resp> extends AbstractDepin
     private final ExecutorService executorService;
 
     /**
-     * 是否开始过链接所有账号
-     */
-    private final AtomicBoolean isStartAccountConnected = new AtomicBoolean(false);
-
-    /**
      * 账户客户端
      */
     private final ConcurrentMap<AccountContext, BaseDepinWSClient<Req, Resp>> accountWSClientMap = new ConcurrentHashMap<>();
 
-
+    /**
+     * 持久化管理器
+     */
     private final AccountPersistenceManager persistenceManager = new AccountPersistenceManager();
 
     /**
@@ -178,30 +174,13 @@ public abstract class AccountAutoManageDepinBot<Req, Resp> extends AbstractDepin
         return newAccountContexts;
     }
 
-    /**
-     * 开始所有账户的连接
-     *
-     * @return String 打印的消息
-     */
-    public String startAccountDepinClient() {
-        if (isStartAccountConnected.compareAndSet(false, true)) {
-            allAccountConnectExecute()
-                    .exceptionally(throwable -> {
-                        log.error("开始所有账户连接时发生异常", throwable);
-                        return null;
-                    });
-            return "已开始账号链接任务";
-        }
-
-        return "已提交过建立连接任务";
-    }
 
     /**
      * 所有账户建立连接
      *
      * @return CompletableFuture<Void>
      */
-    public CompletableFuture<Void> allAccountConnectExecute() {
+    protected CompletableFuture<Void> connectAllAccount() {
         return CompletableFuture.runAsync(() -> {
             //Step 1 遍历账户
             List<CompletableFuture<Void>> connectFutures = accounts.stream()
@@ -215,7 +194,6 @@ public abstract class AccountAutoManageDepinBot<Req, Resp> extends AbstractDepin
 
                             return v;
                         });
-
 
                         String accountName = accountContext.getClientAccount().getName();
 
@@ -268,10 +246,11 @@ public abstract class AccountAutoManageDepinBot<Req, Resp> extends AbstractDepin
             BrowserEnv browserEnv = accountContext.getBrowserEnv();
             return AccountPrintDto
                     .builder()
-                    .name(accountContext.getClientAccount().getName())
+                    .id(accountContext.getClientAccount().getId())
+                    .name(accountContext.getName())
                     .proxyInfo(proxy.getId() + "-" + proxy.getAddress())
                     .browserEnvInfo(String.valueOf(browserEnv == null ? "NO_ENV" : browserEnv.getId()))
-                    .usable(accountContext.isUsable())
+                    .signUp(accountContext.getClientAccount().getSignUp())
                     .startDateTime(accountContext.getConnectStatusInfo().getStartDateTime())
                     .updateDateTime(accountContext.getConnectStatusInfo().getUpdateDateTime())
                     .heartBeatCount(accountContext.getConnectStatusInfo().getHeartBeatCount().get())

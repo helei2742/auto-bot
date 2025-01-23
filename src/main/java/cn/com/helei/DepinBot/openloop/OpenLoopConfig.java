@@ -1,8 +1,9 @@
-package cn.com.helei.DepinBot.oasis;
+package cn.com.helei.DepinBot.openloop;
 
 import cn.com.helei.DepinBot.core.BaseDepinBotConfig;
 import cn.com.helei.DepinBot.core.config.SystemConfig;
 import cn.com.helei.DepinBot.core.util.YamlConfigLoadUtil;
+import cn.com.helei.DepinBot.oasis.OasisBotConfig;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -12,15 +13,15 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
 @Data
-public class OasisBotConfig extends BaseDepinBotConfig {
+public class OpenLoopConfig  extends BaseDepinBotConfig {
 
     private String inviteCode;
 
     public static void main(String[] args) {
-        System.out.println(loadYamlConfig("app/oasis.yaml"));
+        System.out.println(loadYamlConfig("openloop.yaml"));
     }
 
-    public static OasisBotConfig loadYamlConfig(String classpath) {
-        return YamlConfigLoadUtil.load(SystemConfig.CONFIG_DIR_APP_PATH, classpath, List.of("depin", "app", "oasis"), OasisBotConfig.class);
+    public static OpenLoopConfig loadYamlConfig(String classpath) {
+        return YamlConfigLoadUtil.load(SystemConfig.CONFIG_DIR_APP_PATH, classpath, List.of("depin", "app", "openloop"), OpenLoopConfig.class);
     }
 }

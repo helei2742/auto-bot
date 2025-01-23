@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 @Data
@@ -26,6 +27,11 @@ public class CommandMenuNode {
      * 当前节点调用的函数, 返回内容会显示在describe 和 子节点选项之间
      */
     private Supplier<String> action;
+
+    /**
+     * 处理输入
+     */
+    private Consumer<String> resolveInput;
 
     /**
      * 当前节点的子节点

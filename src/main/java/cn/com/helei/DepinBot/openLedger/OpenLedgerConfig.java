@@ -12,6 +12,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -89,24 +90,24 @@ public class OpenLedgerConfig extends BaseDepinBotConfig {
         }
 
         @Override
-        public HttpHeaders getWSHeaders() {
-            HttpHeaders headers = new DefaultHttpHeaders();
+        public HashMap<String, String> getWSHeaders() {
+            HashMap<String, String> headers = new HashMap<>();
 
-            headers.add("Upgrade", "websocket")
-                    .add("Origin", openLedgerConfig.origin)
-                    .add("Host", "apitn.openledger.xyz")
-                    .add("Connection", "Upgrade")
-            ;
+            headers.put("Upgrade", "websocket");
+            headers.put("Origin", openLedgerConfig.origin);
+            headers.put("Host", "apitn.openledger.xyz");
+            headers.put("Connection", "Upgrade");
+
             return headers;
         }
 
         @Override
-        public HttpHeaders getRestHeaders() {
-            HttpHeaders restHeaders = super.getRestHeaders();
+        public  HashMap<String, String>  getRestHeaders() {
+            HashMap<String, String> headers = new HashMap<>();
 
-            restHeaders.add("authorization", "Bearer " + token);
+            headers.put("authorization", "Bearer " + token);
 
-            return restHeaders;
+            return headers;
         }
 
         @Override

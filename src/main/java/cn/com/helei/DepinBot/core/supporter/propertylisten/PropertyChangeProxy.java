@@ -62,31 +62,35 @@ public class PropertyChangeProxy implements MethodInterceptor {
 
     @Override
     public Object intercept(Object obj, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
-        Object invoke = methodProxy.invoke(target, args);
+        Object invoke;
+        String fieldName = getFieldNameFromMethod(method);
 
-        if (isSetter(method)) {
-            String fieldName = getFieldNameFromMethod(method);
+        if (isSetter(method) && fieldValues.containsKey(fieldName)) {
 
-            if (fieldValues.containsKey(fieldName)) {
-                Object oldValue = fieldValues.get(fieldName);
-                Object newValue = args[0];
+            // 是代理的目标
+            invoke = methodProxy.invoke(target, args);
 
-                if (newValue instanceof Map<?, ?>) {
-                    newValue = createMapProxy((Map<?, ?>) newValue, fieldName);
-                }
 
-                //属性值发生变化
-                if ((oldValue == null && newValue != null) || (oldValue != null && !oldValue.equals(newValue))) {
-                    fieldValues.put(fieldName, newValue);
-                    listener.onPropertyChanged(new PropertyChangeInvocation(
-                            target,
-                            fieldName,
-                            oldValue,
-                            newValue,
-                            System.currentTimeMillis())
-                    );
-                }
+            Object oldValue = fieldValues.get(fieldName);
+            Object newValue = args[0];
+
+            if (newValue instanceof Map<?, ?>) {
+                newValue = createMapProxy((Map<?, ?>) newValue, fieldName);
             }
+
+            //属性值发生变化
+            if ((oldValue == null && newValue != null) || (oldValue != null && !oldValue.equals(newValue))) {
+                fieldValues.put(fieldName, newValue);
+                listener.onPropertyChanged(new PropertyChangeInvocation(
+                        target,
+                        fieldName,
+                        oldValue,
+                        newValue,
+                        System.currentTimeMillis())
+                );
+            }
+        } else {
+            invoke = method.invoke(target, args);
         }
 
         return invoke;

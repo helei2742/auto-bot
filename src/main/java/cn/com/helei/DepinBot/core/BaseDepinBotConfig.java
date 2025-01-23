@@ -3,7 +3,8 @@ package cn.com.helei.DepinBot.core;
 
 import lombok.Data;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
 public abstract class BaseDepinBotConfig {
@@ -27,20 +28,31 @@ public abstract class BaseDepinBotConfig {
     /**
      * 网络代理池配置文件名
      */
-    private String networkPoolConfig = "bot/network-proxy.yaml";
+    private String networkPoolConfig = "network-proxy.yaml";
 
     /**
      * 浏览器环境池配置文件名
      */
-    private String browserEnvPoolConfig = "bot/browser-env.yaml";
+    private String browserEnvPoolConfig = "browser-env.yaml";
 
     /**
      * 账户配置文件名
      */
-    private String accountPoolConfig = "bot/account.yaml";
+    private String accountPoolConfig = "account.yaml";
 
     /**
      * 连接url
      */
     private String wsBaseUrl;
+
+
+    private Map<String, String> configMap = new HashMap<>();
+
+    public String getConfig(String key) {
+        return configMap.get(key);
+    }
+
+    public void setConfig(String key, String value) {
+        this.configMap.put(key, value);
+    }
 }

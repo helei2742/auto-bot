@@ -1,0 +1,5 @@
+depin:
+  app:
+    openloop:
+      configMap:
+        inviteCode: ol33b7c321

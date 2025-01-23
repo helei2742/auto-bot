@@ -4,6 +4,7 @@ import cn.com.helei.DepinBot.core.dto.account.AccountContext;
 import cn.com.helei.DepinBot.core.constants.ConnectStatus;
 import cn.com.helei.DepinBot.core.netty.base.AbstractWebsocketClient;
 import cn.com.helei.DepinBot.core.netty.constants.WebsocketClientStatus;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,8 +27,11 @@ public abstract class BaseDepinWSClient<Req, Resp> extends AbstractWebsocketClie
     ) {
         super(accountContext.getClientAccount().getConnectUrl(), handler);
 
+        DefaultHttpHeaders httpHeaders = new DefaultHttpHeaders();
+        accountContext.getWSHeaders().forEach(httpHeaders::add);
+        super.setHeaders(httpHeaders);
+
         super.setName(accountContext.getClientAccount().getName());
-        super.setHeaders(accountContext.getWSHeaders());
         super.setProxy(accountContext.getProxy());
         super.setClientStatusChangeHandler(this::whenClientStatusChange);
 

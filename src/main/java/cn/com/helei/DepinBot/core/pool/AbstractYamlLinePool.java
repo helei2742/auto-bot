@@ -1,6 +1,7 @@
 package cn.com.helei.DepinBot.core.pool;
 
 
+import cn.com.helei.DepinBot.core.config.SystemConfig;
 import cn.com.helei.DepinBot.core.util.YamlConfigLoadUtil;
 import cn.com.helei.DepinBot.core.util.table.CommandLineTablePrintHelper;
 import lombok.Getter;
@@ -9,7 +10,7 @@ import lombok.Setter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-        import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -40,7 +41,7 @@ public class AbstractYamlLinePool<T extends AbstractYamlLineItem> {
     public static <C extends AbstractYamlLinePool<?>> C loadYamlPool(
             String classpath, String path, Class<C> cClass) {
 
-        C pool = YamlConfigLoadUtil.load(classpath, Arrays.stream(path.split("\\.")).toList(), cClass);
+        C pool = YamlConfigLoadUtil.load(SystemConfig.CONFIG_DIR_BOT_PATH, classpath, Arrays.stream(path.split("\\.")).toList(), cClass);
 
         AtomicInteger id = new AtomicInteger();
         List<Object> list1 = pool.getList();

@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class AccountPrintDto {
 
+    private Integer id;
 
     private String name;
 
@@ -21,7 +22,7 @@ public class AccountPrintDto {
 
     private String browserEnvInfo;
 
-    private Boolean usable;
+    private Boolean signUp;
 
     private LocalDateTime startDateTime;
 

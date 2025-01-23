@@ -15,11 +15,8 @@ public class DepinedDepinBot extends CommandLineDepinBot<JSONObject, JSONObject>
     }
 
     @Override
-    protected CommandMenuNode buildMenuNode() {
-        CommandMenuNode mainM = new CommandMenuNode("Depin", "Depin Bot 主菜单", null);
-
-        mainM.addSubMenu(new CommandMenuNode("账户注册", "开始注册账户", this::registerAccountAction));
-        return mainM;
+    protected void buildMenuNode(CommandMenuNode mainManu) {
+        mainManu.addSubMenu(new CommandMenuNode("账户注册", "开始注册账户", this::registerAccountAction));
     }
 
 

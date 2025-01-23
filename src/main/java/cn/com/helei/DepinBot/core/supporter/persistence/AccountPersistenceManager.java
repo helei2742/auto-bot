@@ -251,6 +251,6 @@ public class AccountPersistenceManager {
      * @return String
      */
     private static String getPersistencePath(String subPath) {
-        return System.getProperty("user.dir") + File.separator + subPath;
+        return FileUtil.RESOURCE_ROOT_DIR + File.separator + subPath;
     }
 }

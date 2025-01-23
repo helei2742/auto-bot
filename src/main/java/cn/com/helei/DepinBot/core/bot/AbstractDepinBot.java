@@ -9,13 +9,20 @@ import cn.com.helei.DepinBot.core.pool.env.BrowserEnvPool;
 import cn.com.helei.DepinBot.core.exception.DepinBotInitException;
 import cn.com.helei.DepinBot.core.exception.DepinBotStartException;
 import cn.com.helei.DepinBot.core.exception.DepinBotStatusException;
+import cn.com.helei.DepinBot.core.pool.network.NetworkProxy;
 import cn.com.helei.DepinBot.core.pool.network.NetworkProxyPool;
 import cn.com.helei.DepinBot.core.util.NamedThreadFactory;
+import cn.com.helei.DepinBot.core.util.RestApiClientFactory;
+import cn.hutool.core.util.RandomUtil;
+import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Response;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.*;
+import java.util.function.Supplier;
 
 @Slf4j
 @Getter
@@ -24,11 +31,6 @@ public abstract class AbstractDepinBot<Req, Resp> {
      * 执行异步任务的线程池
      */
     private final ExecutorService executorService;
-
-    /**
-     * 执行定时任务的线程池
-     */
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     /**
      * 代理池
@@ -55,6 +57,11 @@ public abstract class AbstractDepinBot<Req, Resp> {
      */
     private DepinBotStatus status = DepinBotStatus.NEW;
 
+    /**
+     * 同步控制
+     */
+    private final Semaphore syncController;
+
     public AbstractDepinBot(BaseDepinBotConfig baseDepinBotConfig) {
         this.baseDepinBotConfig = baseDepinBotConfig;
         this.executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory(baseDepinBotConfig.getName() + "-executor"));
@@ -75,6 +82,7 @@ public abstract class AbstractDepinBot<Req, Resp> {
                 AccountPool.class
         );
 
+        syncController = new Semaphore(baseDepinBotConfig.getConcurrentCount());
     }
 
     public void init() {
@@ -165,6 +173,74 @@ public abstract class AbstractDepinBot<Req, Resp> {
         }
     }
 
+    /**
+     * 同步请求，使用syncController控制并发
+     *
+     * @param proxy   proxy
+     * @param url     url
+     * @param method  method
+     * @param headers headers
+     * @param body    body
+     * @param params  params
+     * @return CompletableFuture<String> response str
+     */
+    public CompletableFuture<Response> syncRequest(
+            NetworkProxy proxy,
+            String url,
+            String method,
+            Map<String, String> headers,
+            JSONObject body,
+            JSONObject params
+    ) {
+        return syncRequest(proxy, url, method, headers, body, params, null);
+    }
+
+    /**
+     * 同步请求，使用syncController控制并发
+     *
+     * @param proxy   proxy
+     * @param url     url
+     * @param method  method
+     * @param headers headers
+     * @param body    body
+     * @param params  params
+     * @return CompletableFuture<Response> response
+     */
+    public CompletableFuture<Response> syncRequest(
+            NetworkProxy proxy,
+            String url,
+            String method,
+            Map<String, String> headers,
+            JSONObject params,
+            JSONObject body,
+            Supplier<String> requestStart
+    ) {
+        return CompletableFuture.supplyAsync(()->{
+            try {
+                syncController.acquire();
+                // 随机延迟
+                TimeUnit.MILLISECONDS.sleep(RandomUtil.randomLong(1000, 3000));
+
+                String str = "开始";
+                if (requestStart != null) {
+                    str = requestStart.get();
+                }
+                log.debug("同步器允许发送请求-{}", str);
+
+                return RestApiClientFactory.getClient(proxy).request(
+                        url,
+                        method,
+                        headers,
+                        params,
+                        body
+                ).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            } finally {
+                syncController.release();
+            }
+        }, executorService);
+    }
 
     /**
      * 添加定时任务
@@ -174,7 +250,22 @@ public abstract class AbstractDepinBot<Req, Resp> {
      * @param timeUnit timeUnit
      */
     public void addTimer(Runnable runnable, long delay, TimeUnit timeUnit) {
-        scheduler.scheduleAtFixedRate(runnable, 0, delay, timeUnit);
+        executorService.execute(() -> {
+            while (true) {
+                try {
+                    syncController.acquire();
+
+                    runnable.run();
+
+                    timeUnit.sleep(delay);
+                } catch (InterruptedException e) {
+                    log.error("timer interrupted will stop it", e);
+                    break;
+                } finally {
+                    syncController.release();
+                }
+            }
+        });
     }
 
     /**
@@ -193,7 +284,6 @@ public abstract class AbstractDepinBot<Req, Resp> {
         commandInputThread.setDaemon(true);
         commandInputThread.start();
     }
-
 
 
     /**

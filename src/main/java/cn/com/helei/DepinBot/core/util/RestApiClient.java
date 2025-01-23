@@ -53,10 +53,10 @@ public class RestApiClient {
      * @param body    body
      * @return CompletableFuture<JSONObject>
      */
-    public CompletableFuture<String> request(
+    public CompletableFuture<Response> request(
             String url,
             String method,
-            HttpHeaders headers,
+            Map<String, String> headers,
             JSONObject params,
             JSONObject body
     ) {
@@ -74,14 +74,13 @@ public class RestApiClient {
                     queryString.deleteCharAt(queryString.length() - 1);
                 }
                 requestUrl = url + "?" + queryString;
-                ;
             }
 
 
             Request.Builder builder = new Request.Builder();
 
             if (headers != null) {
-                for (Map.Entry<String, String> header : headers) {
+                for (Map.Entry<String, String> header : headers.entrySet()) {
                     builder.addHeader(header.getKey(), header.getValue());
                 }
             }
@@ -89,7 +88,7 @@ public class RestApiClient {
 
             RequestBody requestBody = null;
             if (body != null) {
-                requestBody  = RequestBody.create(body.toJSONString(), JSON);
+                requestBody = RequestBody.create(body.toJSONString(), JSON);
             }
 
 
@@ -106,30 +105,16 @@ public class RestApiClient {
 
             log.debug("创建请求 url[{}], method[{}]成功，开始请求服务器", url, method);
 
-            String bodyMsg = null;
             for (int i = 0; i < RETRY_TIMES; i++) {
-                bodyMsg = null;
 
                 // 发送请求并获取响应
                 try (Response response = okHttpClient.newCall(request).execute()) {
-                    if (response.isSuccessful()) {
-                        return response.body() == null ? "{}" : response.body().string();
-                    } else {
-
-                        bodyMsg = response.body() != null ? response.body().string() : null;
-                        log.warn("请求url [{}] 失败， code [{}]， {}",
-                                url, response.code(), bodyMsg);
-                        break;
-                    }
+                    return response;
                 } catch (SocketTimeoutException e) {
-                    log.error("请求[{}]超时，尝试重新请求 [{}/{}],", url, i, RETRY_TIMES, e);
+                    throw new RuntimeException(String.format("请求[%s]超时，尝试重新请求 [%s/%s],", url, i, RETRY_TIMES), e);
                 } catch (IOException e) {
                     throw new RuntimeException("请求url [" + url + "] 失败", e);
                 }
-            }
-
-            if (bodyMsg != null) {
-                throw new RuntimeException("请求失败：" + bodyMsg);
             }
 
             return null;

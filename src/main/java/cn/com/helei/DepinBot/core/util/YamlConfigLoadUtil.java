@@ -2,6 +2,7 @@ package cn.com.helei.DepinBot.core.util;
 
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -12,14 +13,18 @@ public class YamlConfigLoadUtil {
 
     private static final ConcurrentHashMap<String, Object> LOADED_CONFIG_MAP = new ConcurrentHashMap<>();
 
-    public static  <T> T load(String classpath,
-                      List<String> prefixList,
-                      Class<T> clazz) {
+    public static <T> T load(
+            List<String> path,
+            String fileName,
+            List<String> prefixList,
+            Class<T> clazz
+    ) {
+        String dirResourcePath = FileUtil.getConfigDirResourcePath(path, fileName);
 
-        Object compute = LOADED_CONFIG_MAP.compute(classpath, (k, config) -> {
+        Object compute = LOADED_CONFIG_MAP.compute(dirResourcePath, (k, config) -> {
             if (config == null) {
                 Yaml yaml = new Yaml();
-                try (InputStream inputStream = YamlConfigLoadUtil.class.getClassLoader().getResourceAsStream(classpath)) {
+                try (InputStream inputStream = new FileInputStream(dirResourcePath)) {
                     Map<String, Object> yamlData = yaml.load(inputStream);
 
                     if (prefixList != null) {
@@ -30,7 +35,7 @@ public class YamlConfigLoadUtil {
 
                     config = yaml.loadAs(yaml.dump(yamlData), clazz);
                 } catch (IOException e) {
-                    throw new RuntimeException(String.format("价值配置网络代理池文件[%s]发生错误", classpath));
+                    throw new RuntimeException(String.format("价值配置网络代理池文件[%s]发生错误", dirResourcePath));
                 }
             }
 

@@ -36,13 +36,11 @@ public class AccountContext {
     /**
      * 代理
      */
-    @PropertyChangeListenField
     private NetworkProxy proxy;
 
     /**
      * 浏览器环境
      */
-    @PropertyChangeListenField
     private BrowserEnv browserEnv;
 
     private LocalDateTime saveDatetime;
@@ -70,11 +68,11 @@ public class AccountContext {
         params.put(key, value);
     }
 
-    public HttpHeaders getWSHeaders() {
+    public Map<String, String> getWSHeaders() {
         return clientAccount.getWSHeaders();
     }
 
-    public HttpHeaders getRestHeaders() {
+    public Map<String, String> getRestHeaders() {
         return clientAccount.getRestHeaders();
     }
 

@@ -60,7 +60,7 @@ public class DumpDataSupporter {
 
                     try {
                         Integer successCount = dumpAllQueue().get();
-                        log.info("dump执行完毕，成功[{}],共[{}]", successCount, updateQueueDumpPathMap.size());
+                        log.debug("dump执行完毕，成功[{}],共[{}]", successCount, updateQueueDumpPathMap.size());
                     } catch (InterruptedException | ExecutionException e) {
                         throw new RuntimeException(e);
                     }
@@ -78,7 +78,7 @@ public class DumpDataSupporter {
      * @return success count
      */
     private CompletableFuture<Integer> dumpAllQueue() {
-        log.info("开始启动dump任务");
+        log.debug("开始启动dump任务");
 
         List<CompletableFuture<Boolean>> futures = updateQueueDumpPathMap
                 .entrySet()

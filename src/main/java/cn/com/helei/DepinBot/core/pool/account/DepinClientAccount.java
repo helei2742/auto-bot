@@ -4,9 +4,10 @@ package cn.com.helei.DepinBot.core.pool.account;
 import cn.com.helei.DepinBot.core.supporter.propertylisten.PropertyChangeListenClass;
 import cn.com.helei.DepinBot.core.supporter.propertylisten.PropertyChangeListenField;
 import cn.com.helei.DepinBot.core.pool.AbstractYamlLineItem;
-import io.netty.handler.codec.http.DefaultHttpHeaders;
-import io.netty.handler.codec.http.HttpHeaders;
 import lombok.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 @Getter
@@ -34,6 +35,11 @@ public class DepinClientAccount extends AbstractYamlLineItem {
     @PropertyChangeListenField
     private String password;
 
+    /**
+     * 是否注册过
+     */
+    @PropertyChangeListenField
+    private Boolean signUp;
 
     /**
      * 代理id
@@ -72,12 +78,12 @@ public class DepinClientAccount extends AbstractYamlLineItem {
         }
     }
 
-    public HttpHeaders getWSHeaders() {
-        return new DefaultHttpHeaders();
+    public Map<String, String> getWSHeaders() {
+        return new HashMap<>();
     }
 
-    public HttpHeaders getRestHeaders() {
-        return new DefaultHttpHeaders();
+    public Map<String, String> getRestHeaders() {
+        return new HashMap<>();
     }
 
     public String getConnectUrl() {
