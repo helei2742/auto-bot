@@ -21,6 +21,11 @@ public class BrowserEnv extends AbstractYamlLineItem {
     }
 
     public BrowserEnv() {
-            this.headers = new HashMap<>();
+        this.headers = new HashMap<>();
+    }
+
+    public Map<String, String> getHeaders() {
+        if (headers == null) return new HashMap<>();
+        return new HashMap<>(headers);
     }
 }

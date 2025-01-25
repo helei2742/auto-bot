@@ -35,7 +35,7 @@ public class YamlConfigLoadUtil {
 
                     config = yaml.loadAs(yaml.dump(yamlData), clazz);
                 } catch (IOException e) {
-                    throw new RuntimeException(String.format("价值配置网络代理池文件[%s]发生错误", dirResourcePath));
+                    throw new RuntimeException(String.format("加载配置池文件[%s]发生错误", dirResourcePath), e);
                 }
             }
 

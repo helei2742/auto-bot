@@ -127,7 +127,7 @@ public class SystemInfo {
         Yaml yaml = new Yaml();
         try (InputStream inputStream = NetworkProxyPool.class.getClassLoader().getResourceAsStream(classpath)) {
             Map<String, Object> yamlData = yaml.load(inputStream);
-            Map<String, Object> bot = (Map<String, Object>) yamlData.get("bot");
+            Map<String, Object> bot = (Map<String, Object>) yamlData.get("config/bot");
             Map<String, Object> system = (Map<String, Object>) bot.get("system");
 
             return yaml.loadAs(yaml.dump(system), SystemInfo.class);

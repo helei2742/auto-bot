@@ -1,6 +1,7 @@
 package cn.com.helei.DepinBot.core.util;
 
 import cn.com.helei.DepinBot.core.pool.network.NetworkProxy;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import io.netty.handler.codec.http.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +10,8 @@ import okhttp3.*;
 import java.io.IOException;
 import java.net.Proxy;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -53,7 +56,7 @@ public class RestApiClient {
      * @param body    body
      * @return CompletableFuture<JSONObject>
      */
-    public CompletableFuture<Response> request(
+    public CompletableFuture<String> request(
             String url,
             String method,
             Map<String, String> headers,
@@ -109,7 +112,16 @@ public class RestApiClient {
 
                 // 发送请求并获取响应
                 try (Response response = okHttpClient.newCall(request).execute()) {
-                    return response;
+                    ResponseBody responseBody = null;
+                    if (response.isSuccessful() && (responseBody = response.body()) != null) {
+                        try {
+                            return responseBody.string();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } else {
+                        throw new RuntimeException("请求 " + url + "失败");
+                    }
                 } catch (SocketTimeoutException e) {
                     throw new RuntimeException(String.format("请求[%s]超时，尝试重新请求 [%s/%s],", url, i, RETRY_TIMES), e);
                 } catch (IOException e) {

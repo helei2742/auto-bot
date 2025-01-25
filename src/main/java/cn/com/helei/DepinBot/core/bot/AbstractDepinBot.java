@@ -1,9 +1,7 @@
 package cn.com.helei.DepinBot.core.bot;
 
 import cn.com.helei.DepinBot.core.BaseDepinBotConfig;
-import cn.com.helei.DepinBot.core.BaseDepinWSClient;
 import cn.com.helei.DepinBot.core.constants.DepinBotStatus;
-import cn.com.helei.DepinBot.core.dto.account.AccountContext;
 import cn.com.helei.DepinBot.core.pool.account.AccountPool;
 import cn.com.helei.DepinBot.core.pool.env.BrowserEnvPool;
 import cn.com.helei.DepinBot.core.exception.DepinBotInitException;
@@ -11,13 +9,13 @@ import cn.com.helei.DepinBot.core.exception.DepinBotStartException;
 import cn.com.helei.DepinBot.core.exception.DepinBotStatusException;
 import cn.com.helei.DepinBot.core.pool.network.NetworkProxy;
 import cn.com.helei.DepinBot.core.pool.network.NetworkProxyPool;
+import cn.com.helei.DepinBot.core.util.ClosableTimerTask;
 import cn.com.helei.DepinBot.core.util.NamedThreadFactory;
 import cn.com.helei.DepinBot.core.util.RestApiClientFactory;
 import cn.hutool.core.util.RandomUtil;
 import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Response;
 
 import java.io.IOException;
 import java.util.Map;
@@ -26,7 +24,7 @@ import java.util.function.Supplier;
 
 @Slf4j
 @Getter
-public abstract class AbstractDepinBot<Req, Resp> {
+public abstract class AbstractDepinBot {
     /**
      * 执行异步任务的线程池
      */
@@ -58,9 +56,14 @@ public abstract class AbstractDepinBot<Req, Resp> {
     private DepinBotStatus status = DepinBotStatus.NEW;
 
     /**
-     * 同步控制
+     * 代理并发控制
      */
-    private final Semaphore syncController;
+    private final Map<NetworkProxy, Semaphore> networkSyncControllerMap;
+
+    /**
+     * task 任务并发控制
+     */
+    private final Semaphore taskSyncController;
 
     public AbstractDepinBot(BaseDepinBotConfig baseDepinBotConfig) {
         this.baseDepinBotConfig = baseDepinBotConfig;
@@ -82,7 +85,8 @@ public abstract class AbstractDepinBot<Req, Resp> {
                 AccountPool.class
         );
 
-        syncController = new Semaphore(baseDepinBotConfig.getConcurrentCount());
+        networkSyncControllerMap = new ConcurrentHashMap<>();
+        taskSyncController = new Semaphore(baseDepinBotConfig.getConcurrentCount());
     }
 
     public void init() {
@@ -103,51 +107,12 @@ public abstract class AbstractDepinBot<Req, Resp> {
      */
     protected abstract void doInit() throws DepinBotInitException;
 
-
+    /**
+     * 机器人运行方法
+     *
+     * @throws IOException IOException
+     */
     protected abstract void doExecute() throws IOException;
-
-    /**
-     * 使用accountContext构建AbstractDepinWSClient
-     *
-     * @param accountContext accountContext
-     * @return AbstractDepinWSClient
-     */
-    public abstract BaseDepinWSClient<Req, Resp> buildAccountWSClient(AccountContext accountContext);
-
-
-    /**
-     * 当账户链接时调用
-     *
-     * @param depinWSClient depinWSClient
-     * @param success       是否成功
-     */
-    public abstract void whenAccountConnected(BaseDepinWSClient<Req, Resp> depinWSClient, Boolean success);
-
-    /**
-     * 当ws连接收到响应
-     *
-     * @param depinWSClient depinWSClient
-     * @param id            id
-     * @param response      response
-     */
-    public abstract void whenAccountReceiveResponse(BaseDepinWSClient<Req, Resp> depinWSClient, String id, Resp response);
-
-    /**
-     * 当ws连接收到消息
-     *
-     * @param depinWSClient depinWSClient
-     * @param message       message
-     */
-    public abstract void whenAccountReceiveMessage(BaseDepinWSClient<Req, Resp> depinWSClient, Resp message);
-
-    /**
-     * 获取心跳消息
-     *
-     * @param depinWSClient depinWSClient
-     * @return 消息体
-     */
-    public abstract Req getHeartbeatMessage(BaseDepinWSClient<Req, Resp> depinWSClient);
-
 
     /**
      * 启动bot
@@ -180,19 +145,19 @@ public abstract class AbstractDepinBot<Req, Resp> {
      * @param url     url
      * @param method  method
      * @param headers headers
-     * @param body    body
      * @param params  params
+     * @param body    body
      * @return CompletableFuture<String> response str
      */
-    public CompletableFuture<Response> syncRequest(
+    public CompletableFuture<String> syncRequest(
             NetworkProxy proxy,
             String url,
             String method,
             Map<String, String> headers,
-            JSONObject body,
-            JSONObject params
+            JSONObject params,
+            JSONObject body
     ) {
-        return syncRequest(proxy, url, method, headers, body, params, null);
+        return syncRequest(proxy, url, method, headers, params, body, null);
     }
 
     /**
@@ -202,11 +167,11 @@ public abstract class AbstractDepinBot<Req, Resp> {
      * @param url     url
      * @param method  method
      * @param headers headers
-     * @param body    body
      * @param params  params
-     * @return CompletableFuture<Response> response
+     * @param body    body
+     * @return CompletableFuture<Response> String
      */
-    public CompletableFuture<Response> syncRequest(
+    public CompletableFuture<String> syncRequest(
             NetworkProxy proxy,
             String url,
             String method,
@@ -215,9 +180,18 @@ public abstract class AbstractDepinBot<Req, Resp> {
             JSONObject body,
             Supplier<String> requestStart
     ) {
-        return CompletableFuture.supplyAsync(()->{
+
+        Semaphore networkController = networkSyncControllerMap.compute(proxy, (k, v) -> {
+            if (v == null) {
+                v = new Semaphore(baseDepinBotConfig.getConcurrentCount());
+            }
+            return v;
+        });
+
+
+        return CompletableFuture.supplyAsync(() -> {
             try {
-                syncController.acquire();
+                networkController.acquire();
                 // 随机延迟
                 TimeUnit.MILLISECONDS.sleep(RandomUtil.randomLong(1000, 3000));
 
@@ -225,7 +199,7 @@ public abstract class AbstractDepinBot<Req, Resp> {
                 if (requestStart != null) {
                     str = requestStart.get();
                 }
-                log.debug("同步器允许发送请求-{}", str);
+                log.info("同步器允许发送请求-{}", str);
 
                 return RestApiClientFactory.getClient(proxy).request(
                         url,
@@ -237,32 +211,39 @@ public abstract class AbstractDepinBot<Req, Resp> {
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             } finally {
-                syncController.release();
+                networkController.release();
             }
         }, executorService);
     }
 
     /**
-     * 添加定时任务
+     * 添加定时任务,closableTimerTask执行run方法放回true会继续执行， 返回false则会跳出循环
      *
-     * @param runnable runnable
+     * @param closableTimerTask closableTimerTask
      * @param delay    delay
      * @param timeUnit timeUnit
      */
-    public void addTimer(Runnable runnable, long delay, TimeUnit timeUnit) {
+    public void addTimer(ClosableTimerTask closableTimerTask, long delay, TimeUnit timeUnit) {
+
         executorService.execute(() -> {
             while (true) {
                 try {
-                    syncController.acquire();
+                    taskSyncController.acquire();
 
-                    runnable.run();
+                    if (closableTimerTask.isRunning()) {
+                        closableTimerTask.setRunning(closableTimerTask.run());
+                    }
+
+                    if (!closableTimerTask.isRunning()) {
+                        break;
+                    }
 
                     timeUnit.sleep(delay);
                 } catch (InterruptedException e) {
                     log.error("timer interrupted will stop it", e);
                     break;
                 } finally {
-                    syncController.release();
+                    taskSyncController.release();
                 }
             }
         });

@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AccountPersistenceManagerTest {
     @Test
     void bindPersistenceAnnoListener() {
-        AccountPersistenceManager accountPersistenceManager = new AccountPersistenceManager();
+        AccountPersistenceManager accountPersistenceManager = new AccountPersistenceManager("");
 
         DepinClientAccount clientAccount = new DepinClientAccount();
 

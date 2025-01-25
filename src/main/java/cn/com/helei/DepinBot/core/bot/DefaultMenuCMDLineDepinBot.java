@@ -1,22 +1,26 @@
 package cn.com.helei.DepinBot.core.bot;
 
 import cn.com.helei.DepinBot.core.BaseDepinBotConfig;
-import cn.com.helei.DepinBot.core.BaseDepinWSClient;
 import cn.com.helei.DepinBot.core.commandMenu.CommandMenuNode;
+import cn.com.helei.DepinBot.core.commandMenu.DefaultMenuType;
 import cn.com.helei.DepinBot.core.dto.account.AccountContext;
+import cn.com.helei.DepinBot.core.util.ClosableTimerTask;
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson.JSONObject;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
 @Slf4j
-public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> extends CommandLineDepinBot<JSONObject, JSONObject> {
+public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> extends CommandLineDepinBot {
 
 
     private static final String INVITE_CODE_KEY = "inviteCode";
@@ -31,6 +35,15 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
      */
     private final AtomicBoolean isStartAccountConnected = new AtomicBoolean(false);
 
+
+    private final List<DefaultMenuType> defaultMenuTypes = new ArrayList<>(List.of(
+            DefaultMenuType.PROXY_LIST,
+            DefaultMenuType.ACCOUNT_LIST,
+            DefaultMenuType.PROXY_LIST,
+            DefaultMenuType.BROWSER_ENV_LIST
+    ));
+
+    @Getter
     private final C botConfig;
 
     public DefaultMenuCMDLineDepinBot(C botConfig) {
@@ -41,13 +54,24 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
 
 
     @Override
+    protected CompletableFuture<Boolean> updateAccountRewordInfo(AccountContext accountContext) {
+        return CompletableFuture.completedFuture(false);
+    }
+
+    @Override
     protected void buildMenuNode(CommandMenuNode mainManu) {
-        mainManu.addSubMenu(buildRegisterMenuNode())
-                .addSubMenu(buildQueryTokenMenuNode())
-                .addSubMenu(buildProxyListMenuNode())
-                .addSubMenu(buildBrowserListMenuNode())
-                .addSubMenu(buildAccountListMenuNode())
-                .addSubMenu(buildStartAccountConnectMenuNode());
+        addCustomMenuNode(defaultMenuTypes, mainManu);
+
+        for (DefaultMenuType menuType : defaultMenuTypes) {
+            mainManu.addSubMenu(switch (menuType) {
+                case REGISTER -> buildRegisterMenuNode();
+                case LOGIN -> buildQueryTokenMenuNode();
+                case ACCOUNT_LIST -> buildAccountListMenuNode();
+                case PROXY_LIST -> buildProxyListMenuNode();
+                case BROWSER_ENV_LIST -> buildBrowserListMenuNode();
+                case START_ACCOUNT_CLAIM -> buildStartAccountConnectMenuNode();
+            });
+        }
     }
 
 
@@ -128,6 +152,7 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
 
         return accountListMenuNode
                 .addSubMenu(buildAccountRewardMenuNode())
+                .addSubMenu(buildAccountConnectStatusMenuNode())
                 .addSubMenu(REFRESH_NODE);
     }
 
@@ -145,6 +170,20 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
     }
 
     /**
+     * 查看账户连接情况菜单节点
+     *
+     * @return 账户收益节点
+     */
+    private CommandMenuNode buildAccountConnectStatusMenuNode() {
+        return new CommandMenuNode(
+                "查看账号连接情况",
+                "账号连接情况列表:",
+                this::printAccountConnectStatusList
+        ).addSubMenu(REFRESH_NODE);
+    }
+
+
+    /**
      * 开始账户连接菜单节点
      *
      * @return 连接账户菜单节点
@@ -153,7 +192,7 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
         CommandMenuNode menuNode = new CommandMenuNode(
                 "启动账号",
                 "启动账号界面，",
-                this::startAccountsDepin
+                this::startAccountsClaim
         );
 
         CommandMenuNode refresh = new CommandMenuNode(true, "刷新", "当前账户列表",
@@ -231,21 +270,33 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
 
 
     /**
-     * 开始所有账户的连接
+     * 开始所有账户
      *
      * @return String 打印的消息
      */
-    private String startAccountsDepin() {
+    private String startAccountsClaim() {
         if (isStartAccountConnected.compareAndSet(false, true)) {
-            connectAllAccount()
-                    .exceptionally(throwable -> {
-                        log.error("开始所有账户连接时发生异常", throwable);
-                        return null;
-                    });
-            return "已开始账号链接任务";
+
+            getAccounts().forEach(account -> {
+                if (account.getClientAccount().getId() != 0) { return;}
+                account.getConnectStatusInfo().setStartDateTime(LocalDateTime.now());
+
+                addTimer(
+                        new ClosableTimerTask() {
+                            @Override
+                            public boolean run() {
+                                return doAccountClaim(account);
+                            }
+                        },
+                        getBotConfig().getAutoClaimIntervalSeconds(),
+                        TimeUnit.SECONDS
+                );
+            });
+
+            return "已开始账号自动收获";
         }
 
-        return "已提交过建立连接任务";
+        return "账号自动收获中";
     }
 
     /**
@@ -258,6 +309,13 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
         return "(当前邀请码为:" + inviteCode + ")";
     }
 
+    /**
+     * 添加自定义菜单节点, defaultMenuTypes中可额外添加菜单类型
+     *
+     * @param defaultMenuTypes defaultMenuTypes
+     * @param mainMenu         mainMenu
+     */
+    protected abstract void addCustomMenuNode(List<DefaultMenuType> defaultMenuTypes, CommandMenuNode mainMenu);
 
     /**
      * 注册账户
@@ -276,36 +334,12 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
      */
     protected abstract CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext);
 
+
     /**
-     * 连接所有账户
+     * 开始账户自动收获,会自动循环。返回false则跳出自动循环
      *
      * @return CompletableFuture<Void>
      */
-    protected abstract CompletableFuture<Void> connectAllAccount();
+    protected abstract boolean doAccountClaim(AccountContext accountContext);
 
-
-    @Override
-    public BaseDepinWSClient<JSONObject, JSONObject> buildAccountWSClient(AccountContext accountContext) {
-        return null;
-    }
-
-    @Override
-    public void whenAccountConnected(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient, Boolean success) {
-
-    }
-
-    @Override
-    public void whenAccountReceiveResponse(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient, String id, JSONObject response) {
-
-    }
-
-    @Override
-    public void whenAccountReceiveMessage(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient, JSONObject message) {
-
-    }
-
-    @Override
-    public JSONObject getHeartbeatMessage(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient) {
-        return null;
-    }
 }

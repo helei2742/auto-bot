@@ -1,18 +1,18 @@
 package cn.com.helei.DepinBot.core.bot;
 
 import cn.com.helei.DepinBot.core.BaseDepinBotConfig;
-import cn.com.helei.DepinBot.core.BaseDepinWSClient;
 import cn.com.helei.DepinBot.core.dto.account.AccountContext;
 import cn.com.helei.DepinBot.core.dto.account.AccountPrintDto;
 import cn.com.helei.DepinBot.core.dto.RewordInfo;
+import cn.com.helei.DepinBot.core.dto.account.ConnectStatusInfo;
+import cn.com.helei.DepinBot.core.exception.DepinBotStartException;
+import cn.com.helei.DepinBot.core.exception.RewardQueryException;
 import cn.com.helei.DepinBot.core.pool.env.BrowserEnv;
 import cn.com.helei.DepinBot.core.exception.DepinBotInitException;
-import cn.com.helei.DepinBot.core.exception.DepinBotStatusException;
-import cn.com.helei.DepinBot.core.netty.constants.WebsocketClientStatus;
 import cn.com.helei.DepinBot.core.pool.network.NetworkProxy;
 import cn.com.helei.DepinBot.core.supporter.persistence.AccountPersistenceManager;
-import cn.com.helei.DepinBot.core.util.NamedThreadFactory;
 import cn.com.helei.DepinBot.core.util.table.CommandLineTablePrintHelper;
+import cn.hutool.core.util.BooleanUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -20,24 +20,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
-        import java.util.function.Function;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 @Slf4j
-public abstract class AccountAutoManageDepinBot<Req, Resp> extends AbstractDepinBot<Req, Resp> {
-    /**
-     * 异步操作线程池
-     */
-    private final ExecutorService executorService;
-
-    /**
-     * 账户客户端
-     */
-    private final ConcurrentMap<AccountContext, BaseDepinWSClient<Req, Resp>> accountWSClientMap = new ConcurrentHashMap<>();
+public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
 
     /**
      * 持久化管理器
      */
-    private final AccountPersistenceManager persistenceManager = new AccountPersistenceManager();
+    private final AccountPersistenceManager persistenceManager;
 
     /**
      * 账号列表
@@ -45,13 +37,16 @@ public abstract class AccountAutoManageDepinBot<Req, Resp> extends AbstractDepin
     @Getter
     private final List<AccountContext> accounts = new ArrayList<>();
 
+    /**
+     * 是否允许账户收益查询
+     */
+    private final AtomicBoolean isRunningAccountRewardQuery = new AtomicBoolean(true);
+
 
     public AccountAutoManageDepinBot(BaseDepinBotConfig baseDepinBotConfig) {
         super(baseDepinBotConfig);
 
-
-        this.executorService = Executors
-                .newThreadPerTaskExecutor(new NamedThreadFactory(baseDepinBotConfig.getName() + "-account"));
+        this.persistenceManager = new AccountPersistenceManager(baseDepinBotConfig.getName());
     }
 
     @Override
@@ -62,6 +57,58 @@ public abstract class AccountAutoManageDepinBot<Req, Resp> extends AbstractDepin
         // Step 2 初始化账户
         initAccounts();
     }
+
+
+    @Override
+    public void start() throws DepinBotStartException {
+        super.start();
+
+        // 启动奖励查询任务
+        if (BooleanUtil.isTrue(getBaseDepinBotConfig().getIsAccountRewardAutoRefresh())) {
+            startAccountRewardQueryTask();
+        }
+    }
+
+    /**
+     * 开启账户奖励查询任务
+     */
+    private void startAccountRewardQueryTask() {
+        getExecutorService().execute(() -> {
+            while (isRunningAccountRewardQuery.get()) {
+                List<AccountContext> accounts = getAccounts();
+
+                List<CompletableFuture<Boolean>> futures = accounts.stream().map(accountContext -> {
+                    try {
+                        return updateAccountRewordInfo(accountContext);
+                    } catch (Exception e) {
+                        throw new RewardQueryException(e);
+                    }
+                }).toList();
+
+                for (int i = 0; i < futures.size(); i++) {
+                    try {
+                        futures.get(i).get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        log.error("查询账户[" + accounts.get(i).getName() + "]奖励失败", e.getMessage());
+                    }
+                }
+                try {
+                    TimeUnit.SECONDS.sleep(getBaseDepinBotConfig().getAccountRewardRefreshIntervalSeconds());
+                } catch (InterruptedException e) {
+                    log.error("等待执行账户查询时发生异常", e);
+                }
+            }
+        });
+    }
+
+
+    /**
+     * 更新账户奖励信息
+     *
+     * @param accountContext accountContext
+     * @return CompletableFuture<Boolean>
+     */
+    protected abstract CompletableFuture<Boolean> updateAccountRewordInfo(AccountContext accountContext);
 
 
     /**
@@ -175,64 +222,59 @@ public abstract class AccountAutoManageDepinBot<Req, Resp> extends AbstractDepin
     }
 
 
-    /**
-     * 所有账户建立连接
-     *
-     * @return CompletableFuture<Void>
-     */
-    protected CompletableFuture<Void> connectAllAccount() {
-        return CompletableFuture.runAsync(() -> {
-            //Step 1 遍历账户
-            List<CompletableFuture<Void>> connectFutures = accounts.stream()
-                    .map(accountContext -> {
-                        // Step 2 根据账户获取ws client
-                        BaseDepinWSClient<Req, Resp> depinWSClient = accountWSClientMap.compute(accountContext, (k, v) -> {
-                            // 没有创建过，或被关闭，创建新的
-                            if (v == null || v.getClientStatus().equals(WebsocketClientStatus.SHUTDOWN)) {
-                                v = buildAccountWSClient(accountContext);
-                            }
-
-                            return v;
-                        });
-
-                        String accountName = accountContext.getClientAccount().getName();
-
-                        //Step 3 建立连接
-                        WebsocketClientStatus clientStatus = depinWSClient.getClientStatus();
-                        return switch (clientStatus) {
-                            case NEW, STOP:  // 新创建，停止状态，需要建立连接
-                                yield depinWSClient
-                                        .connect()
-                                        .thenAcceptAsync(success -> {
-                                            try {
-                                                whenAccountConnected(depinWSClient, success);
-                                            } catch (Exception e) {
-                                                log.error("账户[{}]-连接完成后执行回调发生错误", accountName, e);
-                                            }
-                                        }, executorService)
-                                        .exceptionallyAsync(throwable -> {
-                                            log.error("账户[{}]连接失败, ", accountName,
-                                                    throwable);
-                                            return null;
-                                        }, executorService);
-                            case STARTING, RUNNING: // 正在建立连接，直接返回
-                                CompletableFuture.completedFuture(null);
-                            case SHUTDOWN: // 被禁止使用，抛出异常
-                                throw new DepinBotStatusException("cannot start ws client when it shutdown, " + accountName);
-                        };
-                    })
-                    .toList();
-
-            //Step 4 等所有账户连接建立完成
-            try {
-                CompletableFuture
-                        .allOf(connectFutures.toArray(new CompletableFuture[0]))
-                        .get();
-            } catch (InterruptedException | ExecutionException e) {
-                log.error("账户建立连接发生异常", e);
-            }
-        }, executorService);
-    }
+//    {
+//        return CompletableFuture.runAsync(() -> {
+//            //Step 1 遍历账户
+//            List<CompletableFuture<Void>> connectFutures = accounts.stream()
+//                    .map(accountContext -> {
+//                        // Step 2 根据账户获取ws client
+//                        BaseDepinWSClient<Req, Resp> depinWSClient = accountWSClientMap.compute(accountContext, (k, v) -> {
+//                            // 没有创建过，或被关闭，创建新的
+//                            if (v == null || v.getClientStatus().equals(WebsocketClientStatus.SHUTDOWN)) {
+//                                v = buildAccountWSClient(accountContext);
+//                            }
+//
+//                            return v;
+//                        });
+//
+//                        String accountName = accountContext.getClientAccount().getName();
+//
+//                        //Step 3 建立连接
+//                        WebsocketClientStatus clientStatus = depinWSClient.getClientStatus();
+//                        return switch (clientStatus) {
+//                            case NEW, STOP:  // 新创建，停止状态，需要建立连接
+//                                yield depinWSClient
+//                                        .connect()
+//                                        .thenAcceptAsync(success -> {
+//                                            try {
+//                                                whenAccountConnected(depinWSClient, success);
+//                                            } catch (Exception e) {
+//                                                log.error("账户[{}]-连接完成后执行回调发生错误", accountName, e);
+//                                            }
+//                                        }, executorService)
+//                                        .exceptionallyAsync(throwable -> {
+//                                            log.error("账户[{}]连接失败, ", accountName,
+//                                                    throwable);
+//                                            return null;
+//                                        }, executorService);
+//                            case STARTING, RUNNING: // 正在建立连接，直接返回
+//                                CompletableFuture.completedFuture(null);
+//                            case SHUTDOWN: // 被禁止使用，抛出异常
+//                                throw new DepinBotStatusException("cannot start ws client when it shutdown, " + accountName);
+//                        };
+//                    })
+//                    .toList();
+//
+//            //Step 4 等所有账户连接建立完成
+//            try {
+//                CompletableFuture
+//                        .allOf(connectFutures.toArray(new CompletableFuture[0]))
+//                        .get();
+//            } catch (InterruptedException | ExecutionException e) {
+//                log.error("账户建立连接发生异常", e);
+//            }
+//        }, executorService);
+//    }
 
 
     /**
@@ -244,6 +286,7 @@ public abstract class AccountAutoManageDepinBot<Req, Resp> extends AbstractDepin
         List<AccountPrintDto> list = accounts.stream().map(accountContext -> {
             NetworkProxy proxy = accountContext.getProxy();
             BrowserEnv browserEnv = accountContext.getBrowserEnv();
+
             return AccountPrintDto
                     .builder()
                     .id(accountContext.getClientAccount().getId())
@@ -251,15 +294,24 @@ public abstract class AccountAutoManageDepinBot<Req, Resp> extends AbstractDepin
                     .proxyInfo(proxy.getId() + "-" + proxy.getAddress())
                     .browserEnvInfo(String.valueOf(browserEnv == null ? "NO_ENV" : browserEnv.getId()))
                     .signUp(accountContext.getClientAccount().getSignUp())
-                    .startDateTime(accountContext.getConnectStatusInfo().getStartDateTime())
-                    .updateDateTime(accountContext.getConnectStatusInfo().getUpdateDateTime())
-                    .heartBeatCount(accountContext.getConnectStatusInfo().getHeartBeatCount().get())
-                    .connectStatus(accountContext.getConnectStatusInfo().getConnectStatus())
                     .build();
         }).toList();
 
         return "账号列表:\n" +
                 CommandLineTablePrintHelper.generateTableString(list, AccountPrintDto.class) +
+                "\n";
+    }
+
+    /**
+     * 打印账户连接情况
+     *
+     * @return String
+     */
+    public String printAccountConnectStatusList() {
+        List<ConnectStatusInfo> list = accounts.stream().map(AccountContext::getConnectStatusInfo).toList();
+
+        return "账号链接状态列表:\n" +
+                CommandLineTablePrintHelper.generateTableString(list, ConnectStatusInfo.class) +
                 "\n";
     }
 

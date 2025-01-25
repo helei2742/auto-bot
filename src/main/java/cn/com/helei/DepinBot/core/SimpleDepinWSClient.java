@@ -1,6 +1,6 @@
 package cn.com.helei.DepinBot.core;
 
-import cn.com.helei.DepinBot.core.bot.CommandLineDepinBot;
+import cn.com.helei.DepinBot.core.bot.WSMenuCMDLineDepinBot;
 import cn.com.helei.DepinBot.core.dto.account.AccountContext;
 import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
@@ -9,10 +9,10 @@ import lombok.Setter;
 
 public class SimpleDepinWSClient extends BaseDepinWSClient<JSONObject, JSONObject> {
 
-    private final CommandLineDepinBot<JSONObject, JSONObject> bot;
+    private final WSMenuCMDLineDepinBot<?, JSONObject, JSONObject> bot;
 
     public SimpleDepinWSClient(
-            CommandLineDepinBot<JSONObject, JSONObject> bot,
+            WSMenuCMDLineDepinBot<?, JSONObject, JSONObject> bot,
             AccountContext accountContext
     ) {
         super(accountContext, new SimpleDepinWSClientHandler());

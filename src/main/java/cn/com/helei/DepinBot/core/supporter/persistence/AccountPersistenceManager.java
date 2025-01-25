@@ -1,4 +1,3 @@
-
 package cn.com.helei.DepinBot.core.supporter.persistence;
 
 import cn.com.helei.DepinBot.core.dto.account.AccountContext;
@@ -34,6 +33,8 @@ public class AccountPersistenceManager {
 
     private static final int PERSISTENCE_CACHE_SIZE = 3;
 
+    private final String botName;
+
     /**
      * 监听的对象 -》 该对象的root
      */
@@ -55,6 +56,10 @@ public class AccountPersistenceManager {
      * dump数据
      */
     private final DumpDataSupporter dumpDataSupporter = new DumpDataSupporter();
+
+    public AccountPersistenceManager(String botName) {
+        this.botName = botName;
+    }
 
 
     public void init() {

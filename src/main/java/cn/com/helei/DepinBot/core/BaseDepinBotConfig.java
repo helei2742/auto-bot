@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Data
-public abstract class BaseDepinBotConfig {
+public class BaseDepinBotConfig {
 
     /**
      * 名字
@@ -19,6 +19,15 @@ public abstract class BaseDepinBotConfig {
      */
     private int concurrentCount = 5;
 
+    /**
+     * 自动收获间隔
+     */
+    private long autoClaimIntervalSeconds = 60;
+
+    /**
+     * 是否开启账户收益自动刷新
+     */
+    private Boolean isAccountRewardAutoRefresh = false;
 
     /**
      * 账户奖励刷新间隔

@@ -20,7 +20,7 @@ import java.util.Stack;
  */
 @Slf4j
 @Getter
-public abstract class CommandLineDepinBot<Req, Resp> extends AccountAutoManageDepinBot<Req, Resp> {
+public abstract class CommandLineDepinBot extends AccountAutoManageDepinBot {
 
 
     public CommandLineDepinBot(BaseDepinBotConfig baseDepinBotConfig) {
@@ -92,7 +92,6 @@ public abstract class CommandLineDepinBot<Req, Resp> extends AccountAutoManageDe
             } catch (Exception e) {
                 System.out.println("系统异常");
             }
-
         }
     }
 
@@ -123,8 +122,6 @@ public abstract class CommandLineDepinBot<Req, Resp> extends AccountAutoManageDe
      */
     protected void exitHandler() {
     }
-
-
 
     /**
      * 执行Action回调，获取当前菜单打印的字符串
