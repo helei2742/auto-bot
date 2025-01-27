@@ -4,7 +4,6 @@ import cn.com.helei.DepinBot.core.BaseDepinBotConfig;
 import cn.com.helei.DepinBot.core.commandMenu.CommandMenuNode;
 import cn.com.helei.DepinBot.core.commandMenu.DefaultMenuType;
 import cn.com.helei.DepinBot.core.dto.account.AccountContext;
-import cn.com.helei.DepinBot.core.util.ClosableTimerTask;
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.Getter;
@@ -37,7 +36,6 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
 
 
     private final List<DefaultMenuType> defaultMenuTypes = new ArrayList<>(List.of(
-            DefaultMenuType.PROXY_LIST,
             DefaultMenuType.ACCOUNT_LIST,
             DefaultMenuType.PROXY_LIST,
             DefaultMenuType.BROWSER_ENV_LIST
@@ -278,18 +276,13 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
         if (isStartAccountConnected.compareAndSet(false, true)) {
 
             getAccounts().forEach(account -> {
-                if (account.getClientAccount().getId() != 0) { return;}
                 account.getConnectStatusInfo().setStartDateTime(LocalDateTime.now());
 
                 addTimer(
-                        new ClosableTimerTask() {
-                            @Override
-                            public boolean run() {
-                                return doAccountClaim(account);
-                            }
-                        },
+                        () -> doAccountClaim(account),
                         getBotConfig().getAutoClaimIntervalSeconds(),
-                        TimeUnit.SECONDS
+                        TimeUnit.SECONDS,
+                        account
                 );
             });
 

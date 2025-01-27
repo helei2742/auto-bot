@@ -26,29 +26,29 @@ public abstract class BaseDepinWSClientHandler<Req, Resp> extends AbstractWebSoc
                     if (throwable != null) {
                         log.error("client[{}] 发送心跳异常", websocketClient.getName(), throwable);
                         // 发送心跳失败，记录次数
-                        connectStatusInfo.getErrorHeartBeatCount().getAndIncrement();
+                        connectStatusInfo.getErrorHeartBeat().getAndIncrement();
                     }
 
                     // 心跳计数
-                    connectStatusInfo.getHeartBeatCount()
+                    connectStatusInfo.getHeartBeat()
                             .getAndIncrement();
                 }, depinWSClient.getCallbackInvoker());
     }
 
 
     @Override
-    public String getRequestId(Req request) {
-        return "";
+    public Object getRequestId(Req request) {
+        return getDepinWSClient().getRequestId(request);
     }
 
     @Override
-    public String getResponseId(Resp response) {
-        return "";
+    public Object getResponseId(Resp response) {
+        return getDepinWSClient().getResponseId(response);
     }
 
 
     @Override
-    protected void handleResponseMessage(String id, Resp response) {
+    protected void handleResponseMessage(Object id, Resp response) {
         BaseDepinWSClient<Req, Resp> depinWSClient = getDepinWSClient();
 
         depinWSClient.whenAccountReceiveResponse(depinWSClient, id, response);

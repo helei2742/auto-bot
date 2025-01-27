@@ -96,7 +96,10 @@ public class UnichClaimBot extends DefaultMenuCMDLineDepinBot<UnichConfig> {
                     } else {
                         log.error("{} mining请求失败", printPrefix);
                     }
-                }, getExecutorService());
+                }, getExecutorService()).exceptionally(throwable -> {
+                    log.error("{} mining请求失败", printPrefix, throwable);
+                    return null;
+                });
 
         return true;
     }

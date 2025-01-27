@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class LayeredgeDepinBot extends DefaultMenuCMDLineDepinBot<LayeredgeConfig> {
@@ -78,7 +77,7 @@ public class LayeredgeDepinBot extends DefaultMenuCMDLineDepinBot<LayeredgeConfi
                 null,
                 null,
                 () -> {
-                    accountContext.getConnectStatusInfo().getHeartBeatCount().incrementAndGet();
+                    accountContext.getConnectStatusInfo().getHeartBeat().incrementAndGet();
                     return pintStr + " ping服务器";
                 })
                 .thenAcceptAsync(responseStr -> {
@@ -89,7 +88,7 @@ public class LayeredgeDepinBot extends DefaultMenuCMDLineDepinBot<LayeredgeConfi
                 }, getExecutorService())
                 .exceptionally(throwable -> {
                     log.error("{} ping服务器成失败, {}", pintStr, throwable.getMessage());
-                    accountContext.getConnectStatusInfo().getErrorHeartBeatCount().incrementAndGet();
+                    accountContext.getConnectStatusInfo().getErrorHeartBeat().incrementAndGet();
                     return null;
                 });
 

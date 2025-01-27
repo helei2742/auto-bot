@@ -112,15 +112,16 @@ public class RestApiClient {
 
                 // 发送请求并获取响应
                 try (Response response = okHttpClient.newCall(request).execute()) {
-                    ResponseBody responseBody = null;
-                    if (response.isSuccessful() && (responseBody = response.body()) != null) {
+                    ResponseBody responseBody = response.body();
+                    if (response.isSuccessful()) {
                         try {
-                            return responseBody.string();
+                            return responseBody == null ? null : responseBody.string();
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
                     } else {
-                        throw new RuntimeException("请求 " + url + "失败");
+
+                        throw new RuntimeException("请求 " + url + "失败, " + (responseBody == null ? null : responseBody.string()));
                     }
                 } catch (SocketTimeoutException e) {
                     throw new RuntimeException(String.format("请求[%s]超时，尝试重新请求 [%s/%s],", url, i, RETRY_TIMES), e);

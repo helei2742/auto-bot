@@ -1,4 +1,6 @@
 depin:
   app:
     oasis:
+      name: oasis
+      wsBaseUrl: "wss://ws.oasis.ai"
       inviteCode: "285f4152d3bc8f3c"

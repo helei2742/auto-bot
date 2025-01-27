@@ -29,13 +29,23 @@ public class OpenLedgerDepinWSClient extends BaseDepinWSClient<String, String> {
     }
 
     @Override
-    public void whenAccountReceiveResponse(BaseDepinWSClient<String, String> wsClient, String id, String response) {
+    public void whenAccountReceiveResponse(BaseDepinWSClient<String, String> wsClient, Object id, String response) {
 
     }
 
     @Override
     public void whenAccountReceiveMessage(BaseDepinWSClient<String, String> wsClient, String message) {
 
+    }
+
+    @Override
+    public Object getRequestId(String request) {
+        return null;
+    }
+
+    @Override
+    public Object getResponseId(String response) {
+        return null;
     }
 
 
@@ -68,7 +78,7 @@ public class OpenLedgerDepinWSClient extends BaseDepinWSClient<String, String> {
             ConnectStatusInfo statusInfo = accountContext.getConnectStatusInfo();
 
             statusInfo.setUpdateDateTime(LocalDateTime.now());
-            statusInfo.getHeartBeatCount().incrementAndGet();
+            statusInfo.getHeartBeat().incrementAndGet();
 
             JSONObject heartBeatMessage = buildHeartBeatMessageContext();
 

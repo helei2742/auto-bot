@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AccountPersistenceManagerTest {
     @Test
     void bindPersistenceAnnoListener() {
-        AccountPersistenceManager accountPersistenceManager = new AccountPersistenceManager("");
+        AccountPersistenceManager accountPersistenceManager = new AccountPersistenceManager("test");
 
         DepinClientAccount clientAccount = new DepinClientAccount();
 
@@ -17,9 +17,13 @@ class AccountPersistenceManagerTest {
 
         AccountContext proxy = accountPersistenceManager.bindPersistenceAnnoListener(accountContext, "");
 
-        proxy.getParams().put("1", "a");
+//        proxy.getParams().put("1", "a");
         proxy.getParams().put("1", "b");
         proxy.getParams().put("1", "c");
         proxy.getParams().put("1", "d");
+
+        accountContext.getRewordInfo().setTotalPoints(1.0);
+        accountContext.setUsable(false);
+        accountContext.getClientAccount().setName("123");
     }
 }

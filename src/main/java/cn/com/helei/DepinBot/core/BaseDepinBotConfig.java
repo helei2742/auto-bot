@@ -2,17 +2,19 @@ package cn.com.helei.DepinBot.core;
 
 
 import lombok.Data;
+import lombok.ToString;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Data
+@ToString
 public class BaseDepinBotConfig {
 
     /**
      * 名字
      */
-    private String name = "Default Name";
+    private String name;
 
     /**
      * 并发数量
@@ -22,7 +24,7 @@ public class BaseDepinBotConfig {
     /**
      * 自动收获间隔
      */
-    private long autoClaimIntervalSeconds = 60;
+    private int autoClaimIntervalSeconds = 10;
 
     /**
      * 是否开启账户收益自动刷新
@@ -48,11 +50,6 @@ public class BaseDepinBotConfig {
      * 账户配置文件名
      */
     private String accountPoolConfig = "account.yaml";
-
-    /**
-     * 连接url
-     */
-    private String wsBaseUrl;
 
 
     private Map<String, String> configMap = new HashMap<>();

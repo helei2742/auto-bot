@@ -2,4 +2,53 @@ bot:
   network:
     proxy:
       list:
-        -
+        - http://hldjmuos:545n41b7z20x@198.145.103.86:6343
+        - http://hldjmuos:545n41b7z20x@192.46.201.243:6757
+        - http://hldjmuos:545n41b7z20x@46.203.161.123:5620
+        - http://hldjmuos:545n41b7z20x@192.46.201.217:6731
+        - http://hldjmuos:545n41b7z20x@192.46.201.229:6743
+        - http://hldjmuos:545n41b7z20x@46.203.86.233:5733
+        - http://hldjmuos:545n41b7z20x@192.46.201.190:6704
+        - http://hldjmuos:545n41b7z20x@46.203.86.233:5733
+        - http://hldjmuos:545n41b7z20x@192.46.201.209:6723
+        - http://hldjmuos:545n41b7z20x@46.203.47.201:5700
+        - http://hldjmuos:545n41b7z20x@46.203.15.221:7222
+        - http://hldjmuos:545n41b7z20x@46.203.76.251:6751
+        - http://hldjmuos:545n41b7z20x@46.203.47.132:5631
+        - http://hldjmuos:545n41b7z20x@192.46.203.16:5982
+        - http://hldjmuos:545n41b7z20x@46.203.91.72:5570
+        - http://hldjmuos:545n41b7z20x@130.180.237.68:7011
+        - http://hldjmuos:545n41b7z20x@198.145.103.45:6302
+        - http://hldjmuos:545n41b7z20x@192.46.201.7:6521
+        - http://hldjmuos:545n41b7z20x@192.46.201.76:6590
+        - http://hldjmuos:545n41b7z20x@192.46.201.191:6705
+        - http://hldjmuos:545n41b7z20x@192.46.201.115:6629
+        - http://hldjmuos:545n41b7z20x@46.203.82.70:6070
+        - http://hldjmuos:545n41b7z20x@46.203.80.116:6114
+        - http://hldjmuos:545n41b7z20x@46.203.29.186:6673
+        - http://hldjmuos:545n41b7z20x@46.203.15.34:7035
+        - http://hldjmuos:545n41b7z20x@103.243.147.77:6056
+        - http://hldjmuos:545n41b7z20x@192.46.200.190:5860
+        - http://hldjmuos:545n41b7z20x@46.203.76.252:6752
+        - http://hldjmuos:545n41b7z20x@130.180.233.122:7693
+        - http://hldjmuos:545n41b7z20x@130.180.228.8:6292
+        - http://hldjmuos:545n41b7z20x@46.203.82.74:6074
+        - http://hldjmuos:545n41b7z20x@46.203.82.33:6033
+        - http://hldjmuos:545n41b7z20x@46.203.82.71:6071
+        - http://hldjmuos:545n41b7z20x@130.180.231.230:8372
+        - http://hldjmuos:545n41b7z20x@46.203.30.84:6085
+        - http://hldjmuos:545n41b7z20x@130.180.231.213:8355
+        - http://hldjmuos:545n41b7z20x@130.180.233.124:7695
+        - http://hldjmuos:545n41b7z20x@46.203.15.63:7064
+        - http://hldjmuos:545n41b7z20x@130.180.232.108:8546
+        - http://hldjmuos:545n41b7z20x@130.180.232.32:8470
+        - http://hldjmuos:545n41b7z20x@130.180.231.236:8378
+        - http://hldjmuos:545n41b7z20x@46.203.82.156:6156
+        - http://hldjmuos:545n41b7z20x@46.203.137.111:6108
+        - http://hldjmuos:545n41b7z20x@46.203.82.248:6248
+        - http://hldjmuos:545n41b7z20x@46.203.29.211:6698
+        - http://hldjmuos:545n41b7z20x@46.203.86.201:5701
+        - http://hldjmuos:545n41b7z20x@130.180.232.23:8461
+        - http://hldjmuos:545n41b7z20x@130.180.232.190:8628
+        - http://hldjmuos:545n41b7z20x@130.180.233.103:7674
+        - http://hldjmuos:545n41b7z20x@130.180.233.247:7818

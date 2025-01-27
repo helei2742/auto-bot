@@ -25,7 +25,7 @@ public abstract class BaseDepinWSClient<Req, Resp> extends AbstractWebsocketClie
             AccountContext accountContext,
             BaseDepinWSClientHandler<Req, Resp> handler
     ) {
-        super(accountContext.getClientAccount().getConnectUrl(), handler);
+        super(accountContext.getConnectUrl(), handler);
 
         DefaultHttpHeaders httpHeaders = new DefaultHttpHeaders();
         accountContext.getWSHeaders().forEach(httpHeaders::add);
@@ -43,9 +43,14 @@ public abstract class BaseDepinWSClient<Req, Resp> extends AbstractWebsocketClie
 
     public abstract Req getHeartbeatMessage(BaseDepinWSClient<Req, Resp> wsClient);
 
-    public abstract void whenAccountReceiveResponse(BaseDepinWSClient<Req, Resp> wsClient, String id, Resp response) ;
+    public abstract void whenAccountReceiveResponse(BaseDepinWSClient<Req, Resp> wsClient, Object id, Resp response) ;
 
     public abstract void whenAccountReceiveMessage(BaseDepinWSClient<Req, Resp> wsClient, Resp message);
+
+    public abstract Object getRequestId(Req request);
+
+    public abstract Object getResponseId(Resp response);
+
     /**
      * ws客户端状态改变，同步更新账户状态
      *
@@ -75,4 +80,5 @@ public abstract class BaseDepinWSClient<Req, Resp> extends AbstractWebsocketClie
                 }
         );
     }
+
 }

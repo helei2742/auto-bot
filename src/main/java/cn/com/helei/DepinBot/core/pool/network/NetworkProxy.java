@@ -3,7 +3,7 @@ package cn.com.helei.DepinBot.core.pool.network;
 import cn.com.helei.DepinBot.core.pool.AbstractYamlLineItem;
 import lombok.*;
 
-        import java.net.InetSocketAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
 @Getter
@@ -46,5 +46,9 @@ public class NetworkProxy extends AbstractYamlLineItem {
 
     public SocketAddress getAddress() {
         return new InetSocketAddress(host, port);
+    }
+
+    public String getAddressStr() {
+        return host + ":" + port;
     }
 }

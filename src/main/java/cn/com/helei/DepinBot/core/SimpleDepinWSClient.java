@@ -11,8 +11,11 @@ public class SimpleDepinWSClient extends BaseDepinWSClient<JSONObject, JSONObjec
 
     private final WSMenuCMDLineDepinBot<?, JSONObject, JSONObject> bot;
 
+    @Setter
+    private String idFieldName = "id";
+
     public SimpleDepinWSClient(
-            WSMenuCMDLineDepinBot<?, JSONObject, JSONObject> bot,
+            WSMenuCMDLineDepinBot<? extends BaseDepinBotConfig, JSONObject, JSONObject> bot,
             AccountContext accountContext
     ) {
         super(accountContext, new SimpleDepinWSClientHandler());
@@ -26,13 +29,23 @@ public class SimpleDepinWSClient extends BaseDepinWSClient<JSONObject, JSONObjec
     }
 
     @Override
-    public void whenAccountReceiveResponse(BaseDepinWSClient<JSONObject, JSONObject> wsClient, String id, JSONObject response) {
+    public void whenAccountReceiveResponse(BaseDepinWSClient<JSONObject, JSONObject> wsClient, Object id, JSONObject response) {
         bot.whenAccountReceiveResponse(wsClient, id, response);
     }
 
     @Override
     public void whenAccountReceiveMessage(BaseDepinWSClient<JSONObject, JSONObject> wsClient, JSONObject message) {
         bot.whenAccountReceiveMessage(wsClient, message);
+    }
+
+    @Override
+    public Object getRequestId(JSONObject request) {
+        return request.getInteger(idFieldName);
+    }
+
+    @Override
+    public Object getResponseId(JSONObject response) {
+        return response.getIntValue(idFieldName);
     }
 
 

@@ -25,12 +25,17 @@ public class ConnectStatusInfo {
     /**
      * 心跳数
      */
-    private final AtomicInteger heartBeatCount = new AtomicInteger(0);
+    private final AtomicInteger heartBeat = new AtomicInteger(0);
 
     /**
      * 错误的心跳数
      */
-    private final AtomicInteger errorHeartBeatCount = new AtomicInteger(0);
+    private final AtomicInteger errorHeartBeat = new AtomicInteger(0);
+
+    /**
+     * 重启次数
+     */
+    private final AtomicInteger restart = new AtomicInteger(0);
 
     /**
      * 连接状态

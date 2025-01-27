@@ -1,6 +1,7 @@
 depin:
   app:
     unich:
+      name: unich
       configMap:
         inviteCode: ol33b7c321
       tokens:

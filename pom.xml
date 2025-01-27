@@ -37,6 +37,12 @@
 
   <dependencies>
 
+<!--    <dependency>-->
+<!--      <groupId>org.web3j</groupId>-->
+<!--      <artifactId>core</artifactId>-->
+<!--      <version>4.9.7</version>-->
+<!--    </dependency>-->
+
     <dependency>
       <groupId>com.sun.mail</groupId>
       <artifactId>jakarta.mail</artifactId>

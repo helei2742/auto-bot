@@ -9,10 +9,10 @@ import cn.com.helei.DepinBot.core.exception.DepinBotStartException;
 import cn.com.helei.DepinBot.core.exception.DepinBotStatusException;
 import cn.com.helei.DepinBot.core.pool.network.NetworkProxy;
 import cn.com.helei.DepinBot.core.pool.network.NetworkProxyPool;
-import cn.com.helei.DepinBot.core.util.ClosableTimerTask;
 import cn.com.helei.DepinBot.core.util.NamedThreadFactory;
 import cn.com.helei.DepinBot.core.util.RestApiClientFactory;
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -60,12 +60,11 @@ public abstract class AbstractDepinBot {
      */
     private final Map<NetworkProxy, Semaphore> networkSyncControllerMap;
 
-    /**
-     * task 任务并发控制
-     */
-    private final Semaphore taskSyncController;
+
 
     public AbstractDepinBot(BaseDepinBotConfig baseDepinBotConfig) {
+        if (StrUtil.isBlank(baseDepinBotConfig.getName())) throw new IllegalArgumentException("bot 名字不能为空");
+
         this.baseDepinBotConfig = baseDepinBotConfig;
         this.executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory(baseDepinBotConfig.getName() + "-executor"));
 
@@ -86,7 +85,6 @@ public abstract class AbstractDepinBot {
         );
 
         networkSyncControllerMap = new ConcurrentHashMap<>();
-        taskSyncController = new Semaphore(baseDepinBotConfig.getConcurrentCount());
     }
 
     public void init() {
@@ -216,38 +214,6 @@ public abstract class AbstractDepinBot {
         }, executorService);
     }
 
-    /**
-     * 添加定时任务,closableTimerTask执行run方法放回true会继续执行， 返回false则会跳出循环
-     *
-     * @param closableTimerTask closableTimerTask
-     * @param delay    delay
-     * @param timeUnit timeUnit
-     */
-    public void addTimer(ClosableTimerTask closableTimerTask, long delay, TimeUnit timeUnit) {
-
-        executorService.execute(() -> {
-            while (true) {
-                try {
-                    taskSyncController.acquire();
-
-                    if (closableTimerTask.isRunning()) {
-                        closableTimerTask.setRunning(closableTimerTask.run());
-                    }
-
-                    if (!closableTimerTask.isRunning()) {
-                        break;
-                    }
-
-                    timeUnit.sleep(delay);
-                } catch (InterruptedException e) {
-                    log.error("timer interrupted will stop it", e);
-                    break;
-                } finally {
-                    taskSyncController.release();
-                }
-            }
-        });
-    }
 
     /**
      * 异步启动

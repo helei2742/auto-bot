@@ -6,7 +6,6 @@ import cn.com.helei.DepinBot.core.pool.account.DepinClientAccount;
 import cn.com.helei.DepinBot.core.pool.env.BrowserEnv;
 import cn.com.helei.DepinBot.core.pool.network.NetworkProxy;
 import cn.com.helei.DepinBot.core.dto.RewordInfo;
-import io.netty.handler.codec.http.HttpHeaders;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -43,8 +42,10 @@ public class AccountContext {
      */
     private BrowserEnv browserEnv;
 
-    private LocalDateTime saveDatetime;
-
+    /**
+     * 连接的url
+     */
+    private String connectUrl;
 
     /**
      * 连接状态
@@ -59,6 +60,10 @@ public class AccountContext {
 
     @PropertyChangeListenField
     private final Map<String, String> params = new HashMap<>();
+
+
+    private LocalDateTime saveDatetime;
+
 
     public String getParam(String key) {
         return params.get(key);

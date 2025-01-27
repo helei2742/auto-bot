@@ -83,11 +83,6 @@ public class OpenLedgerConfig extends BaseDepinBotConfig {
         }
 
         @Override
-        public String getConnectUrl() {
-            return openLedgerConfig.getWsBaseUrl() + "?authToken=" + token;
-        }
-
-        @Override
         public HashMap<String, String> getWSHeaders() {
             HashMap<String, String> headers = new HashMap<>();
 

@@ -1,6 +1,6 @@
 package cn.com.helei.DepinBot.app.oasis;
 
-import cn.com.helei.DepinBot.core.BaseDepinBotConfig;
+import cn.com.helei.DepinBot.core.WSDepinBotConfig;
 import cn.com.helei.DepinBot.core.config.SystemConfig;
 import cn.com.helei.DepinBot.core.util.YamlConfigLoadUtil;
 import lombok.Data;
@@ -12,7 +12,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
 @Data
-public class OasisBotConfig extends BaseDepinBotConfig {
+public class OasisBotConfig extends WSDepinBotConfig {
 
     private String inviteCode;
 

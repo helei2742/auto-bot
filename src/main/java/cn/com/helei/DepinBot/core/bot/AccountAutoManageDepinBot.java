@@ -11,17 +11,17 @@ import cn.com.helei.DepinBot.core.pool.env.BrowserEnv;
 import cn.com.helei.DepinBot.core.exception.DepinBotInitException;
 import cn.com.helei.DepinBot.core.pool.network.NetworkProxy;
 import cn.com.helei.DepinBot.core.supporter.persistence.AccountPersistenceManager;
+import cn.com.helei.DepinBot.core.util.ClosableTimerTask;
 import cn.com.helei.DepinBot.core.util.table.CommandLineTablePrintHelper;
 import cn.hutool.core.util.BooleanUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+        import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 @Slf4j
 public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
@@ -43,10 +43,24 @@ public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
     private final AtomicBoolean isRunningAccountRewardQuery = new AtomicBoolean(true);
 
 
+    /**
+     * 存放账户对应的addTimer添加的任务
+     */
+    private final Map<AccountContext, Set<ClosableTimerTask>> accountTimerTaskMap;
+
+    /**
+     * task 任务并发控制
+     */
+    private final Semaphore taskSyncController;
+
+
+
     public AccountAutoManageDepinBot(BaseDepinBotConfig baseDepinBotConfig) {
         super(baseDepinBotConfig);
 
         this.persistenceManager = new AccountPersistenceManager(baseDepinBotConfig.getName());
+        this.accountTimerTaskMap = new ConcurrentHashMap<>();
+        this.taskSyncController = new Semaphore(baseDepinBotConfig.getConcurrentCount());
     }
 
     @Override
@@ -67,6 +81,59 @@ public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
         if (BooleanUtil.isTrue(getBaseDepinBotConfig().getIsAccountRewardAutoRefresh())) {
             startAccountRewardQueryTask();
         }
+    }
+
+    /**
+     * 添加定时任务,closableTimerTask执行run方法放回true会继续执行， 返回false则会跳出循环
+     *
+     * @param taskLogic taskLogic
+     * @param delay    delay
+     * @param timeUnit timeUnit
+     */
+    public ClosableTimerTask addTimer(
+            Supplier<Boolean> taskLogic,
+            long delay,
+            TimeUnit timeUnit,
+            AccountContext timerOwner
+    ) {
+        ClosableTimerTask closableTimerTask = new ClosableTimerTask(taskLogic);
+
+        accountTimerTaskMap.compute(timerOwner, (k, v) -> {
+            if (v == null) {
+                v = new HashSet<>();
+            }
+            v.add(closableTimerTask);
+            return v;
+        });
+
+        getExecutorService().execute(() -> {
+            while (true) {
+                try {
+                    taskSyncController.acquire();
+
+                    if (closableTimerTask.isRunning()) {
+                        closableTimerTask.setRunning(closableTimerTask.getTask().get());
+                    }
+
+                    if (!closableTimerTask.isRunning()) {
+                        // 运行完毕后移除
+                        accountTimerTaskMap.get(timerOwner).remove(closableTimerTask);
+                        break;
+                    }
+
+                    timeUnit.sleep(delay);
+                } catch (Exception e) {
+                    log.error("定时任务执行失败", e);
+                    // 异常退出后移除
+                    accountTimerTaskMap.get(timerOwner).remove(closableTimerTask);
+                    break;
+                } finally {
+                    taskSyncController.release();
+                }
+            }
+        });
+
+        return closableTimerTask;
     }
 
     /**
@@ -134,7 +201,8 @@ public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
             }
 
             // Step 3 加载到bot
-            registerAccountsInBot(accountContexts, AccountPersistenceManager::getAccountContextPersistencePath);
+            registerAccountsInBot(accountContexts,
+                    accountContext ->  AccountPersistenceManager.getAccountContextPersistencePath(getBaseDepinBotConfig().getName(), accountContext));
 
             accounts.addAll(accountContexts);
         } catch (Exception e) {
@@ -221,62 +289,6 @@ public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
         return newAccountContexts;
     }
 
-
-//    {
-//        return CompletableFuture.runAsync(() -> {
-//            //Step 1 遍历账户
-//            List<CompletableFuture<Void>> connectFutures = accounts.stream()
-//                    .map(accountContext -> {
-//                        // Step 2 根据账户获取ws client
-//                        BaseDepinWSClient<Req, Resp> depinWSClient = accountWSClientMap.compute(accountContext, (k, v) -> {
-//                            // 没有创建过，或被关闭，创建新的
-//                            if (v == null || v.getClientStatus().equals(WebsocketClientStatus.SHUTDOWN)) {
-//                                v = buildAccountWSClient(accountContext);
-//                            }
-//
-//                            return v;
-//                        });
-//
-//                        String accountName = accountContext.getClientAccount().getName();
-//
-//                        //Step 3 建立连接
-//                        WebsocketClientStatus clientStatus = depinWSClient.getClientStatus();
-//                        return switch (clientStatus) {
-//                            case NEW, STOP:  // 新创建，停止状态，需要建立连接
-//                                yield depinWSClient
-//                                        .connect()
-//                                        .thenAcceptAsync(success -> {
-//                                            try {
-//                                                whenAccountConnected(depinWSClient, success);
-//                                            } catch (Exception e) {
-//                                                log.error("账户[{}]-连接完成后执行回调发生错误", accountName, e);
-//                                            }
-//                                        }, executorService)
-//                                        .exceptionallyAsync(throwable -> {
-//                                            log.error("账户[{}]连接失败, ", accountName,
-//                                                    throwable);
-//                                            return null;
-//                                        }, executorService);
-//                            case STARTING, RUNNING: // 正在建立连接，直接返回
-//                                CompletableFuture.completedFuture(null);
-//                            case SHUTDOWN: // 被禁止使用，抛出异常
-//                                throw new DepinBotStatusException("cannot start ws client when it shutdown, " + accountName);
-//                        };
-//                    })
-//                    .toList();
-//
-//            //Step 4 等所有账户连接建立完成
-//            try {
-//                CompletableFuture
-//                        .allOf(connectFutures.toArray(new CompletableFuture[0]))
-//                        .get();
-//            } catch (InterruptedException | ExecutionException e) {
-//                log.error("账户建立连接发生异常", e);
-//            }
-//        }, executorService);
-//    }
-
-
     /**
      * 打印账号列表
      *
@@ -332,4 +344,19 @@ public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
         return sb.toString();
     }
 
+
+    /**
+     * 去除账户的所有计时任务
+     *
+     * @param accountContext    accountContext
+     */
+    public void removeAccountTimer(AccountContext accountContext) {
+        accountTimerTaskMap.compute(accountContext, (k,v)->{
+            if (v != null) {
+                v.forEach(task->task.setRunning(false));
+                v.removeIf(task->true);
+            }
+            return v;
+        });
+    }
 }

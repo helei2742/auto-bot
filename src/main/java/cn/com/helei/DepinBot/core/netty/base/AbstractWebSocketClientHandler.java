@@ -26,16 +26,16 @@ public abstract class AbstractWebSocketClientHandler<Req, Resp> extends BaseWebS
     /**
      * 存放请求响应的回调
      */
-    protected final ConcurrentMap<String, HandlerEntity<Resp>> requestIdMap = new ConcurrentHashMap<>();
+    protected final ConcurrentMap<Object, HandlerEntity<Resp>> requestIdMap = new ConcurrentHashMap<>();
 
 
     @Override
     protected void whenReceiveMessage(String text) {
         Resp message = convertMessageToRespType(text);
 
-        String responseId = getResponseId(message);
+        Object responseId = getResponseId(message);
 
-        if (StrUtil.isNotBlank(responseId)) {
+        if (responseId != null) {
             //有id，是发送请求的响应
             //提交response
             handleResponseMessage(responseId, message);
@@ -54,9 +54,9 @@ public abstract class AbstractWebSocketClientHandler<Req, Resp> extends BaseWebS
      */
     public boolean registryRequest(Req request, Consumer<Resp> callback) {
         AtomicBoolean res = new AtomicBoolean(false);
-        String requestId = getRequestId(request);
+        Object requestId = getRequestId(request);
 
-        if (StrUtil.isBlank(requestId)) return false;
+        if (requestId == null) return false;
 
         requestIdMap.compute(requestId, (k, v) -> {
             if (v == null) {
@@ -77,7 +77,7 @@ public abstract class AbstractWebSocketClientHandler<Req, Resp> extends BaseWebS
      * @param id       id
      * @param response 响应消息体
      */
-    protected void handleResponseMessage(String id, Resp response) {
+    protected void handleResponseMessage(Object id, Resp response) {
         HandlerEntity<Resp> handlerEntity = requestIdMap.get(id);
 
         if (System.currentTimeMillis() > handlerEntity.getExpireTime()) {
@@ -110,7 +110,7 @@ public abstract class AbstractWebSocketClientHandler<Req, Resp> extends BaseWebS
      * @param request request
      * @return id
      */
-    public abstract String getRequestId(Req request);
+    public abstract Object getRequestId(Req request);
 
     /**
      * 获取响应id
@@ -118,5 +118,5 @@ public abstract class AbstractWebSocketClientHandler<Req, Resp> extends BaseWebS
      * @param response 响应
      * @return id
      */
-    public abstract String getResponseId(Resp response);
+    public abstract Object getResponseId(Resp response);
 }

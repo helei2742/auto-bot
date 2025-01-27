@@ -6,6 +6,7 @@ import cn.com.helei.DepinBot.core.bot.WSMenuCMDLineDepinBot;
 import cn.com.helei.DepinBot.core.commandMenu.CommandMenuNode;
 import cn.com.helei.DepinBot.core.commandMenu.DefaultMenuType;
 import cn.com.helei.DepinBot.core.dto.account.AccountContext;
+import cn.com.helei.DepinBot.core.netty.constants.WebsocketClientStatus;
 import cn.com.helei.DepinBot.core.util.SystemInfo;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ public class OasisDepinBot extends WSMenuCMDLineDepinBot<OasisBotConfig, JSONObj
     @Override
     protected void addCustomMenuNode(List<DefaultMenuType> defaultMenuTypes, CommandMenuNode mainMenu) {
         defaultMenuTypes.add(DefaultMenuType.START_ACCOUNT_CLAIM);
+        defaultMenuTypes.add(DefaultMenuType.LOGIN);
 
         CommandMenuNode resendCode = new CommandMenuNode(true, "重发验证邮件",
                 "开始重发验证邮件", this::resendCode);
@@ -49,6 +51,13 @@ public class OasisDepinBot extends WSMenuCMDLineDepinBot<OasisBotConfig, JSONObj
 
     @Override
     public BaseDepinWSClient<JSONObject, JSONObject> buildAccountWSClient(AccountContext accountContext) {
+        String token = accountContext.getParam("token");
+        if (token == null) {
+            throw new IllegalArgumentException("token不能为空");
+        }
+
+        accountContext.setConnectUrl(getBotConfig().getWsBaseUrl() + "?token=" + token + "&version=0.1.20&platform=extension");
+
         SimpleDepinWSClient simpleDepinWSClient = new SimpleDepinWSClient(this, accountContext);
         simpleDepinWSClient.setAllIdleTimeSecond((int) getBotConfig().getAutoClaimIntervalSeconds());
 
@@ -57,16 +66,21 @@ public class OasisDepinBot extends WSMenuCMDLineDepinBot<OasisBotConfig, JSONObj
 
 
     @Override
-    public void whenAccountConnected(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient, Boolean success) {
-        //Step 1 发送机器信息
-        depinWSClient.sendMessage(generateRandomSystemData());
+    public void whenAccountClientStatusChange(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient, WebsocketClientStatus clientStatus) {
 
-        //Step 2 主动发一次心跳
-        depinWSClient.sendMessage(getHeartbeatMessage(depinWSClient));
+        switch (clientStatus) {
+            case RUNNING -> {
+                //Step 1 发送机器信息
+                depinWSClient.sendMessage(generateRandomSystemData());
+
+                //Step 2 主动发一次心跳
+                depinWSClient.sendMessage(getHeartbeatMessage(depinWSClient));
+            }
+        }
     }
 
     @Override
-    public void whenAccountReceiveResponse(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient, String id, JSONObject response) {
+    public void whenAccountReceiveResponse(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient, Object id, JSONObject response) {
 
     }
 
@@ -95,7 +109,7 @@ public class OasisDepinBot extends WSMenuCMDLineDepinBot<OasisBotConfig, JSONObj
                 }
             }
             default -> {
-                log.warn("账户[{}]收到位置消息[{}]", accountName, message);
+                log.warn("账户[{}]收到未知消息[{}]", accountName, message);
             }
         }
     }

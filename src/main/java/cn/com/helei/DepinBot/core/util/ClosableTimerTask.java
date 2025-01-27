@@ -3,11 +3,17 @@ package cn.com.helei.DepinBot.core.util;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.function.Supplier;
+
 @Setter
 @Getter
-public abstract class ClosableTimerTask {
+public class ClosableTimerTask {
 
     private volatile boolean isRunning = true;
 
-    public abstract boolean run();
+    private Supplier<Boolean> task;
+
+    public ClosableTimerTask(Supplier<Boolean> task) {
+        this.task = task;
+    }
 }

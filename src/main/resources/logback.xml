@@ -15,4 +15,8 @@
     <!-- 设置 Netty 日志级别为 INFO -->
     <logger name="io.netty" level="INFO"/>
 
+
+
+    <logger name="cn.com.helei.DepinBot.core.netty.base" level="on" />
+
 </configuration>

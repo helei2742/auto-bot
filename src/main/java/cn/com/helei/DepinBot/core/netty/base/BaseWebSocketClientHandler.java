@@ -1,10 +1,11 @@
 package cn.com.helei.DepinBot.core.netty.base;
 
 import cn.com.helei.DepinBot.core.netty.constants.NettyConstants;
+import cn.com.helei.DepinBot.core.netty.constants.WebsocketClientStatus;
 import io.netty.channel.*;
-        import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.websocketx.*;
-        import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,14 +53,18 @@ public abstract class BaseWebSocketClientHandler<P, T> extends SimpleChannelInbo
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        log.warn("WebSocket Client [{}] disconnected!, start reconnect", ctx.channel().attr(NettyConstants.CLIENT_NAME).get());
-        websocketClient.reconnect();
-//        websocketClient.close();
+        log.warn("WebSocket Client [{}] disconnected!", ctx.channel().attr(NettyConstants.CLIENT_NAME).get());
+        websocketClient.close();
     }
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
         log.warn("WebSocket Client [{}] unregistered!", ctx.channel().attr(NettyConstants.CLIENT_NAME).get());
+        websocketClient.close();
+
+        if (!websocketClient.getClientStatus().equals(WebsocketClientStatus.SHUTDOWN)) {
+            websocketClient.reconnect();
+        }
     }
 
     @Override

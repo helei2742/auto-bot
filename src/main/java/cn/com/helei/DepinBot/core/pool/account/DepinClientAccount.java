@@ -86,7 +86,4 @@ public class DepinClientAccount extends AbstractYamlLineItem {
         return new HashMap<>();
     }
 
-    public String getConnectUrl() {
-        return "";
-    }
 }

@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 @Slf4j
 public class AccountPersistenceManager {
 
-    private static final String PERSISTENCE_PATH = "persistence/accounts";
+    private static final String PERSISTENCE_PATH = "accounts";
 
     private static final String PERSISTENCE_ACCOUNT_PATTERN = "account-%d.json";
 
@@ -72,7 +72,7 @@ public class AccountPersistenceManager {
      * @param accountContexts accountContexts
      */
     public synchronized void persistenceAccountContexts(List<AccountContext> accountContexts) throws IOException {
-        Path path = Paths.get(getPersistencePath(PERSISTENCE_PATH));
+        Path path = Paths.get(getPersistencePath(botName, PERSISTENCE_PATH));
         if (!Files.exists(path)) Files.createDirectories(path);
 
         for (AccountContext accountContext : accountContexts) {
@@ -89,7 +89,7 @@ public class AccountPersistenceManager {
      * @return PersistenceDto
      */
     public synchronized Map<Integer, AccountContext> loadAccountContexts() {
-        Path path = Paths.get(getPersistencePath(PERSISTENCE_PATH));
+        Path path = Paths.get(getPersistencePath(botName, PERSISTENCE_PATH));
 
         if (!Files.exists(path)) return null;
 
@@ -197,11 +197,12 @@ public class AccountPersistenceManager {
     /**
      * 获取账户持久化路径
      *
+     * @param botName        botName
      * @param accountContext accountContext
      * @return path
      */
-    public static String getAccountContextPersistencePath(AccountContext accountContext) {
-        Path path = Paths.get(getPersistencePath(PERSISTENCE_PATH));
+    public static String getAccountContextPersistencePath(String botName, AccountContext accountContext) {
+        Path path = Paths.get(getPersistencePath(botName, PERSISTENCE_PATH));
         String fileName = String.format(PERSISTENCE_ACCOUNT_PATTERN, accountContext.getClientAccount().getId());
 
         return Paths.get(path.toString(), fileName).toString();
@@ -218,7 +219,7 @@ public class AccountPersistenceManager {
         Object rootProxy = originRoot2ProxyMap.get(root);
 
         rootUpdateQueueMap.compute(root, (k, v) -> {
-            log.info("目标[{}] 属性改变了:{},{}->{} [{}]", root.hashCode(), invocation.getPropertyName(),
+            log.debug("目标[{}] 属性改变了:{},{}->{} [{}]", root.hashCode(), invocation.getPropertyName(),
                     invocation.getOldValue(), invocation.getNewValue(), invocation.getTimestamp());
 
             if (v == null) {
@@ -252,10 +253,11 @@ public class AccountPersistenceManager {
     /**
      * 获取持久化路径， 项目根目录开始
      *
+     * @param botName botName
      * @param subPath subPath
      * @return String
      */
-    private static String getPersistencePath(String subPath) {
-        return FileUtil.RESOURCE_ROOT_DIR + File.separator + subPath;
+    private static String getPersistencePath(String botName, String subPath) {
+        return FileUtil.RESOURCE_ROOT_DIR + File.separator + botName + File.separator + subPath;
     }
 }
