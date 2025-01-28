@@ -1,6 +1,10 @@
 depin:
   app:
     oasis:
-      name: oasis
+      name: "oasis"
       wsBaseUrl: "wss://ws.oasis.ai"
       inviteCode: "285f4152d3bc8f3c"
+      wsUnlimitedRetry: false
+      wsConnectCount: 10
+      heartBeatIntervalSecond: 50
+      reconnectCountDownSecond: 180

@@ -1,0 +1,20 @@
+<configuration>
+
+    <!-- 设置根日志级别 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <!-- 配置 console appender 输出日志到控制台 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} - %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 设置 Netty 日志级别为 INFO -->
+    <logger name="io.netty" level="INFO"/>
+
+    <logger name="cn.com.helei.bot.core.netty.base" level="on" />
+
+</configuration>

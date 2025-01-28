@@ -2,8 +2,59 @@ depin:
   app:
     keitokun:
       name: keitokun
-      wsConnectCount: 10
+      wsConnectCount: 20
       wsBaseUrl: "wss://game.keitokun.com/api/v1/ws"
+      tokens:
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwNzQ2NDIsImlhdCI6MTczNzk4ODI0MiwidXNlcklkIjoiNzQ5MjM3MDkwMzkifQ.pC_BkM_uHRoPtp5wPQZYHC9OhqCNcjwkycQRgoJRKNY
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwNzQ4MTYsImlhdCI6MTczNzk4ODQxNiwidXNlcklkIjoiMTM1OTgyMzUwNzcifQ.uv1NFP_2xE-yHvIfcQoEPoR0XiWTkr1uDEHlOYpTe94
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODI2MzksImlhdCI6MTczNzk5NjIzOSwidXNlcklkIjoiMjUxNzIyMDUwMjUifQ.LQtSfoqFtRbqDBZ8e5MBskDKkCzIri4YuWHAktv3A_Q
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODI3NTksImlhdCI6MTczNzk5NjM1OSwidXNlcklkIjoiMjE0MzUxODQ3NjgifQ.EX6t3i6mNzoRWmoEi9ThTAsdXAkR08PAKpXYlDvJyo8
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODI4NzYsImlhdCI6MTczNzk5NjQ3NiwidXNlcklkIjoiMTk1NTI0ODc3ODMifQ.pTQp4cYwNrXzAPejBKz6r9jIfkjUBM5NEaidVUGMbFA
+        -
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODMwNTIsImlhdCI6MTczNzk5NjY1MiwidXNlcklkIjoiMzM0ODEyMjM3NDcifQ.ANnP9xqhDkCs4jvncDL9j5-yHo2c216Yi74QlZomNgo
+        -
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODMzMzAsImlhdCI6MTczNzk5NjkzMCwidXNlcklkIjoiNjg4MjIzNjgwNDEifQ.RdUIg9eBJP39ju-kCkJlzcRKQYDOTOU84TLDXfGj1kE
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODM0NTAsImlhdCI6MTczNzk5NzA1MCwidXNlcklkIjoiODc4MzczNTcwNTcifQ.V_sDqSTkUCHWGG5DjTwbq4MrRIYlx39zJLvImkxsaus
+        -
+        -
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODM5NDEsImlhdCI6MTczNzk5NzU0MSwidXNlcklkIjoiMTYyMjYzOTc5NjQifQ.vuAIM3U4IOmZlzbI3nb_WwYTS0ZGkgSTBED1lrxynW8
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODM2MjYsImlhdCI6MTczNzk5NzIyNiwidXNlcklkIjoiMzQ5Njk4MjU5NjQifQ.QMCYoNTgXKYi-LGUP7hrQn-sa8vTHTpA825dkEnWf4
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODM2NDgsImlhdCI6MTczNzk5NzI0OCwidXNlcklkIjoiNTc3MDcyMzM2MzAifQ.9MHydgEP3aeNQFItgEl5-S4YvHMx6VN5c51zIU5GvcI
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODM3MjYsImlhdCI6MTczNzk5NzMyNiwidXNlcklkIjoiMjU0ODQ5Mzg5MjkifQ.qpjcxi-URQ5PFH9vbUHPSLVkdNNF77CtGfENDMzFp8o
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODQxNTMsImlhdCI6MTczNzk5Nzc1MywidXNlcklkIjoiNDMwMzczMjczMjQifQ.lnKdCJiiFJGS6QkKhFU3HV39n2CvSozh4OOn2DuBZq0
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODQxNTMsImlhdCI6MTczNzk5Nzc1MywidXNlcklkIjoiODg1NzQ2NTI5NDIifQ.HvnsaABCI5BpQqbFlRc07Yq3aH7pgrpTkYtfwLqBeLM
+        -
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODQxNTMsImlhdCI6MTczNzk5Nzc1MywidXNlcklkIjoiNTMwNDYyNzU2MDYifQ.NeLtung4CdSukFZTS9NofwKx888gH42cVyfriJtfyBU
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODQxNTMsImlhdCI6MTczNzk5Nzc1MywidXNlcklkIjoiNjY0OTk2ODMzMjkifQ.iI03GJbqfAxCfgnCtzxGy32RUhTbfPa8n4TNQnuioDU
+        -
+        -
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODUxMTUsImlhdCI6MTczNzk5ODcxNSwidXNlcklkIjoiNjEyNDE1MzQ0NDgifQ.t1U9M5a-U7CCDDll4J5KkFj0rSMUTka2jCYTp9XSjKs
+        -
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODQ2ODQsImlhdCI6MTczNzk5ODI4NCwidXNlcklkIjoiNzk1NDkxMjg3OTcifQ.23dwtR20x5v1zOI9_HBrB35IQUOdIuEXQpjnBRsdBbY
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODQ3MjksImlhdCI6MTczNzk5ODMyOSwidXNlcklkIjoiNjA4MTk4NzE1MDUifQ.HyYk9CoPt_V21mQeKDj4ei6eZDPOr0VNW-WNdaczBZ
+        -
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODQ3MjUsImlhdCI6MTczNzk5ODMyNSwidXNlcklkIjoiMTI1NzM5OTI2MzgifQ.C0aqAIlKH33WrTI1C-yCKaeB_jYD_86QdO4rK7VhWHM
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODQ3NTksImlhdCI6MTczNzk5ODM1OSwidXNlcklkIjoiODgzOTQ2MjI1NTEifQ.yHbqXCmx3U5aFbag4RhWBUooki6HpgL70pFft-cd91A
+        -
+        -
+        -
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODUzNzUsImlhdCI6MTczNzk5ODk3NSwidXNlcklkIjoiODAxODAyNzExNzcifQ.ehgKur90LsZ5eQHvMOab2qrOmx7SB3BYMbwZidANSdA
+        -
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODU0NTcsImlhdCI6MTczNzk5OTA1NywidXNlcklkIjoiNDIwODQyMzQ4ODgifQ.AoZHv6lJqVYog6SZYpGL6NLZ51ZwaaRf09kRDBpBCmA
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODU0MjAsImlhdCI6MTczNzk5OTAyMCwidXNlcklkIjoiNjc3MzYwOTQ0NTkifQ.4RGS7Rpqv1JQrxl_MppbnnYiEtpzUv3z2RvE0lqmqXE
+        -
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODU0MjEsImlhdCI6MTczNzk5OTAyMSwidXNlcklkIjoiOTE1NjkzOTk0MjIifQ.IUTP8R0vmBK6j_v_5V685IjWxobIqPejGxaKHHUEe-w
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODU0NDQsImlhdCI6MTczNzk5OTA0NCwidXNlcklkIjoiODkzMDQ3NzMwMDMifQ.Hs1MFe6do-4VJzu7xHXrgUnnJTgaA_QzyG9P1BbHBEM
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODYwMzEsImlhdCI6MTczNzk5OTYzMSwidXNlcklkIjoiNzI3MTg0MTU5MTkifQ.tyjNA_o_sHxKx_sVzIzOY7TuEfAq5-ytLxV1y8eah68
+        -
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODYwMzMsImlhdCI6MTczNzk5OTYzMywidXNlcklkIjoiNTA4NjczNTg2MTMifQ.TiMgdAZ8B44pa5lSWsTNN1m7tLtqF6iPmC98WBeE5HA
+        -
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODYyNTksImlhdCI6MTczNzk5OTg1OSwidXNlcklkIjoiMjQ1MTMwNzMxNTkifQ.WqdrH1K4zFzxkBic5a83-dUKvE1TujUMOVpUYg0qjbY
+        -
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODYwMzEsImlhdCI6MTczNzk5OTYzMSwidXNlcklkIjoiMjEwMTEwMDQ4NzYifQ.5PT-2VNmU37ZKE_yHSVD7o0we-FVb-xIri652hOp8PI
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODYwMzEsImlhdCI6MTczNzk5OTYzMSwidXNlcklkIjoiNDIyNTI5NzM5NDMifQ.cw5hoA3l_LnklDo8_0XR8BaU1yManS-g1JIps8CcpdQ
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODY1NjgsImlhdCI6MTczODAwMDE2OCwidXNlcklkIjoiNTAwNjI4ODQxNTkifQ.HeWXxrQEfq1Yn-mxmbSAC9cLt1seQNnQmDF7OU10-2U
+        - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzgwODY1NjgsImlhdCI6MTczODAwMDE2OCwidXNlcklkIjoiNjY5NjE2Mjg5MDEifQ.7KKci4rLapoZp_0NVRWGg2dbuqbn7OFeoDqJ_cBsuFE
       uids:
         - "74923709039"
         - "13598235077"

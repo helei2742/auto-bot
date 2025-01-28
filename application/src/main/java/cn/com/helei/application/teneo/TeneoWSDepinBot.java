@@ -1,0 +1,197 @@
+package cn.com.helei.application.teneo;
+
+import cn.com.helei.bot.core.BaseDepinWSClient;
+import cn.com.helei.bot.core.SimpleDepinWSClient;
+import cn.com.helei.bot.core.bot.WSMenuCMDLineDepinBot;
+import cn.com.helei.bot.core.commandMenu.CommandMenuNode;
+import cn.com.helei.bot.core.commandMenu.DefaultMenuType;
+import cn.com.helei.bot.core.dto.account.AccountContext;
+import cn.com.helei.bot.core.dto.ConnectStatusInfo;
+import cn.com.helei.bot.core.exception.DepinBotStartException;
+import cn.com.helei.bot.core.exception.LoginException;
+import cn.com.helei.bot.core.netty.constants.WebsocketClientStatus;
+import cn.com.helei.bot.core.pool.network.NetworkProxy;
+import com.alibaba.fastjson.JSONObject;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+@Slf4j
+public class TeneoWSDepinBot extends WSMenuCMDLineDepinBot<TeneoDepinConfig, JSONObject, JSONObject> {
+
+
+    public TeneoWSDepinBot(TeneoDepinConfig config) {
+        super(config);
+    }
+
+    @Override
+    public BaseDepinWSClient<JSONObject, JSONObject> buildAccountWSClient(AccountContext accountContext) {
+//        if (accountContext.getClientAccount().getId() != 0 ) return null;
+
+        accountContext.setConnectUrl("wss://secure.ws.teneo.pro/websocket?accessToken="
+                + accountContext.getParam("token") + "&version=v0.2");
+
+        SimpleDepinWSClient simpleDepinWSClient = new SimpleDepinWSClient(this, accountContext);
+
+        DefaultHttpHeaders headers = new DefaultHttpHeaders();
+        Map<String, String> originHeaders = accountContext.getBrowserEnv().getHeaders();
+        originHeaders.forEach(headers::add);
+
+        headers.add("Host", "secure.ws.teneo.pro");
+        headers.add("Origin", "chrome-extension://emcclcoaglgcpoognfiggmhnhgabppkm");
+        headers.add("Upgrade", "websocket");
+
+        simpleDepinWSClient.setHeaders(headers);
+
+        return simpleDepinWSClient;
+    }
+
+    @Override
+    public void whenAccountClientStatusChange(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient, WebsocketClientStatus clientStatus) {
+
+        final AccountContext accountContext = depinWSClient.getAccountContext();
+
+        switch (clientStatus) {
+            case STARTING -> {
+                log.info("账户[{}]-proxy[{}] 开始连接ws服务器[{}]",
+                        accountContext.getName(), accountContext.getProxy().getAddressStr(), accountContext.getConnectUrl());
+
+            }
+            case RUNNING -> {
+                log.info("账户[{}]-proxy[{} ]已连接到ws服务器",
+                        accountContext.getName(), accountContext.getProxy().getAddressStr());
+
+                depinWSClient.sendMessage(getHeartbeatMessage(depinWSClient));
+            }
+            case STOP -> {
+                log.warn("账户[{}]-proxy[{}]已断开连接",
+                        accountContext.getName(), accountContext.getProxy().getAddressStr());
+                accountContext.getConnectStatusInfo().getRestart().incrementAndGet();
+            }
+            case SHUTDOWN ->{
+                log.warn("账户[{}]-proxy[{}] 工作已停止",
+                        accountContext.getName(), accountContext.getProxy().getAddressStr());
+            }
+        }
+    }
+
+    @Override
+    public void whenAccountReceiveResponse(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient, Object id, JSONObject response) {
+
+    }
+
+    @Override
+    public void whenAccountReceiveMessage(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient, JSONObject message) {
+        String type = message.getString("message");
+        AccountContext accountContext = depinWSClient.getAccountContext();
+
+        if ("Connected successfully".equals(type)) {
+            Double pointsToday = message.getDouble("pointsToday");
+            Double pointsTotal = message.getDouble("pointsTotal");
+
+            accountContext.getRewordInfo().setTodayPoints(pointsToday);
+            accountContext.getRewordInfo().setTotalPoints(pointsTotal);
+
+            log.info("账户[{}]-proxy[{}] 连接成功. 今日积分: {}, 总积分: {}",
+                    accountContext.getName(), accountContext.getProxy().getAddressStr(),
+                    pointsToday, pointsTotal);
+
+        } else if ("Pulse from server".equals(type)) {
+            Double pointsToday = message.getDouble("pointsToday");
+            Double pointsTotal = message.getDouble("pointsTotal");
+
+            accountContext.getRewordInfo().setTodayPoints(pointsToday);
+            accountContext.getRewordInfo().setTotalPoints(pointsTotal);
+
+            int heartbeatToday = message.getInteger("heartbeats");
+
+            //减去提前加上的错误心跳数
+            accountContext.getConnectStatusInfo().getErrorHeartBeat().decrementAndGet();
+            log.info("账户[{}]-proxy[{}] 心跳发送成功. 今日心跳: {}",
+                    accountContext.getName(), accountContext.getProxy().getAddressStr(),
+                    heartbeatToday);
+        }
+    }
+
+    @Override
+    public JSONObject getHeartbeatMessage(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient) {
+        ConnectStatusInfo connectStatusInfo = depinWSClient.getAccountContext().getConnectStatusInfo();
+        connectStatusInfo.getHeartBeat().incrementAndGet();
+
+        // 错误心跳数提前加上
+        connectStatusInfo.getErrorHeartBeat().incrementAndGet();
+
+        JSONObject ping = new JSONObject();
+        ping.put("type", "ping");
+
+        log.info("账户[{}]发送ping", depinWSClient.getAccountContext().getName());
+        return ping;
+    }
+
+    @Override
+    protected void addCustomMenuNode(List<DefaultMenuType> defaultMenuTypes, CommandMenuNode mainMenu) {
+        defaultMenuTypes.add(DefaultMenuType.LOGIN);
+        defaultMenuTypes.add(DefaultMenuType.START_ACCOUNT_CLAIM);
+    }
+
+    @Override
+    protected CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode) {
+        return null;
+    }
+
+    @Override
+    protected CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext) {
+        String url = "https://auth.teneo.pro/api/login";
+
+        NetworkProxy proxy = accountContext.getProxy();
+
+        JSONObject body = new JSONObject();
+        body.put("email", accountContext.getClientAccount().getEmail());
+        String password = accountContext.getClientAccount().getPassword();
+        if (!password.matches(".*[0-9].*")) {
+            password = password + "1";
+        }
+        body.put("password", password);
+
+        String printStr = String.format("账户[%s]-proxy[%s:{%d]",
+                accountContext.getClientAccount().getEmail(), proxy.getHost(), proxy.getPort());
+
+        Map<String, String> headers = accountContext.getBrowserEnv().getHeaders();
+        headers.put("origin", "https://dashboard.teneo.pro");
+        headers.put("referer", "https://dashboard.teneo.pro/");
+        headers.put("X-API-KEY", getBotConfig().getApiKey());
+
+
+        return syncRequest(
+                proxy,
+                url,
+                "post",
+                headers,
+                null,
+                body,
+                () -> printStr
+        ).thenApplyAsync(responseStr -> {
+            JSONObject response = JSONObject.parseObject(responseStr);
+            if (response != null && responseStr.contains("access_token")) {
+                String string = response.getString("access_token");
+                log.info("{} token 获取成功,{}", printStr, string);
+                return string;
+            } else {
+                throw new LoginException(printStr + " 登录获取token失败, response: " + responseStr);
+            }
+        });
+    }
+
+    public static void main(String[] args) throws DepinBotStartException {
+        TeneoDepinConfig teneoDepinConfig = TeneoDepinConfig.loadYamlConfig("bot.app.teneo", "teneo.yaml", TeneoDepinConfig.class);
+
+        TeneoWSDepinBot teneoWSDepinBot = new TeneoWSDepinBot(teneoDepinConfig);
+
+        teneoWSDepinBot.init();
+
+        teneoWSDepinBot.start();
+    }
+}
