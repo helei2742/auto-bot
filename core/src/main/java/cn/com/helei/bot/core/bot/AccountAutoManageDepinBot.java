@@ -1,17 +1,18 @@
 package cn.com.helei.bot.core.bot;
 
-import cn.com.helei.bot.core.BaseDepinBotConfig;
+import cn.com.helei.bot.core.config.BaseDepinBotConfig;
 import cn.com.helei.bot.core.dto.account.AccountContext;
 import cn.com.helei.bot.core.dto.account.AccountPrintDto;
 import cn.com.helei.bot.core.dto.RewordInfo;
 import cn.com.helei.bot.core.dto.ConnectStatusInfo;
 import cn.com.helei.bot.core.exception.DepinBotStartException;
 import cn.com.helei.bot.core.exception.RewardQueryException;
+import cn.com.helei.bot.core.pool.account.DepinClientAccount;
 import cn.com.helei.bot.core.pool.env.BrowserEnv;
 import cn.com.helei.bot.core.exception.DepinBotInitException;
 import cn.com.helei.bot.core.pool.env.BrowserEnvPool;
 import cn.com.helei.bot.core.pool.network.NetworkProxy;
-import cn.com.helei.bot.core.pool.network.NetworkProxyPool;
+import cn.com.helei.bot.core.pool.network.StaticProxyPool;
 import cn.com.helei.bot.core.pool.twitter.TwitterPool;
 import cn.com.helei.bot.core.supporter.persistence.AccountPersistenceManager;
 import cn.com.helei.bot.core.util.ClosableTimerTask;
@@ -22,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 import java.util.concurrent.*;
-        import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -57,7 +58,6 @@ public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
     private final Semaphore taskSyncController;
 
 
-
     public AccountAutoManageDepinBot(BaseDepinBotConfig baseDepinBotConfig) {
         super(baseDepinBotConfig);
 
@@ -90,8 +90,8 @@ public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
      * 添加定时任务,closableTimerTask执行run方法放回true会继续执行， 返回false则会跳出循环
      *
      * @param taskLogic taskLogic
-     * @param delay    delay
-     * @param timeUnit timeUnit
+     * @param delay     delay
+     * @param timeUnit  timeUnit
      */
     public ClosableTimerTask addTimer(
             Supplier<Boolean> taskLogic,
@@ -180,6 +180,38 @@ public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
      */
     protected abstract CompletableFuture<Boolean> updateAccountRewordInfo(AccountContext accountContext);
 
+    /**
+     * 加载其他的账户
+     *
+     * @return List<DepinClientAccount>
+     */
+    protected List<DepinClientAccount> loadExtraBaseAccounts() {
+        return Collections.emptyList();
+    }
+
+    /**
+     * 主要账户创建后调用
+     *
+     * @param mainAccounts mainAccounts
+     */
+    protected void mainAccountCreateHandler(List<AccountContext> mainAccounts) {
+    }
+
+    /**
+     * 临时账户创建后调用
+     *
+     * @param tempAccounts tempAccounts
+     */
+    protected void tempAccountCreateHandler(List<AccountContext> tempAccounts) {
+    }
+
+    /**
+     * 所有账户创建完后调用
+     *
+     * @param accounts accounts
+     */
+    protected void allAccountCreateHandler(List<AccountContext> accounts) {
+    }
 
     /**
      * 初始化账号方法
@@ -205,7 +237,7 @@ public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
 
             // Step 3 加载到bot
             registerAccountsInBot(accountContexts,
-                    accountContext ->  AccountPersistenceManager.getAccountContextPersistencePath(getBaseDepinBotConfig().getName(), accountContext));
+                    accountContext -> AccountPersistenceManager.getAccountContextPersistencePath(getBaseDepinBotConfig().getName(), accountContext));
 
             accounts.addAll(accountContexts);
         } catch (Exception e) {
@@ -222,7 +254,6 @@ public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
         persistenceManager.registerPersistenceListener(accountContexts, getSavePath);
     }
 
-
     /**
      * 加载新的账户上下文列表，从配置文件中
      *
@@ -231,17 +262,36 @@ public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
     private List<AccountContext> loadNewAccountContexts() {
         // Step 1 初始化账号
 
+        // 加载账户配置文件中的主账户
+        List<AccountContext> mainAccounts = buildAccountContext(getAccountPool().getAllItem());
+        mainAccountCreateHandler(mainAccounts);
+
+        // 添加子类写入的额外的账户
+        List<AccountContext> tempAccounts = buildAccountContext(loadExtraBaseAccounts());
+        tempAccountCreateHandler(tempAccounts);
+
+        mainAccounts.addAll(tempAccounts);
+
+        return mainAccounts;
+    }
+
+    /**
+     * 构建depinClientAccounts
+     *
+     * @param depinClientAccounts depinClientAccounts
+     * @return AccountContext
+     */
+    private List<AccountContext> buildAccountContext(List<DepinClientAccount> depinClientAccounts) {
         List<AccountContext> newAccountContexts = new ArrayList<>();
 
         List<AccountContext> noProxyIds = new ArrayList<>();
         List<AccountContext> noBrowserEnvIds = new ArrayList<>();
 
-        NetworkProxyPool proxyPool = getProxyPool();
+        StaticProxyPool staticProxyPool = getStaticProxyPool();
         BrowserEnvPool browserEnvPool = getBrowserEnvPool();
         TwitterPool twitterPool = getTwitterPool();
 
-        getAccountPool()
-                .getAllItem()
+        depinClientAccounts
                 .forEach(depinClientAccount -> {
                     AccountContext accountContext = AccountContext.builder()
                             .clientAccount(depinClientAccount).build();
@@ -251,10 +301,10 @@ public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
 
                     // 账号没有配置代
                     if (depinClientAccount.getProxyId() != null) {
-                        accountContext.setProxy(proxyPool.getItem(depinClientAccount.getProxyId()));
-                    } else if (id < proxyPool.size()){
+                        accountContext.setProxy(staticProxyPool.getItem(depinClientAccount.getProxyId()));
+                    } else if (id < staticProxyPool.size()) {
                         accountContext.getClientAccount().setProxyId(id);
-                        accountContext.setProxy(proxyPool.getItem(id));
+                        accountContext.setProxy(staticProxyPool.getItem(id));
                     } else {
                         noProxyIds.add(accountContext);
                     }
@@ -262,7 +312,7 @@ public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
                     // 账号没有配置浏览器环境
                     if (depinClientAccount.getBrowserEnvId() != null) {
                         accountContext.setBrowserEnv(browserEnvPool.getItem(depinClientAccount.getBrowserEnvId()));
-                    } else if (id < browserEnvPool.size()){
+                    } else if (id < browserEnvPool.size()) {
                         accountContext.getClientAccount().setBrowserEnvId(id);
                         accountContext.setBrowserEnv(browserEnvPool.getItem(id));
                     } else {
@@ -272,11 +322,10 @@ public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
                     // 添加推特
                     if (depinClientAccount.getTwitterId() != null) {
                         accountContext.setTwitter(twitterPool.getItem(depinClientAccount.getTwitterId()));
-                    } else if (id < twitterPool.size()){
+                    } else if (id < twitterPool.size()) {
                         accountContext.getClientAccount().setTwitterId(id);
                         accountContext.setTwitter(twitterPool.getItem(id));
                     }
-
 
                     newAccountContexts.add(accountContext);
                 });
@@ -284,14 +333,37 @@ public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
         // Step 2 账号没代理的尝试给他设置代理
         if (!noProxyIds.isEmpty()) {
             log.warn("以下账号没有配置代理，将随机选择一个代理进行使用");
-            List<NetworkProxy> lessUsedProxy = proxyPool.getLessUsedItem(noProxyIds.size());
-            for (int i = 0; i < noProxyIds.size(); i++) {
+
+            // 静态代理，给账户分配使用，用完不重复分配
+            List<Integer> unUsedItemIds = staticProxyPool.getUnUsedItemId();
+            for (int i = 0; i < Math.min(unUsedItemIds.size(), noProxyIds.size()); i++) {
                 AccountContext accountContext = noProxyIds.get(i);
 
-                NetworkProxy proxy = lessUsedProxy.get(i);
+                NetworkProxy proxy = staticProxyPool.getItem(unUsedItemIds.get(i));
                 accountContext.setProxy(proxy);
 
-                log.warn("账号:{},将使用代理:{}", accountContext.getName(), proxy);
+                log.info("账号:{},将使用代理:{}[{}][{}]", accountContext.getName(), proxy, proxy.getProxyType(), proxy.getProxyType());
+            }
+
+            // 静态不够，用动态的
+            if (noProxyIds.size() > unUsedItemIds.size()) {
+                // 动态代理，每次取最少使用的给账户分配使用
+                List<NetworkProxy> lessUsedProxy = getDynamicProxyPool()
+                        .getLessUsedItem(noProxyIds.size() - unUsedItemIds.size());
+
+                for (int i = unUsedItemIds.size(); i < noProxyIds.size(); i++) {
+                    AccountContext accountContext = noProxyIds.get(i);
+
+                    if (!lessUsedProxy.isEmpty()) {
+                        NetworkProxy proxy = lessUsedProxy.get(i - unUsedItemIds.size());
+                        accountContext.setProxy(proxy);
+
+                        log.info("账号:{},将使用动态代理:{}[{}]", accountContext.getName(), proxy.getAddressStr(), proxy.getProxyType());
+
+                    } else {
+                        log.warn("账号:{},将不动态代理", accountContext.getName());
+                    }
+                }
             }
         }
 
@@ -308,7 +380,6 @@ public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
                 log.warn("账号:{},将使用浏览器环境:{}", accountContext.getName(), browserEnv);
             }
         }
-
 
         return newAccountContexts;
     }
@@ -327,7 +398,7 @@ public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
                     .builder()
                     .id(accountContext.getClientAccount().getId())
                     .name(accountContext.getName())
-                    .proxyInfo(proxy.getId() + "-" + proxy.getAddress())
+                    .proxyInfo(proxy == null ? "NO_PROXY" : proxy.getId() + "-" + proxy.getAddressStr())
                     .browserEnvInfo(String.valueOf(browserEnv == null ? "NO_ENV" : browserEnv.getId()))
                     .signUp(accountContext.getClientAccount().getSignUp())
                     .build();
@@ -373,13 +444,13 @@ public abstract class AccountAutoManageDepinBot extends AbstractDepinBot {
     /**
      * 去除账户的所有计时任务
      *
-     * @param accountContext    accountContext
+     * @param accountContext accountContext
      */
     public void removeAccountTimer(AccountContext accountContext) {
-        accountTimerTaskMap.compute(accountContext, (k,v)->{
+        accountTimerTaskMap.compute(accountContext, (k, v) -> {
             if (v != null) {
-                v.forEach(task->task.setRunning(false));
-                v.removeIf(task->true);
+                v.forEach(task -> task.setRunning(false));
+                v.removeIf(task -> true);
             }
             return v;
         });

@@ -1,6 +1,6 @@
 package cn.com.helei.bot.core.bot;
 
-import cn.com.helei.bot.core.BaseDepinBotConfig;
+import cn.com.helei.bot.core.config.BaseDepinBotConfig;
 import cn.com.helei.bot.core.constants.DepinBotStatus;
 import cn.com.helei.bot.core.dto.DepinBotRuntimeInfo;
 import cn.com.helei.bot.core.pool.account.AccountPool;
@@ -8,8 +8,9 @@ import cn.com.helei.bot.core.pool.env.BrowserEnvPool;
 import cn.com.helei.bot.core.exception.DepinBotInitException;
 import cn.com.helei.bot.core.exception.DepinBotStartException;
 import cn.com.helei.bot.core.exception.DepinBotStatusException;
+import cn.com.helei.bot.core.pool.network.DynamicProxyPool;
 import cn.com.helei.bot.core.pool.network.NetworkProxy;
-import cn.com.helei.bot.core.pool.network.NetworkProxyPool;
+import cn.com.helei.bot.core.pool.network.StaticProxyPool;
 import cn.com.helei.bot.core.pool.twitter.TwitterPool;
 import cn.com.helei.bot.core.util.NamedThreadFactory;
 import cn.com.helei.bot.core.util.RestApiClientFactory;
@@ -33,9 +34,14 @@ public abstract class AbstractDepinBot {
     private final ExecutorService executorService;
 
     /**
-     * 代理池
+     * 静态代理池
      */
-    private final NetworkProxyPool proxyPool;
+    private final StaticProxyPool staticProxyPool;
+
+    /**
+     * 动态代理池
+     */
+    private final DynamicProxyPool dynamicProxyPool;
 
     /**
      * 浏览器环境池
@@ -78,10 +84,15 @@ public abstract class AbstractDepinBot {
         this.baseDepinBotConfig = baseDepinBotConfig;
         this.executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory(baseDepinBotConfig.getName() + "-executor"));
 
-        this.proxyPool = NetworkProxyPool.loadYamlPool(
-                baseDepinBotConfig.getNetworkPoolConfig(),
-                "bot.network.proxy",
-                NetworkProxyPool.class
+        this.staticProxyPool = StaticProxyPool.loadYamlPool(
+                baseDepinBotConfig.getStaticPoolConfig(),
+                "bot.network.proxy-static",
+                StaticProxyPool.class
+        );
+        this.dynamicProxyPool = DynamicProxyPool.loadYamlPool(
+                baseDepinBotConfig.getDynamicProxyConfig(),
+                "bot.network.proxy-dynamic",
+                DynamicProxyPool.class
         );
         this.browserEnvPool = BrowserEnvPool.loadYamlPool(
                 baseDepinBotConfig.getBrowserEnvPoolConfig(),

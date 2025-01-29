@@ -2,7 +2,7 @@ package cn.com.helei.bot.core.pool.env;
 
 
 import cn.com.helei.bot.core.pool.AbstractYamlLinePool;
-import cn.com.helei.bot.core.pool.network.NetworkProxyPool;
+import cn.com.helei.bot.core.pool.network.StaticProxyPool;
 
 public class BrowserEnvPool extends AbstractYamlLinePool<BrowserEnv> {
 
@@ -20,6 +20,6 @@ public class BrowserEnvPool extends AbstractYamlLinePool<BrowserEnv> {
 
 
     public static void main(String[] args) {
-        System.out.println(NetworkProxyPool.getDefault());
+        System.out.println(StaticProxyPool.getDefault());
     }
 }

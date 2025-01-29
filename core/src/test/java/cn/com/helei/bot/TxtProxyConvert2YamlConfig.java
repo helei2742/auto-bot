@@ -1,5 +1,7 @@
-package cn.com.helei.bot.core.pool.network;
+package cn.com.helei.bot;
 
+import cn.com.helei.bot.core.pool.network.NetworkProxy;
+import cn.com.helei.bot.core.pool.network.StaticProxyPool;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -39,7 +41,7 @@ public class TxtProxyConvert2YamlConfig {
 
             // 写入 YAML 文件
             try (FileWriter writer = new FileWriter(fileName1)) {
-                NetworkProxyPool data = new NetworkProxyPool();
+                StaticProxyPool data = new StaticProxyPool();
                 data.getList().addAll(set);
                 yaml.dump(data, writer);  // 将对象写入 YAML 文件
                 System.out.println("YAML 文件写入成功！");

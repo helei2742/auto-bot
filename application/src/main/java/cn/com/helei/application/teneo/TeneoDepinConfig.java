@@ -1,6 +1,6 @@
 package cn.com.helei.application.teneo;
 
-import cn.com.helei.bot.core.WSDepinBotConfig;
+import cn.com.helei.bot.core.config.WSDepinBotConfig;
 import lombok.*;
 
 @EqualsAndHashCode(callSuper = true)
@@ -9,4 +9,5 @@ public class TeneoDepinConfig extends WSDepinBotConfig {
 
     private String apiKey;
 
+    private String registerEmailPath;
 }

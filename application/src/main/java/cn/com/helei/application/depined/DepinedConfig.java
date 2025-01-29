@@ -1,6 +1,6 @@
 package cn.com.helei.application.depined;
 
-import cn.com.helei.bot.core.BaseDepinBotConfig;
+import cn.com.helei.bot.core.config.BaseDepinBotConfig;
 import cn.com.helei.bot.core.config.SystemConfig;
 import cn.com.helei.bot.core.util.YamlConfigLoadUtil;
 import lombok.Data;

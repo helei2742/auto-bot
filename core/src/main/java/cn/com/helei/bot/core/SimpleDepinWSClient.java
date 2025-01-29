@@ -1,6 +1,7 @@
 package cn.com.helei.bot.core;
 
 import cn.com.helei.bot.core.bot.WSMenuCMDLineDepinBot;
+import cn.com.helei.bot.core.config.BaseDepinBotConfig;
 import cn.com.helei.bot.core.dto.account.AccountContext;
 import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;

@@ -1,6 +1,6 @@
 package cn.com.helei.bot.core.bot;
 
-import cn.com.helei.bot.core.BaseDepinBotConfig;
+import cn.com.helei.bot.core.config.BaseDepinBotConfig;
 import cn.com.helei.bot.core.commandMenu.CommandMenuNode;
 import cn.com.helei.bot.core.commandMenu.DefaultMenuType;
 import cn.com.helei.bot.core.dto.account.AccountContext;
@@ -118,8 +118,8 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
     private CommandMenuNode buildProxyListMenuNode() {
         return new CommandMenuNode(
                 "查看代理列表",
-                "当前代理列表文件:" + getProxyPool().getConfigClassPath(),
-                getProxyPool()::printPool
+                "当前代理列表文件:" + getStaticProxyPool().getConfigClassPath(),
+                getStaticProxyPool()::printPool
         ).addSubMenu(REFRESH_NODE);
     }
 

@@ -91,4 +91,8 @@ public class AccountContext {
     public String getName() {
         return clientAccount.getName() == null ? clientAccount.getEmail() : clientAccount.getName();
     }
+
+    public String getSimpleInfo() {
+        return String.format("账户[%s]-代理[%s]", getName(), getProxy() == null ? "NO_PROXY" : getProxy().getAddressStr());
+    }
 }

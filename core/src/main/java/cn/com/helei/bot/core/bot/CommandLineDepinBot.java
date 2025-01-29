@@ -1,6 +1,6 @@
 package cn.com.helei.bot.core.bot;
 
-import cn.com.helei.bot.core.BaseDepinBotConfig;
+import cn.com.helei.bot.core.config.BaseDepinBotConfig;
 import cn.com.helei.bot.core.commandMenu.CommandMenuNode;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

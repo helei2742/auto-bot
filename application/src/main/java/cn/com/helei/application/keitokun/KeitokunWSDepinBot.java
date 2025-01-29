@@ -7,9 +7,10 @@ import cn.com.helei.bot.core.commandMenu.CommandMenuNode;
 import cn.com.helei.bot.core.commandMenu.DefaultMenuType;
 import cn.com.helei.bot.core.dto.account.AccountContext;
 import cn.com.helei.bot.core.dto.ConnectStatusInfo;
-import cn.com.helei.bot.core.exception.DepinBotInitException;
 import cn.com.helei.bot.core.exception.DepinBotStartException;
 import cn.com.helei.bot.core.netty.constants.WebsocketClientStatus;
+import cn.com.helei.bot.core.pool.account.DepinClientAccount;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JSONObject, JSONObject> {
@@ -31,6 +33,8 @@ public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JS
     private final static String TODAY_KEY = "today";
 
     private final static String TOKEN_KEY = "token";
+
+    private final static String UID_KEY = "uid";
 
     private final static Map<BaseDepinWSClient<JSONObject, JSONObject>, Integer> requestIdMap = new ConcurrentHashMap<>();
 
@@ -46,50 +50,92 @@ public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JS
     }
 
     @Override
-    protected void doInit() throws DepinBotInitException {
-        super.doInit();
-
-        // 将tokens加载到对应的accountContext
-        List<AccountContext> accounts = getAccounts();
-
+    protected void mainAccountCreateHandler(List<AccountContext> mainAccounts) {
         List<String> uids = getBotConfig().getUids();
         List<String> tokens = getBotConfig().getTokens();
         if (uids == null) return;
 
-        String today = LocalDate.now().toString();
 
         for (int i = 0; i < uids.size(); i++) {
-            if (i < accounts.size()) {
+            if (i < mainAccounts.size()) {
                 String uid = uids.get(i);
-                AccountContext accountContext = accounts.get(i);
 
-                String remainingTapStr = accountContext.getParam(TODAY_REMAINING_TAP_KEY);
-                String accountSaveDay = accountContext.getParam(TODAY_KEY);
+                AccountContext accountContext = mainAccounts.get(i);
 
-                // 今天还有没点击的,或者就没点击
-                if (accountSaveDay == null || remainingTapStr == null
-                        || !accountSaveDay.equals(today) || Integer.parseInt(remainingTapStr) >= 0
-                ) {
-                    accountContext.setParam("uid", uid);
-                    accountContext.setParam(TODAY_KEY, LocalDate.now().toString());
-                    accountContext.setConnectUrl(getBotConfig().getWsBaseUrl() + "?uid=" + uid);
-                } else {
-                    accountContext.setParam("uid", null);
-                }
-
+                accountContext.setParam(UID_KEY, uid);
                 accountContext.setParam(TOKEN_KEY, tokens.get(i));
             }
         }
     }
 
     @Override
+    protected void tempAccountCreateHandler(List<AccountContext> tempAccounts) {
+        List<String> extraAccounts = getBotConfig().getExtraAccounts();
+        if (extraAccounts == null) return;
+
+        for (int i = 0; i < tempAccounts.size(); i++) {
+            AccountContext accountContext = tempAccounts.get(i);
+            String[] split = extraAccounts.get(i).split(", ");
+            String uid = split[0];
+            String token = split[1];
+
+            accountContext.setParam(UID_KEY, uid);
+            accountContext.setParam(TOKEN_KEY, token);
+        }
+    }
+
+    @Override
+    protected List<DepinClientAccount> loadExtraBaseAccounts() {
+        AtomicInteger counter = new AtomicInteger(getAccountPool().getIdMapItem().size());
+        List<DepinClientAccount> list = new ArrayList<>();
+
+        for (int i = 0; i < getBotConfig().getExtraAccounts().size(); i++) {
+            DepinClientAccount depinClientAccount = new DepinClientAccount();
+
+            int id = counter.incrementAndGet();
+            depinClientAccount.setId(id);
+            depinClientAccount.setName("邀请小号-" + id);
+            list.add(depinClientAccount);
+        }
+
+        return list;
+    }
+
+    @Override
     public BaseDepinWSClient<JSONObject, JSONObject> buildAccountWSClient(AccountContext accountContext) {
+        String prefix = accountContext.getSimpleInfo();
+
+        // Step 1 检查是否有uid
         String uid = accountContext.getParam("uid");
 
         if (uid == null || "-1".equals(uid)) {
+            log.warn("{} uid为不可用", prefix);
             return null;
         }
 
+        // Step 2 判断今天的点击是否完成
+        String today = LocalDate.now().toString();
+        String remainingTapStr = accountContext.getParam(TODAY_REMAINING_TAP_KEY);
+        String accountSaveDay = accountContext.getParam(TODAY_KEY);
+
+        // 今天还有没点击的,或者就没点击、没点击完的
+        if (accountSaveDay == null || remainingTapStr == null
+                || !accountSaveDay.equals(today) || Integer.parseInt(remainingTapStr) > 0
+        ) {
+            accountContext.setParam(TODAY_KEY, LocalDate.now().toString());
+            if (StrUtil.isNotBlank(remainingTapStr) && Integer.parseInt(remainingTapStr) == 0) {
+                accountContext.setParam(TODAY_REMAINING_TAP_KEY, "500");
+            }
+            accountContext.setConnectUrl(getBotConfig().getWsBaseUrl() + "?uid=" + accountContext.getParam(UID_KEY));
+        } else {
+            // 今天点击完的
+            log.warn("{} 今日点击已完成", prefix);
+            return null;
+        }
+
+        log.info("{}-uid[{}] 开始创建ws客户端", prefix, uid);
+
+        // Step 3 创建ws客户端
         SimpleDepinWSClient simpleDepinWSClient = new SimpleDepinWSClient(this, accountContext);
 
         requestIdMap.put(simpleDepinWSClient, 0);
@@ -111,55 +157,29 @@ public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JS
     public void whenAccountClientStatusChange(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient, WebsocketClientStatus clientStatus) {
         AccountContext accountContext = depinWSClient.getAccountContext();
 
-        String printPrefix = String.format("账户[%s]-uid[%s]-proxy[%s]",
-                accountContext.getName(), accountContext.getParam("uid"), accountContext.getProxy().getAddressStr());
+        String printPrefix = accountContext.getSimpleInfo() + "-" + accountContext.getParam(UID_KEY);
 
         switch (clientStatus) {
             case RUNNING -> {
-                log.info("[{}] 连接ws服务器[{}]成功", printPrefix, accountContext.getConnectUrl());
+                log.info("{} 连接ws服务器[{}]成功", printPrefix, accountContext.getConnectUrl());
+
+                // 立马发一个
+                sendHeartbeat(depinWSClient, printPrefix, accountContext);
 
                 // 随机时间发送心跳
-                addTimer(() -> {
-                            try {
-                                TimeUnit.MILLISECONDS.sleep(random.nextLong(5000) + 500);
-
-                                Integer noResponseHeartBeatCount = clientNoResponseHeartbeatMap.get(depinWSClient);
-
-                                // 未收到响应的心跳数超过限制
-                                if (noResponseHeartBeatCount != null && noResponseHeartBeatCount > 10) {
-                                    depinWSClient.close();
-                                    clientNoResponseHeartbeatMap.remove(depinWSClient);
-                                    return false;
-                                }
-
-
-                                // 发送心跳
-                                JSONObject heartbeatMessage = getHeartbeatMessage(depinWSClient);
-                                log.info("[{}] 发送心跳[{}]", printPrefix, heartbeatMessage);
-
-                                depinWSClient.sendMessage(heartbeatMessage);
-                                accountContext.getConnectStatusInfo().getHeartBeat().getAndIncrement();
-
-                                //设置未响应心跳数
-                                clientNoResponseHeartbeatMap.compute(depinWSClient, (k, v) -> v == null ? 1 : v + 1);
-                            } catch (Exception e) {
-                                log.error("[{}] 发送心跳错误, {}", printPrefix, e.getMessage());
-                            }
-
-                            return true;
-                        },
+                addTimer(() -> sendHeartbeat(depinWSClient, printPrefix, accountContext),
                         getBotConfig().getAutoClaimIntervalSeconds() + random.nextInt(8),
                         TimeUnit.SECONDS,
                         accountContext
                 );
             }
             case STOP -> {
-                log.info("[{}] 连接到ws服务器[{}]失败", printPrefix, accountContext.getConnectUrl());
+                log.info("{} 连接到ws服务器[{}]失败", printPrefix, accountContext.getConnectUrl());
 
                 accountContext.getConnectStatusInfo().getRestart().incrementAndGet();
             }
             case SHUTDOWN -> {
-                log.info("[{}] ws连接已断开", printPrefix);
+                log.info("{} ws连接已断开", printPrefix);
                 requestIdMap.remove(depinWSClient);
             }
         }
@@ -173,35 +193,37 @@ public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JS
         AccountContext accountContext = depinWSClient.getAccountContext();
         ConnectStatusInfo connectStatusInfo = accountContext.getConnectStatusInfo();
 
+        String prefix = accountContext.getSimpleInfo() + "-" + accountContext.getParam("uid");
+
         switch (cmd) {
             case 1001:
                 clientNoResponseHeartbeatMap.remove(depinWSClient);
 
                 Integer totalNum = data.getInteger("totalNum");
                 Integer collectNum = data.getInteger("collectNum");
-                log.info("[{}]收到响应,[{}/{}](已点击/剩余)", accountContext.getParam("uid"),
-                        collectNum, totalNum);
-
-                accountContext.getRewordInfo().setTotalPoints(data.getInteger("keitoAmount") * 1.0);
-                accountContext.getRewordInfo().setTodayPoints(collectNum * 1.0);
-
-                connectStatusInfo.getHeartBeat().incrementAndGet();
 
                 accountContext.setParam(TODAY_REMAINING_TAP_KEY,
                         String.valueOf(Math.max(0, totalNum - collectNum)));
 
                 // 今日的领完了, 关闭
                 if (totalNum <= collectNum) {
-                    log.info("账户[{}]今日keitokun点击已完成，断开ws连接", accountContext.getParam("uid"));
-
-                    depinWSClient.shutdown();
+                    log.info("{} 今日keitokun点击已完成，断开ws连接", prefix);
                     removeAccountTimer(accountContext);
 
                     accountContext.setParam(TODAY_KEY, LocalDate.now().toString());
+                    depinWSClient.shutdown();
                 }
+
+                log.info("{} 收到响应,[{}/{}](已点击/剩余)", prefix,
+                        collectNum, totalNum);
+
+                accountContext.getRewordInfo().setTotalPoints(data.getInteger("keitoAmount") * 1.0);
+                accountContext.getRewordInfo().setTodayPoints(collectNum * 1.0);
+
+                connectStatusInfo.getHeartBeat().incrementAndGet();
                 break;
             default:
-                log.warn("[{}]收到未知响应[{}]", accountContext.getName(), response);
+                log.warn("{} 收到未知响应[{}]", prefix, response);
                 connectStatusInfo.getErrorHeartBeat().incrementAndGet();
         }
 
@@ -323,8 +345,8 @@ public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JS
         headers.put("x-token", token);
         headers.put("timestamp", String.valueOf(System.currentTimeMillis()));
 
-        String printStr = String.format("账户[%s]-uid[%s]-token[%s]",
-                accountContext.getName(), uid, token.substring(0, Math.min(16, token.length() - 1)));
+        String printStr = String.format("账户[%s]-uid[%s]-proxy[%s]",
+                accountContext.getName(), uid, accountContext.getProxy().getAddressStr());
 
         return syncRequest(
                 accountContext.getProxy(),
@@ -371,8 +393,8 @@ public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JS
         headers.put("x-token", token);
         headers.put("timestamp", String.valueOf(System.currentTimeMillis()));
 
-        String printStr = String.format("账户[%s]-uid[%s]-token[%s]",
-                accountContext.getName(), uid, token);
+        String printStr = String.format("账户[%s]-uid[%s]-proxy[%s]",
+                accountContext.getName(), uid, accountContext.getProxy().getAddressStr());
 
         return syncRequest(
                 accountContext.getProxy(),
@@ -396,6 +418,37 @@ public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JS
             return false;
         });
     }
+
+
+    private boolean sendHeartbeat(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient, String printPrefix, AccountContext accountContext) {
+        try {
+            TimeUnit.MILLISECONDS.sleep(random.nextLong(5000) + 500);
+
+            Integer noResponseHeartBeatCount = clientNoResponseHeartbeatMap.get(depinWSClient);
+
+            // 未收到响应的心跳数超过限制
+            if (noResponseHeartBeatCount != null && noResponseHeartBeatCount > 10) {
+                depinWSClient.close();
+                clientNoResponseHeartbeatMap.remove(depinWSClient);
+                return false;
+            }
+
+
+            // 发送心跳
+            JSONObject heartbeatMessage = getHeartbeatMessage(depinWSClient);
+            log.info("[{}] 发送心跳[{}]", printPrefix, heartbeatMessage);
+
+            depinWSClient.sendMessage(heartbeatMessage);
+            accountContext.getConnectStatusInfo().getHeartBeat().getAndIncrement();
+
+            //设置未响应心跳数
+            clientNoResponseHeartbeatMap.compute(depinWSClient, (k, v) -> v == null ? 1 : v + 1);
+        } catch (Exception e) {
+            log.error("[{}] 发送心跳错误, {}", printPrefix, e.getMessage());
+        }
+        return true;
+    }
+
 
     public static void main(String[] args) throws DepinBotStartException {
         KeitokunWSDepinBot mKeitokunWSDepinBot = new KeitokunWSDepinBot(KeitokunConfig.loadYamlConfig("keitokun.yaml"));

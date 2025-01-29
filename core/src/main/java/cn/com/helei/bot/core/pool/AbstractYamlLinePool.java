@@ -39,12 +39,16 @@ public class AbstractYamlLinePool<T extends AbstractYamlLineItem> {
     }
 
     public static <C extends AbstractYamlLinePool<?>> C loadYamlPool(
-            String classpath, String path, Class<C> cClass) {
+            String dirPath, String path, Class<C> cClass) {
 
-        C pool = YamlConfigLoadUtil.load(SystemConfig.CONFIG_DIR_BOT_PATH, classpath, Arrays.stream(path.split("\\.")).toList(), cClass);
+        C pool = YamlConfigLoadUtil.load(SystemConfig.CONFIG_DIR_BOT_PATH, dirPath, Arrays.stream(path.split("\\.")).toList(), cClass);
+        pool.setConfigClassPath(dirPath);
+
+        List<Object> list1 = pool.getList();
+
+        if (list1 == null || list1.isEmpty()) {return pool;}
 
         AtomicInteger id = new AtomicInteger();
-        List<Object> list1 = pool.getList();
         for (Object rawLine : list1) {
             AbstractYamlLineItem item;
 
@@ -57,13 +61,18 @@ public class AbstractYamlLinePool<T extends AbstractYamlLineItem> {
 
             int itemID = id.getAndIncrement();
             item.setId(itemID);
+
+            pool.itemCreatedHandler(item);
+
             pool.getIdMapItem().put(itemID, item);
             pool.getUseCountMap().put(itemID, 0);
         }
 
-        pool.setConfigClassPath(classpath);
 
         return pool;
+    }
+
+    protected void itemCreatedHandler(AbstractYamlLineItem item) {
     }
 
 
@@ -96,6 +105,8 @@ public class AbstractYamlLinePool<T extends AbstractYamlLineItem> {
      * @return List<T>
      */
     public synchronized List<T> getLessUsedItem(int count) {
+        if (getIdMapItem().isEmpty()) return Collections.emptyList();
+
         int batchSize = Math.min(count, getUseCountMap().size());
 
         List<T> res = new ArrayList<>(count);
@@ -117,6 +128,16 @@ public class AbstractYamlLinePool<T extends AbstractYamlLineItem> {
         }
 
         return res;
+    }
+
+    /**
+     * 查询未使用的id
+     *
+     * @return List<T>
+     */
+    public synchronized List<Integer> getUnUsedItemId() {
+       return getUseCountMap().entrySet().stream()
+                .filter(e -> e.getValue() == 0).map(Map.Entry::getKey).toList();
     }
 
     /**

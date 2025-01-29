@@ -1,6 +1,6 @@
 package cn.com.helei.application.gpu_net;
 
-import cn.com.helei.bot.core.BaseDepinBotConfig;
+import cn.com.helei.bot.core.config.BaseDepinBotConfig;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

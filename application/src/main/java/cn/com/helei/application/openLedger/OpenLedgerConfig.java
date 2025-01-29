@@ -1,6 +1,6 @@
 package cn.com.helei.application.openLedger;
 
-import cn.com.helei.bot.core.BaseDepinBotConfig;
+import cn.com.helei.bot.core.config.BaseDepinBotConfig;
 import cn.com.helei.bot.core.pool.account.DepinClientAccount;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

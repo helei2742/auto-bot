@@ -1,6 +1,6 @@
 package cn.com.helei.application.oasis;
 
-import cn.com.helei.bot.core.WSDepinBotConfig;
+import cn.com.helei.bot.core.config.WSDepinBotConfig;
 import cn.com.helei.bot.core.config.SystemConfig;
 import cn.com.helei.bot.core.util.YamlConfigLoadUtil;
 import lombok.Data;

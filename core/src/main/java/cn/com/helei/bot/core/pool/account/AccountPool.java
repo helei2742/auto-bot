@@ -11,7 +11,7 @@ public class AccountPool extends AbstractYamlLinePool<DepinClientAccount> {
 
     public static AccountPool getDefault() {
         return loadYamlPool(
-                "config/bot/account.yaml",
+                "account.yaml",
                 "bot.account",
                 AccountPool.class
         );

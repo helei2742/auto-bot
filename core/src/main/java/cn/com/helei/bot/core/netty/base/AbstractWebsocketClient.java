@@ -4,6 +4,7 @@ package cn.com.helei.bot.core.netty.base;
 import cn.com.helei.bot.core.pool.network.NetworkProxy;
 import cn.com.helei.bot.core.netty.constants.NettyConstants;
 import cn.com.helei.bot.core.netty.constants.WebsocketClientStatus;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
@@ -172,7 +173,11 @@ public abstract class AbstractWebsocketClient<P, T> {
                         ChannelPipeline p = ch.pipeline();
                         if (proxy != null) {
                             // 添加 HttpProxyHandler 作为代理
-                            p.addLast(new HttpProxyHandler(proxy.getAddress(), proxy.getUsername(), proxy.getPassword()));
+                            if (StrUtil.isNotBlank(proxy.getUsername())) {
+                                p.addLast(new HttpProxyHandler(proxy.getAddress(), proxy.getUsername(), proxy.getPassword()));
+                            } else {
+                                p.addLast(new HttpProxyHandler(proxy.getAddress()));
+                            }
                         }
 
                         if (sslCtx != null) {
@@ -502,7 +507,7 @@ public abstract class AbstractWebsocketClient<P, T> {
             if (clientStatus.equals(newStatus)) return;
 
             if (clientStatus.equals(WebsocketClientStatus.SHUTDOWN)) {
-                throw new IllegalArgumentException("client status is shutdown，new status is not" + newStatus);
+                throw new IllegalArgumentException("client status is shutdown，new status can not be " + newStatus);
             }
 
             try {

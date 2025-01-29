@@ -13,6 +13,8 @@ public class NetworkProxy extends AbstractYamlLineItem {
 
     private ProxyType proxyType;
 
+    private ProxyProtocal proxyProtocal;
+
     private String host;
 
     private int port;
@@ -27,21 +29,26 @@ public class NetworkProxy extends AbstractYamlLineItem {
         String[] split = proxyUrl.split("://");
         String protocol = split[0];
 
-        proxyType = switch (protocol) {
-            case "http" -> ProxyType.HTTP;
-            case "sockt5" -> ProxyType.SOCKT5;
+        proxyProtocal = switch (protocol) {
+            case "http" -> ProxyProtocal.HTTP;
+            case "sockt5" -> ProxyProtocal.SOCKT5;
             default -> throw new IllegalStateException("Unexpected value: " + protocol);
         };
         String[] upAndAddress = split[1].split("@");
 
-        String[] up = upAndAddress[0].split(":");
-        this.username = up[0];
-        this.password = up[1];
+        if (upAndAddress.length == 1) {
+            String[] address = upAndAddress[0].split(":");
+            this.host = address[0];
+            this.port = Integer.parseInt(address[1]);
+        } else if (upAndAddress.length == 2) {
+            String[] up = upAndAddress[0].split(":");
+            this.username = up[0];
+            this.password = up[1];
 
-        String[] address = upAndAddress[1].split(":");
-        this.host = address[0];
-        this.port = Integer.parseInt(address[1]);
-
+            String[] address = upAndAddress[1].split(":");
+            this.host = address[0];
+            this.port = Integer.parseInt(address[1]);
+        }
     }
 
     public SocketAddress getAddress() {

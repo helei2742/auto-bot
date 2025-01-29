@@ -29,7 +29,6 @@ public class TeneoWSDepinBot extends WSMenuCMDLineDepinBot<TeneoDepinConfig, JSO
 
     @Override
     public BaseDepinWSClient<JSONObject, JSONObject> buildAccountWSClient(AccountContext accountContext) {
-//        if (accountContext.getClientAccount().getId() != 0 ) return null;
 
         accountContext.setConnectUrl("wss://secure.ws.teneo.pro/websocket?accessToken="
                 + accountContext.getParam("token") + "&version=v0.2");
@@ -186,7 +185,7 @@ public class TeneoWSDepinBot extends WSMenuCMDLineDepinBot<TeneoDepinConfig, JSO
     }
 
     public static void main(String[] args) throws DepinBotStartException {
-        TeneoDepinConfig teneoDepinConfig = TeneoDepinConfig.loadYamlConfig("bot.app.teneo", "teneo.yaml", TeneoDepinConfig.class);
+        TeneoDepinConfig teneoDepinConfig = TeneoDepinConfig.loadYamlConfig("bot.app.teneo", "teneo/teneo.yaml", TeneoDepinConfig.class);
 
         TeneoWSDepinBot teneoWSDepinBot = new TeneoWSDepinBot(teneoDepinConfig);
 

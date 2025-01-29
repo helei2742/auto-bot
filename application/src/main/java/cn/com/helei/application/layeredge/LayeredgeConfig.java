@@ -1,5 +1,6 @@
 package cn.com.helei.application.layeredge;
 
+import cn.com.helei.bot.core.config.BaseDepinBotConfig;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
@@ -9,7 +10,7 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-public class LayeredgeConfig extends cn.com.helei.bot.core.BaseDepinBotConfig {
+public class LayeredgeConfig extends BaseDepinBotConfig {
 
 
     private List<String> publicKeys;

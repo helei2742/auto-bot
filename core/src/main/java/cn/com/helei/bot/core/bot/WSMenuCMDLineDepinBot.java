@@ -1,7 +1,7 @@
 package cn.com.helei.bot.core.bot;
 
 import cn.com.helei.bot.core.BaseDepinWSClient;
-import cn.com.helei.bot.core.WSDepinBotConfig;
+import cn.com.helei.bot.core.config.WSDepinBotConfig;
 import cn.com.helei.bot.core.dto.account.AccountContext;
 import cn.com.helei.bot.core.exception.DepinBotStatusException;
 import cn.com.helei.bot.core.netty.constants.WebsocketClientStatus;

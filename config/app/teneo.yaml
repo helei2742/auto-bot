@@ -1,7 +1,0 @@
-bot:
-  app:
-    teneo:
-      name: teneo
-      apiKey: "OwAG3kib1ivOJG4Y0OCZ8lJETa6ypvsDtGmdhcjA"
-      wsConnectCount: 50
-      autoClaimIntervalSeconds: 30
