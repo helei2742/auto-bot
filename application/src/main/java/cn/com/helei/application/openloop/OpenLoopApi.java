@@ -34,9 +34,9 @@ public class OpenLoopApi {
     public CompletableFuture<Boolean> registerUser(AccountContext accountContext, String inviteCode) {
         try {
             JSONObject account = new JSONObject();
-            String email = accountContext.getClientAccount().getEmail();
+            String email = accountContext.getAccountBaseInfo().getEmail();
             String name = accountContext.getName();
-            String password = accountContext.getClientAccount().getPassword();
+            String password = accountContext.getAccountBaseInfo().getPassword();
 
             account.put("username", email);
             account.put("name", name);
@@ -68,7 +68,7 @@ public class OpenLoopApi {
                         }
                     });
         } catch (Exception e) {
-            log.error("注册[{}]发生未知错误", accountContext.getClientAccount().getEmail(), e);
+            log.error("注册[{}]发生未知错误", accountContext.getAccountBaseInfo().getEmail(), e);
             return CompletableFuture.completedFuture(false);
         }
     }
@@ -82,9 +82,9 @@ public class OpenLoopApi {
     public CompletableFuture<String> loginUser(AccountContext accountContext) {
 
         JSONObject account = new JSONObject();
-        String email = accountContext.getClientAccount().getEmail();
+        String email = accountContext.getAccountBaseInfo().getEmail();
         account.put("username", email);
-        account.put("password", accountContext.getClientAccount().getPassword());
+        account.put("password", accountContext.getAccountBaseInfo().getPassword());
 
         Map<String, String> headers = getHeaders(accountContext);
 
@@ -117,11 +117,13 @@ public class OpenLoopApi {
      * @return JSONObject
      */
     public CompletableFuture<Boolean> shareBandwidth(AccountContext accountContext) {
+        String token = accountContext.getParam("token");
+
         JSONObject body = new JSONObject();
         body.put("quality", getRandomQuality());
 
         Map<String, String> headers = getHeaders(accountContext);
-        headers.put("Authorization", "Bearer " + accountContext.getParam("token"));
+        headers.put("Authorization", "Bearer " + token);
         headers.put("origin", "chrome-extension://effapmdildnpkiaeghlkicpfflpiambm");
         NetworkProxy proxy = accountContext.getProxy();
         String address = proxy.getHost() + ":" + proxy.getPort();

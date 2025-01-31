@@ -8,6 +8,7 @@ import cn.com.helei.bot.core.netty.constants.WebsocketClientStatus;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -48,8 +49,8 @@ public abstract class WSMenuCMDLineDepinBot<C extends WSDepinBotConfig, Req, Res
      * 开始账户claim
      */
     @Override
-    protected final void doAccountsClaim() {
-        getAccounts().forEach(account -> {
+    protected final void doAccountsClaim(String type, List<AccountContext> accountContexts) {
+        accountContexts.forEach(account -> {
             account.getConnectStatusInfo().setStartDateTime(LocalDateTime.now());
             getExecutorService().execute(() -> doAccountClaim(account));
         });
@@ -57,7 +58,7 @@ public abstract class WSMenuCMDLineDepinBot<C extends WSDepinBotConfig, Req, Res
 
 
     @Override
-    protected final boolean doAccountClaim(AccountContext accountContext) {
+    public final boolean doAccountClaim(AccountContext accountContext) {
         // Step 1 获取锁，才能进行claim
         try {
             wsConnectSemaphore.acquire();
@@ -94,7 +95,7 @@ public abstract class WSMenuCMDLineDepinBot<C extends WSDepinBotConfig, Req, Res
             return false;
         }
 
-        String accountName = accountContext.getClientAccount().getName();
+        String accountName = accountContext.getAccountBaseInfo().getName();
 
         //Step 4 设置相关回调
         WebsocketClientStatus currentStatus = depinWSClient.getClientStatus();

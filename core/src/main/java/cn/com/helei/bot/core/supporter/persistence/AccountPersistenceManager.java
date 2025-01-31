@@ -12,9 +12,11 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
 import java.lang.reflect.Field;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,19 +68,25 @@ public class AccountPersistenceManager {
         dumpDataSupporter.startDumpTask();
     }
 
+
     /**
-     * 持久化保存accountContexts
+     * 持久化保存typedAccountMap
      *
-     * @param accountContexts accountContexts
+     * @param typedAccountMap typedAccountMap
      */
-    public synchronized void persistenceAccountContexts(List<AccountContext> accountContexts) throws IOException {
-        Path path = Paths.get(getPersistencePath(botName, PERSISTENCE_PATH));
-        if (!Files.exists(path)) Files.createDirectories(path);
+    public synchronized void persistenceAccountContexts(Map<String, List<AccountContext>> typedAccountMap) throws IOException {
+        for (Map.Entry<String, List<AccountContext>> entry : typedAccountMap.entrySet()) {
+            String type = entry.getKey();
+            List<AccountContext> accountContexts = entry.getValue();
 
-        for (AccountContext accountContext : accountContexts) {
-            String fileName = String.format(PERSISTENCE_ACCOUNT_PATTERN, accountContext.getClientAccount().getId());
+            Path path = Paths.get(getPersistencePath(botName, PERSISTENCE_PATH + File.separator + type));
+            if (!Files.exists(path)) Files.createDirectories(path);
 
-            saveAccountContext(accountContext, path, fileName);
+            for (AccountContext accountContext : accountContexts) {
+                String fileName = String.format(PERSISTENCE_ACCOUNT_PATTERN, accountContext.getAccountBaseInfo().getId());
+
+                saveAccountContext(accountContext, path, fileName);
+            }
         }
     }
 
@@ -88,33 +96,47 @@ public class AccountPersistenceManager {
      *
      * @return PersistenceDto
      */
-    public synchronized Map<Integer, AccountContext> loadAccountContexts() {
+    public synchronized Map<String, List<AccountContext>> loadAccountContexts() {
         Path path = Paths.get(getPersistencePath(botName, PERSISTENCE_PATH));
 
         if (!Files.exists(path)) return null;
 
-        Map<Integer, AccountContext> map = new HashMap<>();
+        Map<String, List<AccountContext>> typedAccountMap = new HashMap<>();
 
-        try (Stream<Path> walk = Files.walk(path);) {
+        // Step 1 遍历 accounts 目录x
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(path, Files::isDirectory)) {
+            stream.forEach(dirPath -> {
+                if (!Files.exists(dirPath)) return;
 
-            for (Path filePath : walk.filter(Files::isRegularFile)
-                    .filter(p -> p.toString().contains("account-")).toList()) {
+                // Step 2 遍历 accounts/xxx 目录里的账户持久化文件
+                try (Stream<Path> dirWalk = Files.walk(dirPath)) {
 
-                Integer idx = Integer.valueOf(filePath.toString()
-                        .split("account-")[1].split(".json")[0]);
+                    List<AccountContext> accountContexts = new ArrayList<>();
+                    for (Path filePath : dirWalk.filter(Files::isRegularFile)
+                            .filter(p -> p.toString().contains("account-")).toList()) {
 
-                try (BufferedReader reader = new BufferedReader(new FileReader(filePath.toFile()));) {
-                    String line = null;
-                    StringBuilder sb = new StringBuilder();
-                    while ((line = reader.readLine()) != null) {
-                        sb.append(line);
+                        // 便利解析文件
+                        Integer idx = Integer.valueOf(filePath.toString()
+                                .split("account-")[1].split(".json")[0]);
+
+                        try (BufferedReader reader = new BufferedReader(new FileReader(filePath.toFile()));) {
+                            String line = null;
+                            StringBuilder sb = new StringBuilder();
+                            while ((line = reader.readLine()) != null) {
+                                sb.append(line);
+                            }
+
+                            accountContexts.add(JSONObject.parseObject(sb.toString(), AccountContext.class));
+                        }
                     }
 
-                    map.put(idx, JSONObject.parseObject(sb.toString(), AccountContext.class));
+                    typedAccountMap.put(dirPath.getFileName().toString(), accountContexts);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-            }
+            });
 
-            return map;
+            return typedAccountMap;
         } catch (Exception e) {
             throw new RuntimeException("读取账户文件失败", e);
         }
@@ -201,9 +223,9 @@ public class AccountPersistenceManager {
      * @param accountContext accountContext
      * @return path
      */
-    public static String getAccountContextPersistencePath(String botName, AccountContext accountContext) {
-        Path path = Paths.get(getPersistencePath(botName, PERSISTENCE_PATH));
-        String fileName = String.format(PERSISTENCE_ACCOUNT_PATTERN, accountContext.getClientAccount().getId());
+    public static String getAccountContextPersistencePath(String botName, String type, AccountContext accountContext) {
+        Path path = Paths.get(getPersistencePath(botName, PERSISTENCE_PATH + File.separator + type));
+        String fileName = String.format(PERSISTENCE_ACCOUNT_PATTERN, accountContext.getAccountBaseInfo().getId());
 
         return Paths.get(path.toString(), fileName).toString();
     }
@@ -257,7 +279,7 @@ public class AccountPersistenceManager {
      * @param subPath subPath
      * @return String
      */
-    private static String getPersistencePath(String botName, String subPath) {
+    public static String getPersistencePath(String botName, String subPath) {
         return FileUtil.RESOURCE_ROOT_DIR + File.separator + "data" + File.separator + botName + File.separator + subPath;
     }
 }

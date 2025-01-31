@@ -42,12 +42,12 @@ public class OasisDepinBot extends WSMenuCMDLineDepinBot<OasisBotConfig, JSONObj
     }
 
     @Override
-    protected CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode) {
+    public CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode) {
         return oasisApi.registerUser(accountContext, inviteCode);
     }
 
     @Override
-    protected CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext) {
+    public CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext) {
         return oasisApi
                 .loginUser(accountContext);
     }
@@ -72,7 +72,7 @@ public class OasisDepinBot extends WSMenuCMDLineDepinBot<OasisBotConfig, JSONObj
         httpHeaders.set("connection", "Upgrade");
 
         SimpleDepinWSClient simpleDepinWSClient = new SimpleDepinWSClient(this, accountContext);
-        simpleDepinWSClient.setHeaders(httpHeaders);
+//        simpleDepinWSClient.setHeaders(httpHeaders);
         return simpleDepinWSClient;
     }
 
@@ -157,7 +157,7 @@ public class OasisDepinBot extends WSMenuCMDLineDepinBot<OasisBotConfig, JSONObj
     public JSONObject getHeartbeatMessage(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient) {
         AccountContext accountContext = depinWSClient.getAccountContext();
 
-        log.info("账户[{}]发送心跳", accountContext.getClientAccount().getName());
+        log.info("账户[{}]发送心跳", accountContext.getAccountBaseInfo().getName());
 
         // 定时发送心跳
         JSONObject pingFrame = new JSONObject();
@@ -183,7 +183,7 @@ public class OasisDepinBot extends WSMenuCMDLineDepinBot<OasisBotConfig, JSONObj
      */
     private String resendCode() {
         List<CompletableFuture<Void>> futures = getAccounts().stream().map(accountContext -> {
-            String email = accountContext.getClientAccount().getEmail();
+            String email = accountContext.getAccountBaseInfo().getEmail();
 
             return oasisApi
                     .resendCode(accountContext)

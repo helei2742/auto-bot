@@ -48,17 +48,17 @@ public class LayeredgeDepinBot extends DefaultMenuCMDLineDepinBot<LayeredgeConfi
     }
 
     @Override
-    protected CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode) {
+    public CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode) {
         return null;
     }
 
     @Override
-    protected CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext) {
+    public CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext) {
         return null;
     }
 
     @Override
-    protected boolean doAccountClaim(AccountContext accountContext) {
+    public boolean doAccountClaim(AccountContext accountContext) {
         String url = "https://referral.layeredge.io/api/light-node/node-status/";
         NetworkProxy proxy = accountContext.getProxy();
         Map<String, String> headers = getHeaders(accountContext);
@@ -66,7 +66,7 @@ public class LayeredgeDepinBot extends DefaultMenuCMDLineDepinBot<LayeredgeConfi
         String address = accountContext.getParam("publicKey");
 
         String pintStr = String.format("id[%s]-账户[%s]-address[%s]-proxy[%s/%d]",
-                accountContext.getClientAccount().getId(), accountContext.getName(), address, proxy.getAddress(), proxy.getPort()
+                accountContext.getAccountBaseInfo().getId(), accountContext.getName(), address, proxy.getAddress(), proxy.getPort()
         );
 
         syncRequest(
@@ -96,7 +96,7 @@ public class LayeredgeDepinBot extends DefaultMenuCMDLineDepinBot<LayeredgeConfi
     }
 
     @Override
-    protected CompletableFuture<Boolean> updateAccountRewordInfo(AccountContext accountContext) {
+    public CompletableFuture<Boolean> updateAccountRewordInfo(AccountContext accountContext) {
         String url = "https://referral.layeredge.io/api/referral/wallet-details/";
         NetworkProxy proxy = accountContext.getProxy();
         Map<String, String> headers = getHeaders(accountContext);
@@ -104,7 +104,7 @@ public class LayeredgeDepinBot extends DefaultMenuCMDLineDepinBot<LayeredgeConfi
         String address = accountContext.getParam("publicKey");
 
         String pintStr = String.format("id[%s]-账户[%s]-address[%s]-proxy[%s/%d]",
-                accountContext.getClientAccount().getId(), accountContext.getName(), address, proxy.getAddress(), proxy.getPort()
+                accountContext.getAccountBaseInfo().getId(), accountContext.getName(), address, proxy.getAddress(), proxy.getPort()
         );
 
         return syncRequest(
@@ -128,7 +128,7 @@ public class LayeredgeDepinBot extends DefaultMenuCMDLineDepinBot<LayeredgeConfi
 
     private String dailySignIn() {
         getAccounts().forEach(accountContext -> {
-            if (accountContext.getClientAccount().getId() != 0) return;
+            if (accountContext.getAccountBaseInfo().getId() != 0) return;
             String url = "https://dashboard.layeredge.io/api/claim-points";
 
             NetworkProxy proxy = accountContext.getProxy();
@@ -139,7 +139,7 @@ public class LayeredgeDepinBot extends DefaultMenuCMDLineDepinBot<LayeredgeConfi
             body.put("walletAddress", address);
 
             String pintStr = String.format("id[%s]-账户[%s]-address[%s]-proxy[%s/%d]",
-                    accountContext.getClientAccount().getId(), accountContext.getName(), address, proxy.getAddress(), proxy.getPort()
+                    accountContext.getAccountBaseInfo().getId(), accountContext.getName(), address, proxy.getAddress(), proxy.getPort()
             );
 
             syncRequest(

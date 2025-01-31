@@ -8,12 +8,11 @@ import cn.com.helei.bot.core.commandMenu.DefaultMenuType;
 import cn.com.helei.bot.core.dto.account.AccountContext;
 import cn.com.helei.bot.core.dto.ConnectStatusInfo;
 import cn.com.helei.bot.core.exception.DepinBotStartException;
-import cn.com.helei.bot.core.exception.LoginException;
 import cn.com.helei.bot.core.netty.constants.WebsocketClientStatus;
-import cn.com.helei.bot.core.pool.network.NetworkProxy;
 import com.alibaba.fastjson.JSONObject;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import lombok.extern.slf4j.Slf4j;
+
 
 import java.util.List;
 import java.util.Map;
@@ -22,9 +21,12 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class TeneoWSDepinBot extends WSMenuCMDLineDepinBot<TeneoDepinConfig, JSONObject, JSONObject> {
 
+    private final TeneoApi teneoApi;
 
     public TeneoWSDepinBot(TeneoDepinConfig config) {
         super(config);
+
+        this.teneoApi = new TeneoApi(this);
     }
 
     @Override
@@ -41,7 +43,6 @@ public class TeneoWSDepinBot extends WSMenuCMDLineDepinBot<TeneoDepinConfig, JSO
 
         headers.add("Host", "secure.ws.teneo.pro");
         headers.add("Origin", "chrome-extension://emcclcoaglgcpoognfiggmhnhgabppkm");
-        headers.add("Upgrade", "websocket");
 
         simpleDepinWSClient.setHeaders(headers);
 
@@ -126,62 +127,27 @@ public class TeneoWSDepinBot extends WSMenuCMDLineDepinBot<TeneoDepinConfig, JSO
         JSONObject ping = new JSONObject();
         ping.put("type", "ping");
 
-        log.info("账户[{}]发送ping", depinWSClient.getAccountContext().getName());
+        log.info("{} 发送ping", depinWSClient.getAccountContext().getSimpleInfo());
         return ping;
     }
 
     @Override
     protected void addCustomMenuNode(List<DefaultMenuType> defaultMenuTypes, CommandMenuNode mainMenu) {
         defaultMenuTypes.add(DefaultMenuType.LOGIN);
+        defaultMenuTypes.add(DefaultMenuType.REGISTER);
         defaultMenuTypes.add(DefaultMenuType.START_ACCOUNT_CLAIM);
+
+        mainMenu.addSubMenu(new CommandMenuNode("验证邮箱", "开始验证注册邮箱", teneoApi::verifierEmail));
     }
 
     @Override
-    protected CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode) {
-        return null;
+    public CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode) {
+        return teneoApi.registerAccount(accountContext, inviteCode);
     }
 
     @Override
-    protected CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext) {
-        String url = "https://auth.teneo.pro/api/login";
-
-        NetworkProxy proxy = accountContext.getProxy();
-
-        JSONObject body = new JSONObject();
-        body.put("email", accountContext.getClientAccount().getEmail());
-        String password = accountContext.getClientAccount().getPassword();
-        if (!password.matches(".*[0-9].*")) {
-            password = password + "1";
-        }
-        body.put("password", password);
-
-        String printStr = String.format("账户[%s]-proxy[%s:{%d]",
-                accountContext.getClientAccount().getEmail(), proxy.getHost(), proxy.getPort());
-
-        Map<String, String> headers = accountContext.getBrowserEnv().getHeaders();
-        headers.put("origin", "https://dashboard.teneo.pro");
-        headers.put("referer", "https://dashboard.teneo.pro/");
-        headers.put("X-API-KEY", getBotConfig().getApiKey());
-
-
-        return syncRequest(
-                proxy,
-                url,
-                "post",
-                headers,
-                null,
-                body,
-                () -> printStr
-        ).thenApplyAsync(responseStr -> {
-            JSONObject response = JSONObject.parseObject(responseStr);
-            if (response != null && responseStr.contains("access_token")) {
-                String string = response.getString("access_token");
-                log.info("{} token 获取成功,{}", printStr, string);
-                return string;
-            } else {
-                throw new LoginException(printStr + " 登录获取token失败, response: " + responseStr);
-            }
-        });
+    public CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext) {
+        return teneoApi.login(accountContext);
     }
 
     public static void main(String[] args) throws DepinBotStartException {

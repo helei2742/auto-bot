@@ -174,9 +174,9 @@ public abstract class AbstractWebsocketClient<P, T> {
                         if (proxy != null) {
                             // 添加 HttpProxyHandler 作为代理
                             if (StrUtil.isNotBlank(proxy.getUsername())) {
-                                p.addLast(new HttpProxyHandler(proxy.getAddress(), proxy.getUsername(), proxy.getPassword()));
+                                p.addFirst(new HttpProxyHandler(proxy.getAddress(), proxy.getUsername(), proxy.getPassword()));
                             } else {
-                                p.addLast(new HttpProxyHandler(proxy.getAddress()));
+                                p.addFirst(new HttpProxyHandler(proxy.getAddress()));
                             }
                         }
 
@@ -294,7 +294,7 @@ public abstract class AbstractWebsocketClient<P, T> {
                         reconnectTimes.decrementAndGet();
                     }, reconnectCountDownSecond, TimeUnit.SECONDS);
 
-                    log.info("start connect client [{}], url[{}], current times [{}]", name, url, reconnectTimes.get());
+                    log.info("start connect client [{}], url[{}], current times [{}]", name, uri, reconnectTimes.get());
 
                     //Step 4.2 latch用于同步等等链接完成
                     CountDownLatch latch = new CountDownLatch(1);

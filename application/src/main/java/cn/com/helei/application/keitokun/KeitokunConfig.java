@@ -14,14 +14,12 @@ import java.util.List;
 @ToString(callSuper = true)
 public class KeitokunConfig extends WSDepinBotConfig {
 
-    private List<String> uids;
-
-    private List<String> tokens;
-
     private List<String> extraAccounts;
 
-    public static KeitokunConfig loadYamlConfig(String classpath) {
-        return YamlConfigLoadUtil.load(SystemConfig.CONFIG_DIR_APP_PATH, classpath, List.of("depin", "app", "keitokun"), KeitokunConfig.class);
+    private String tokenAndUidFileName;
+
+    public static KeitokunConfig loadYamlConfig(String appDirPath) {
+        return YamlConfigLoadUtil.load(SystemConfig.CONFIG_DIR_APP_PATH, appDirPath, List.of("depin", "app", "keitokun"), KeitokunConfig.class);
     }
 
 

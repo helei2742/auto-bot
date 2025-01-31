@@ -74,6 +74,7 @@ public abstract class BaseWebSocketClientHandler<P, T> extends SimpleChannelInbo
         if (!handshaker.isHandshakeComplete()) {
             if (msg instanceof FullHttpResponse response) {
                 try {
+
                     handshaker.finishHandshake(ch, response);
                     log.info("WebSocket client [{}] Handshake complete!", ch.attr(NettyConstants.CLIENT_NAME).get());
                     handshakeFuture.setSuccess();

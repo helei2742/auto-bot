@@ -1,6 +1,7 @@
 package cn.com.helei.bot.core.util;
 
 import cn.com.helei.bot.core.pool.network.NetworkProxy;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
@@ -28,15 +29,17 @@ public class RestApiClient {
     ) {
         this.executorService = executorService;
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
+
         if (proxy != null) {
-            builder.proxy(new Proxy(Proxy.Type.HTTP, proxy.getAddress()))
-                    .proxyAuthenticator((route, response) -> {
-                        String credential = Credentials.basic(proxy.getUsername(), proxy.getPassword());
-                        return response.request().newBuilder()
-                                .header("Proxy-Authorization", credential)
-                                .build();
-                    })
-            ;
+            builder.proxy(new Proxy(Proxy.Type.HTTP, proxy.getAddress()));
+            if (StrUtil.isNotBlank(proxy.getUsername())) {
+                builder .proxyAuthenticator((route, response) -> {
+                    String credential = Credentials.basic(proxy.getUsername(), proxy.getPassword());
+                    return response.request().newBuilder()
+                            .header("Proxy-Authorization", credential)
+                            .build();
+                });
+            }
         }
         this.okHttpClient = builder.build();
     }

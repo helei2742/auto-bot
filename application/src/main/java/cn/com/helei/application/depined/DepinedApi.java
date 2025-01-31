@@ -1,7 +1,7 @@
 package cn.com.helei.application.depined;
 
 import cn.com.helei.bot.core.dto.account.AccountContext;
-import cn.com.helei.bot.core.pool.account.DepinClientAccount;
+import cn.com.helei.bot.core.dto.account.AccountBaseInfo;
 import cn.com.helei.bot.core.pool.env.BrowserEnv;
 import cn.com.helei.bot.core.exception.RegisterException;
 import cn.com.helei.bot.core.pool.network.NetworkProxy;
@@ -23,7 +23,7 @@ public class DepinedApi {
     }
 
     public CompletableFuture<Void> register(NetworkProxy proxy, AccountContext accountContext) {
-        DepinClientAccount clientAccount = accountContext.getClientAccount();
+        AccountBaseInfo clientAccount = accountContext.getAccountBaseInfo();
         JSONObject body = new JSONObject();
         body.put("email", clientAccount.getEmail());
         body.put("password", clientAccount.getPassword());
@@ -71,7 +71,7 @@ public class DepinedApi {
 
     public CompletableFuture<Void> setUsername(NetworkProxy proxy, AccountContext accountContext) {
         String token = accountContext.getParam("token");
-        String username = accountContext.getClientAccount().getEmail().split("@")[0];
+        String username = accountContext.getAccountBaseInfo().getEmail().split("@")[0];
 
         JSONObject body = new JSONObject();
 

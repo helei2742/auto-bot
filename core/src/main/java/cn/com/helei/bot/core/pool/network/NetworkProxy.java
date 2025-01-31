@@ -11,6 +11,8 @@ import java.net.SocketAddress;
 @NoArgsConstructor
 public class NetworkProxy extends AbstractYamlLineItem {
 
+    public static final NetworkProxy DEFAULT = new NetworkProxy();
+
     private ProxyType proxyType;
 
     private ProxyProtocal proxyProtocal;

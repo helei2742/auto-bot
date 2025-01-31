@@ -31,9 +31,9 @@ public class OasisApi {
     public CompletableFuture<Boolean> registerUser(AccountContext accountContext, String inviteCode) {
 
         JSONObject account = new JSONObject();
-        String email = accountContext.getClientAccount().getEmail();
+        String email = accountContext.getAccountBaseInfo().getEmail();
         account.put("email", email);
-        account.put("password", accountContext.getClientAccount().getPassword());
+        account.put("password", accountContext.getAccountBaseInfo().getPassword());
         account.put("referralCode", inviteCode);
 
         Map<String, String> headers = accountContext.getBrowserEnv().getHeaders();
@@ -67,8 +67,8 @@ public class OasisApi {
     public CompletableFuture<String> loginUser(AccountContext accountContext) {
 
         JSONObject account = new JSONObject();
-        account.put("email", accountContext.getClientAccount().getEmail());
-        account.put("password", accountContext.getClientAccount().getPassword());
+        account.put("email", accountContext.getAccountBaseInfo().getEmail());
+        account.put("password", accountContext.getAccountBaseInfo().getPassword());
         account.put("rememberSession", true);
 
         Map<String, String> headers = accountContext.getBrowserEnv().getHeaders();
@@ -87,7 +87,7 @@ public class OasisApi {
                     String token = result.getString("token");
 
                     if (StrUtil.isNotBlank(token)) {
-                        log.info("邮箱[{}]登录成功，token[{}]", accountContext.getClientAccount().getEmail(), token);
+                        log.info("邮箱[{}]登录成功，token[{}]", accountContext.getAccountBaseInfo().getEmail(), token);
                         accountContext.setParam("token", token);
                         return token;
                     }
@@ -104,7 +104,7 @@ public class OasisApi {
     public CompletableFuture<Boolean> resendCode(AccountContext accountContext) {
 
         JSONObject account = new JSONObject();
-        account.put("email", accountContext.getClientAccount().getEmail());
+        account.put("email", accountContext.getAccountBaseInfo().getEmail());
 
         Map<String, String> headers = accountContext.getBrowserEnv().getHeaders();
         headers.put("Content-Type", "application/json; charset=utf-8");

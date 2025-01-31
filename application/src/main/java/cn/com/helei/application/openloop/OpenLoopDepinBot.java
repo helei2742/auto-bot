@@ -33,7 +33,7 @@ public class OpenLoopDepinBot extends DefaultMenuCMDLineDepinBot<OpenLoopConfig>
     }
 
     @Override
-    protected CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode) {
+    public CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode) {
         return openLoopApi.registerUser(
                 accountContext,
                 inviteCode
@@ -41,14 +41,14 @@ public class OpenLoopDepinBot extends DefaultMenuCMDLineDepinBot<OpenLoopConfig>
     }
 
     @Override
-    protected CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext) {
+    public CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext) {
         return openLoopApi.loginUser(
                 accountContext
         );
     }
 
     @Override
-    protected boolean doAccountClaim(AccountContext accountContext) {
+    public boolean doAccountClaim(AccountContext accountContext) {
         try {
             return openLoopApi.shareBandwidth(accountContext).get();
         } catch (InterruptedException | ExecutionException e) {

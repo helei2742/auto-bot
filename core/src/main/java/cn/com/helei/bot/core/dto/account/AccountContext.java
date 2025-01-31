@@ -4,10 +4,10 @@ import cn.com.helei.bot.core.dto.ConnectStatusInfo;
 import cn.com.helei.bot.core.pool.twitter.Twitter;
 import cn.com.helei.bot.core.supporter.propertylisten.PropertyChangeListenClass;
 import cn.com.helei.bot.core.supporter.propertylisten.PropertyChangeListenField;
-import cn.com.helei.bot.core.pool.account.DepinClientAccount;
 import cn.com.helei.bot.core.pool.env.BrowserEnv;
 import cn.com.helei.bot.core.pool.network.NetworkProxy;
 import cn.com.helei.bot.core.dto.RewordInfo;
+import com.alibaba.fastjson.annotation.JSONField;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -32,7 +32,7 @@ public class AccountContext {
      * client 账户
      */
     @PropertyChangeListenField
-    private DepinClientAccount clientAccount;
+    private AccountBaseInfo accountBaseInfo;
 
     /**
      * 账户对应的twitter
@@ -66,7 +66,8 @@ public class AccountContext {
     private RewordInfo rewordInfo = new RewordInfo();
 
     @PropertyChangeListenField
-    private final Map<String, String> params = new HashMap<>();
+    @JSONField(serialize = true, deserialize = true)
+    private Map<String, String> params = new HashMap<>();
 
 
     private LocalDateTime saveDatetime;
@@ -81,15 +82,15 @@ public class AccountContext {
     }
 
     public Map<String, String> getWSHeaders() {
-        return clientAccount.getWSHeaders();
+        return accountBaseInfo.getWSHeaders();
     }
 
     public Map<String, String> getRestHeaders() {
-        return clientAccount.getRestHeaders();
+        return accountBaseInfo.getRestHeaders();
     }
 
     public String getName() {
-        return clientAccount.getName() == null ? clientAccount.getEmail() : clientAccount.getName();
+        return accountBaseInfo.getName() == null ? accountBaseInfo.getEmail() : accountBaseInfo.getName();
     }
 
     public String getSimpleInfo() {

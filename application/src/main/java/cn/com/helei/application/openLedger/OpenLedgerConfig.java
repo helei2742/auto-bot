@@ -1,7 +1,7 @@
 package cn.com.helei.application.openLedger;
 
 import cn.com.helei.bot.core.config.BaseDepinBotConfig;
-import cn.com.helei.bot.core.pool.account.DepinClientAccount;
+import cn.com.helei.bot.core.dto.account.AccountBaseInfo;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -29,7 +29,7 @@ public class OpenLedgerConfig extends BaseDepinBotConfig {
     /**
      * 账户列表
      */
-    private List<OpenLedgerAccount> openLedgerAccounts;
+    private List<OpenLedgerAccountBaseInfo> openLedgerAccounts;
 
 
     public static void main(String[] args) {
@@ -65,7 +65,7 @@ public class OpenLedgerConfig extends BaseDepinBotConfig {
 
     @EqualsAndHashCode(callSuper = true)
     @Data
-    public static class OpenLedgerAccount extends DepinClientAccount {
+    public static class OpenLedgerAccountBaseInfo extends AccountBaseInfo {
 
         private final static String printTemplate = "%-25s\t%-25s\t%-5s";
 

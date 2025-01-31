@@ -4,35 +4,23 @@ import cn.com.helei.bot.core.config.BaseDepinBotConfig;
 import cn.com.helei.bot.core.commandMenu.CommandMenuNode;
 import cn.com.helei.bot.core.commandMenu.DefaultMenuType;
 import cn.com.helei.bot.core.dto.account.AccountContext;
-import cn.hutool.core.util.BooleanUtil;
-import cn.hutool.core.util.StrUtil;
+import cn.com.helei.bot.core.supporter.AccountInfoPrinter;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 
 @Slf4j
 public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> extends CommandLineDepinBot {
 
-
-    private static final String INVITE_CODE_KEY = "inviteCode";
-
     /**
      * 刷新节点
      */
     public static final CommandMenuNode REFRESH_NODE = new CommandMenuNode(true, "刷新", "当前数据已刷新", null);
-
-    /**
-     * 是否开始过链接所有账号
-     */
-    private final AtomicBoolean isStartAccountConnected = new AtomicBoolean(false);
 
 
     private final List<DefaultMenuType> defaultMenuTypes = new ArrayList<>(List.of(
@@ -52,7 +40,7 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
 
 
     @Override
-    protected CompletableFuture<Boolean> updateAccountRewordInfo(AccountContext accountContext) {
+    public CompletableFuture<Boolean> updateAccountRewordInfo(AccountContext accountContext) {
         return CompletableFuture.completedFuture(false);
     }
 
@@ -72,6 +60,13 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
         }
     }
 
+    /**
+     * 添加自定义菜单节点, defaultMenuTypes中可额外添加菜单类型
+     *
+     * @param defaultMenuTypes defaultMenuTypes
+     * @param mainMenu         mainMenu
+     */
+    protected abstract void addCustomMenuNode(List<DefaultMenuType> defaultMenuTypes, CommandMenuNode mainMenu);
 
     /**
      * 构建注册菜单节点
@@ -80,24 +75,47 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
      */
     private CommandMenuNode buildRegisterMenuNode() {
         CommandMenuNode registerMenu = new CommandMenuNode("注册",
-                "请确认邀请码后运行", this::printCurrentInvite);
+                "请确认设置后运行", this::printCurrentRegisterConfig);
 
         CommandMenuNode interInvite = new CommandMenuNode(
                 "填入邀请码",
                 "请输入邀请码：",
-                this::printCurrentInvite
+                this::printCurrentRegisterConfig
         );
         interInvite.setResolveInput(input -> {
             log.info("邀请码修改[{}]->[{}]", botConfig.getConfig(INVITE_CODE_KEY), input);
             botConfig.setConfig(INVITE_CODE_KEY, input);
         });
 
+        CommandMenuNode typeSelect = new CommandMenuNode(
+                "选择账户类型",
+                "请选择账户类型",
+                this::printCurrentRegisterConfig
+        );
 
-        return registerMenu.addSubMenu(interInvite)
+        List<String> typeList = new ArrayList<>(getTypedAccountMap().keySet());
+        for (String type : typeList) {
+            CommandMenuNode typeInput = new CommandMenuNode(
+                    true,
+                    type + " 账户",
+                    "type",
+                    () -> {
+                        botConfig.setConfig(REGISTER_TYPE_KEY, type);
+                        return "注册[" + type + "]类型账户，共：" + getTypedAccountMap().get(type).size();
+                    }
+            );
+
+            typeSelect.addSubMenu(typeInput);
+        }
+
+
+        return registerMenu
+                .addSubMenu(interInvite)
+                .addSubMenu(typeSelect)
                 .addSubMenu(new CommandMenuNode(
                         "开始注册",
                         "开始注册所有账号...",
-                        this::registerAllAccount
+                        this::registerTypeAccount
                 ));
     }
 
@@ -107,7 +125,18 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
      * @return CommandMenuNode
      */
     private CommandMenuNode buildQueryTokenMenuNode() {
-        return new CommandMenuNode("获取token", "开始获取所有账号token...", this::loadAllAccountToken);
+        CommandMenuNode menuNode = new CommandMenuNode("获取token", "请选择邮箱类型", null);
+
+        for (String type : getTypedAccountMap().keySet()) {
+            CommandMenuNode typeInput = new CommandMenuNode(
+                    true,
+                    type + " 账户",
+                    "type",
+                    () -> this.loadTypedAccountToken(type)
+            );
+            menuNode.addSubMenu(typeInput);
+        }
+        return menuNode;
     }
 
     /**
@@ -145,7 +174,7 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
         CommandMenuNode accountListMenuNode = new CommandMenuNode(
                 "查看账号",
                 "当前账户详情列表:",
-                this::printAccountList
+                () -> AccountInfoPrinter.printAccountList(getTypedAccountMap())
         );
 
         return accountListMenuNode
@@ -163,7 +192,7 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
         return new CommandMenuNode(
                 "查看账号收益",
                 "账号收益详情列表:",
-                this::printAccountReward
+                () -> AccountInfoPrinter.printAccountReward(getTypedAccountMap())
         ).addSubMenu(REFRESH_NODE);
     }
 
@@ -176,7 +205,7 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
         return new CommandMenuNode(
                 "查看账号连接情况",
                 "账号连接情况列表:",
-                this::printAccountConnectStatusList
+                () -> AccountInfoPrinter.printAccountConnectStatusList(getTypedAccountMap())
         ).addSubMenu(REFRESH_NODE);
     }
 
@@ -189,157 +218,42 @@ public abstract class DefaultMenuCMDLineDepinBot<C extends BaseDepinBotConfig> e
     private CommandMenuNode buildStartAccountConnectMenuNode() {
         CommandMenuNode menuNode = new CommandMenuNode(
                 "启动账号",
-                "启动账号界面，",
-                this::startAccountsClaim
+                "选择启动账号类型",
+                null
         );
 
+        Set<String> typeSet = getTypedAccountMap().keySet();
+        for (String type : typeSet) {
+            CommandMenuNode typeInput = new CommandMenuNode(true, type + " 账户", "type",
+                    () -> startAccountsClaim(type, getTypedAccountMap().get(type))
+            );
+
+            menuNode.addSubMenu(typeInput);
+        }
+        menuNode.addSubMenu(new CommandMenuNode(true, "全部类型账户", "", () -> {
+            getTypedAccountMap().forEach(this::startAccountsClaim);
+
+            return "开始全部类型" + typeSet + "账户";
+        }));
+
         CommandMenuNode refresh = new CommandMenuNode(true, "刷新", "当前账户列表",
-                this::printAccountList);
+                () -> AccountInfoPrinter.printAccountList(getTypedAccountMap()));
 
         menuNode.addSubMenu(refresh);
         return menuNode;
     }
 
-    /**
-     * 注册所有账号
-     *
-     * @return String
-     */
-    private String registerAllAccount() {
-        CompletableFuture.supplyAsync(() -> {
-            List<CompletableFuture<Boolean>> futures = getAccounts().stream()
-                    .map(account -> {
-                        // 账户注册过，
-                        if (BooleanUtil.isTrue(account.getClientAccount().getSignUp())) {
-                            log.warn("账户[{}]-email[{}]注册过", account.getName(), account.getClientAccount().getEmail());
-                            return CompletableFuture.completedFuture(false);
-                        } else {
-                            return registerAccount(account, botConfig.getConfig(INVITE_CODE_KEY));
-                        }
-                    }).toList();
-
-            int successCount = 0;
-            for (int i = 0; i < futures.size(); i++) {
-                CompletableFuture<Boolean> future = futures.get(i);
-                AccountContext accountContext = getAccounts().get(i);
-                try {
-                    if (future.get()) {
-                        //注册成功
-                        successCount++;
-                        accountContext.getClientAccount().setSignUp(true);
-                    }
-                } catch (InterruptedException | ExecutionException e) {
-                    log.error("注册账号[{}]发生错误, {}", accountContext.getName(), e.getMessage());
-                }
-            }
-
-            return String.format("所有账号注册完毕，[%d/%d]", successCount, getAccounts().size());
-        }, getExecutorService());
-
-        return "已开始账户注册";
-    }
-
-    /**
-     * 获取账号的token
-     *
-     * @return String
-     */
-    public String loadAllAccountToken() {
-        List<CompletableFuture<String>> futures = getAccounts().stream()
-                .map(this::requestTokenOfAccount).toList();
-
-        int successCount = 0;
-        for (int i = 0; i < futures.size(); i++) {
-            CompletableFuture<String> future = futures.get(i);
-            AccountContext accountContext = getAccounts().get(i);
-            try {
-                String token = future.get();
-                if (StrUtil.isNotBlank(token)) {
-                    successCount++;
-                    accountContext.getParams().put("token", token);
-                }
-            } catch (InterruptedException | ExecutionException e) {
-                log.error("账号[{}]获取token发生错误, {}", accountContext.getName(), e.getMessage());
-            }
-        }
-
-        return String.format("所有账号获取token完毕，[%d/%d]", successCount, getAccounts().size());
-    }
-
-
-    /**
-     * 开始所有账户Claim
-     *
-     * @return String 打印的消息
-     */
-    private String startAccountsClaim() {
-        if (isStartAccountConnected.compareAndSet(false, true)) {
-
-            doAccountsClaim();
-
-            return "已开始账号自动收获";
-        }
-
-        return "账号自动收获中";
-    }
-
-    /**
-     * 开始账户claim
-     */
-    protected void doAccountsClaim() {
-        getAccounts().forEach(account -> {
-            account.getConnectStatusInfo().setStartDateTime(LocalDateTime.now());
-
-            addTimer(
-                    () -> doAccountClaim(account),
-                    getBotConfig().getAutoClaimIntervalSeconds(),
-                    TimeUnit.SECONDS,
-                    account
-            );
-        });
-    }
 
     /**
      * 打印当前的邀请码
      *
      * @return 邀请码
      */
-    private String printCurrentInvite() {
-        String inviteCode = botConfig.getConfigMap().get("inviteCode");
-        return "(当前邀请码为:" + inviteCode + ")";
+    private String printCurrentRegisterConfig() {
+        String inviteCode = botConfig.getConfigMap().get(INVITE_CODE_KEY);
+        String registerType = botConfig.getConfigMap().get(REGISTER_TYPE_KEY);
+
+        return "(当前邀请码为:" + inviteCode + ")\n"
+                + "(当前注册类型为:" + registerType + ")\n";
     }
-
-    /**
-     * 添加自定义菜单节点, defaultMenuTypes中可额外添加菜单类型
-     *
-     * @param defaultMenuTypes defaultMenuTypes
-     * @param mainMenu         mainMenu
-     */
-    protected abstract void addCustomMenuNode(List<DefaultMenuType> defaultMenuTypes, CommandMenuNode mainMenu);
-
-    /**
-     * 注册账户
-     *
-     * @param accountContext accountContext
-     * @param inviteCode     inviteCode
-     * @return CompletableFuture<Boolean> 是否注册成功
-     */
-    protected abstract CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode);
-
-    /**
-     * 请求获取账户token
-     *
-     * @param accountContext accountContext
-     * @return CompletableFuture<String> token
-     */
-    protected abstract CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext);
-
-
-    /**
-     * 开始账户自动收获,会自动循环。返回false则跳出自动循环
-     *
-     * @return CompletableFuture<Void>
-     */
-    protected abstract boolean doAccountClaim(AccountContext accountContext);
-
 }

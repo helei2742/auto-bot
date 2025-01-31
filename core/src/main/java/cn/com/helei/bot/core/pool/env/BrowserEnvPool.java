@@ -10,16 +10,4 @@ public class BrowserEnvPool extends AbstractYamlLinePool<BrowserEnv> {
         super(BrowserEnv.class);
     }
 
-    public static BrowserEnvPool getDefault() {
-        return loadYamlPool(
-                "bot/browser-env.yaml",
-                "bot.browser.env",
-                BrowserEnvPool.class
-        );
-    }
-
-
-    public static void main(String[] args) {
-        System.out.println(StaticProxyPool.getDefault());
-    }
 }

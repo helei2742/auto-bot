@@ -16,23 +16,27 @@ public abstract class BaseDepinWSClientHandler<Req, Resp> extends AbstractWebSoc
     protected void handleAllIdle(ChannelHandlerContext ctx) {
         BaseDepinWSClient<Req, Resp> depinWSClient = getDepinWSClient();
 
-        depinWSClient
-                .sendMessage(depinWSClient.getHeartbeatMessage(depinWSClient))
-                .whenCompleteAsync((unused, throwable) -> {
-                    ConnectStatusInfo connectStatusInfo = depinWSClient
-                            .getAccountContext()
-                            .getConnectStatusInfo();
 
-                    if (throwable != null) {
-                        log.error("client[{}] 发送心跳异常", websocketClient.getName(), throwable);
-                        // 发送心跳失败，记录次数
-                        connectStatusInfo.getErrorHeartBeat().getAndIncrement();
-                    }
+        Req heartbeatMessage = depinWSClient.getHeartbeatMessage(depinWSClient);
+        if (heartbeatMessage != null) {
+            depinWSClient
+                    .sendMessage(heartbeatMessage)
+                    .whenCompleteAsync((unused, throwable) -> {
+                        ConnectStatusInfo connectStatusInfo = depinWSClient
+                                .getAccountContext()
+                                .getConnectStatusInfo();
 
-                    // 心跳计数
-                    connectStatusInfo.getHeartBeat()
-                            .getAndIncrement();
-                }, depinWSClient.getCallbackInvoker());
+                        if (throwable != null) {
+                            log.error("client[{}] 发送心跳异常", websocketClient.getName(), throwable);
+                            // 发送心跳失败，记录次数
+                            connectStatusInfo.getErrorHeartBeat().getAndIncrement();
+                        }
+
+                        // 心跳计数
+                        connectStatusInfo.getHeartBeat()
+                                .getAndIncrement();
+                    }, depinWSClient.getCallbackInvoker());
+        }
     }
 
 

@@ -1,9 +1,9 @@
 package cn.com.helei.bot.core.bot;
 
 import cn.com.helei.bot.core.config.BaseDepinBotConfig;
+import cn.com.helei.bot.core.config.SystemConfig;
 import cn.com.helei.bot.core.constants.DepinBotStatus;
 import cn.com.helei.bot.core.dto.DepinBotRuntimeInfo;
-import cn.com.helei.bot.core.pool.account.AccountPool;
 import cn.com.helei.bot.core.pool.env.BrowserEnvPool;
 import cn.com.helei.bot.core.exception.DepinBotInitException;
 import cn.com.helei.bot.core.exception.DepinBotStartException;
@@ -12,6 +12,7 @@ import cn.com.helei.bot.core.pool.network.DynamicProxyPool;
 import cn.com.helei.bot.core.pool.network.NetworkProxy;
 import cn.com.helei.bot.core.pool.network.StaticProxyPool;
 import cn.com.helei.bot.core.pool.twitter.TwitterPool;
+import cn.com.helei.bot.core.util.FileUtil;
 import cn.com.helei.bot.core.util.NamedThreadFactory;
 import cn.com.helei.bot.core.util.RestApiClientFactory;
 import cn.hutool.core.util.RandomUtil;
@@ -48,10 +49,6 @@ public abstract class AbstractDepinBot {
      */
     private final BrowserEnvPool browserEnvPool;
 
-    /**
-     * 账户池
-     */
-    private final AccountPool accountPool;
 
     /**
      * 推特池
@@ -98,11 +95,6 @@ public abstract class AbstractDepinBot {
                 baseDepinBotConfig.getBrowserEnvPoolConfig(),
                 "bot.browser",
                 BrowserEnvPool.class
-        );
-        this.accountPool = AccountPool.loadYamlPool(
-                baseDepinBotConfig.getAccountPoolConfig(),
-                "bot.account",
-                AccountPool.class
         );
         this.twitterPool = TwitterPool.loadYamlPool(
                 baseDepinBotConfig.getTwitterPoolConfig(),
@@ -207,7 +199,8 @@ public abstract class AbstractDepinBot {
             Supplier<String> requestStart
     ) {
 
-        Semaphore networkController = networkSyncControllerMap.compute(proxy, (k, v) -> {
+        Semaphore networkController = networkSyncControllerMap
+                .compute(proxy == null ? NetworkProxy.DEFAULT : proxy, (k, v) -> {
             if (v == null) {
                 v = new Semaphore(baseDepinBotConfig.getConcurrentCount());
             }
@@ -253,6 +246,15 @@ public abstract class AbstractDepinBot {
             sb.append(k).append(": ").append(v).append("\n");
         });
         return sb.toString();
+    }
+
+    /**
+     * 获取app的配置目录
+     *
+     * @return String
+     */
+    public String getAppConfigDir() {
+        return FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_APP_PATH, getBaseDepinBotConfig().getName());
     }
 
 

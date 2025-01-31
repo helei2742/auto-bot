@@ -31,7 +31,7 @@ public abstract class BaseDepinWSClient<Req, Resp> extends AbstractWebsocketClie
         accountContext.getWSHeaders().forEach(httpHeaders::add);
         super.setHeaders(httpHeaders);
 
-        super.setName(accountContext.getClientAccount().getName());
+        super.setName(accountContext.getName());
         super.setProxy(accountContext.getProxy());
         super.setClientStatusChangeHandler(this::whenClientStatusChange);
 

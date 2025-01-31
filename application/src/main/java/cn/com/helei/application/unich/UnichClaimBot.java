@@ -24,6 +24,19 @@ public class UnichClaimBot extends DefaultMenuCMDLineDepinBot<UnichConfig> {
     public UnichClaimBot(UnichConfig botConfig) {
         super(botConfig);
     }
+//
+//    @Override
+//    protected void mainAccountCreateHandler(List<AccountContext> mainAccounts) {
+//
+//        AccountContext accountContext = new AccountContext();
+//        accountContext.setParam("token", "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2NzkyMzA5M2ZkNWFjM2E2YWQ3M2VjOTMiLCJzaWduZWRBdCI6MTczNzczNDM0MTAzMiwiaWQiOiI0U1FLVE1ZTlUyQ1VDSDBTIiwidHlwZSI6ImFjY2Vzc1Rva2VuIn0.8Buae8mnHJ0Ur3eUPdaHXCwCjNbOc-a90xvJKSSZ-DI");
+//
+//        AccountBaseInfo accountBaseInfo = new AccountBaseInfo();
+//        accountBaseInfo.setId(-1);
+//        accountBaseInfo.setEmail("914577981@qq.com");
+//
+//        accountContext.setClientAccount(accountBaseInfo);
+//    }
 
     @Override
     protected void doInit() throws DepinBotInitException {
@@ -55,17 +68,17 @@ public class UnichClaimBot extends DefaultMenuCMDLineDepinBot<UnichConfig> {
     }
 
     @Override
-    protected CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode) {
+    public CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode) {
         return null;
     }
 
     @Override
-    protected CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext) {
+    public CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext) {
         return null;
     }
 
     @Override
-    protected boolean doAccountClaim(AccountContext accountContext) {
+    public boolean doAccountClaim(AccountContext accountContext) {
         String listUrl = "https://api.unich.com/airdrop/user/v1/mining/start";
 
         NetworkProxy proxy = accountContext.getProxy();
@@ -75,7 +88,7 @@ public class UnichClaimBot extends DefaultMenuCMDLineDepinBot<UnichConfig> {
         headers.put("Authorization", "Bearer " + token);
 
         String printPrefix = String.format("id[%s]-账户[%s]-token[%s]-proxy[%s]",
-                accountContext.getClientAccount().getId(), accountContext.getName(),
+                accountContext.getAccountBaseInfo().getId(), accountContext.getName(),
                 token.substring(0, Math.min(16, token.length())), proxy.getHost() + ":" + proxy.getPort());
 
 

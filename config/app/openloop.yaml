@@ -1,7 +1,0 @@
-depin:
-  app:
-    openloop:
-      name: openloop
-      inviteCode: ol33b7c321
-      concurrentCount: 20
-      autoClaimIntervalSeconds: 60

@@ -2,26 +2,28 @@ package cn.com.helei.bot.core.supporter.persistence;
 
 import cn.com.helei.bot.core.dto.RewordInfo;
 import cn.com.helei.bot.core.dto.account.AccountContext;
-import cn.com.helei.bot.core.pool.account.DepinClientAccount;
-import cn.com.helei.bot.core.supporter.persistence.AccountPersistenceManager;
+import cn.com.helei.bot.core.dto.account.AccountBaseInfo;
 import org.junit.jupiter.api.Test;
+
+import java.util.HashMap;
 
 class AccountPersistenceManagerTest {
     @Test
     void bindPersistenceAnnoListener() {
         AccountPersistenceManager accountPersistenceManager = new AccountPersistenceManager("test");
 
-        DepinClientAccount clientAccount = new DepinClientAccount();
+        AccountBaseInfo clientAccount = new AccountBaseInfo();
+        AccountContext accountContext = AccountContext.builder().accountBaseInfo(clientAccount).rewordInfo(new RewordInfo()).build();
 
-        AccountContext accountContext = AccountContext.builder().clientAccount(clientAccount).rewordInfo(new RewordInfo()).build();
-
+        accountContext.setParams(new HashMap<>());
         AccountContext proxy = accountPersistenceManager.bindPersistenceAnnoListener(accountContext, "");
 
-//        proxy.getParams().put("1", "a");
-//        proxy.getParams().put("1", "b");
-//        proxy.getParams().put("1", "c");
-//        proxy.getParams().put("1", "d");
-
+        accountContext.setParam("2", "2");
+//        proxy.setParam("1", "a");
+//        proxy.setParam("1", "b");
+//        proxy.setParam("1", "c");
+//        proxy.setParam("1", "d");
+//
         proxy.getRewordInfo().setTotalPoints(1.0);
 //        accountContext.setUsable(false);
 //        accountContext.getClientAccount().setName("123");

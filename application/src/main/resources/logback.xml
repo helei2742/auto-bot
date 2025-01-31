@@ -15,6 +15,6 @@
     <!-- 设置 Netty 日志级别为 INFO -->
     <logger name="io.netty" level="INFO"/>
 
-    <logger name="cn.com.helei.bot.core.netty.base" level="on" />
+    <logger name="cn.com.helei.bot.core.netty.base" level="off" />
 
 </configuration>

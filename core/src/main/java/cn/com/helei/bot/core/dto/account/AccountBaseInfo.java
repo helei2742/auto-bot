@@ -1,9 +1,8 @@
-package cn.com.helei.bot.core.pool.account;
+package cn.com.helei.bot.core.dto.account;
 
 
 import cn.com.helei.bot.core.supporter.propertylisten.PropertyChangeListenClass;
 import cn.com.helei.bot.core.supporter.propertylisten.PropertyChangeListenField;
-import cn.com.helei.bot.core.pool.AbstractYamlLineItem;
 import lombok.*;
 
 import java.util.HashMap;
@@ -15,7 +14,14 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @PropertyChangeListenClass
-public class DepinClientAccount extends AbstractYamlLineItem {
+public class AccountBaseInfo {
+
+    private Integer id;
+
+    /**
+     * 账户类型 ， google、qq等
+     */
+    private String type;
 
     /**
      * 账户名
@@ -36,12 +42,6 @@ public class DepinClientAccount extends AbstractYamlLineItem {
     private String password;
 
     /**
-     * 是否注册过
-     */
-    @PropertyChangeListenField
-    private Boolean signUp;
-
-    /**
      * 代理id
      */
     @PropertyChangeListenField
@@ -59,18 +59,23 @@ public class DepinClientAccount extends AbstractYamlLineItem {
     @PropertyChangeListenField
     private Integer browserEnvId;
 
+    /**
+     * 是否注册过
+     */
+    @PropertyChangeListenField
+    private Boolean signUp;
 
-    public DepinClientAccount(Object originLine) {
+    public AccountBaseInfo(Object originLine) {
         String emailAndPassword = (String) originLine;
 
         String[] split = emailAndPassword.split(", ");
         email = split[0];
 
-        String[] emailSplit = email.split("@");
-        if (emailSplit.length != 2) {
-            throw new IllegalArgumentException("邮箱格式错误");
-        }
-        this.name = emailSplit[0];
+//        String[] emailSplit = email.split("@");
+//        if (emailSplit.length != 2) {
+//            throw new IllegalArgumentException("邮箱格式错误");
+//        }
+//        this.name = emailSplit[0];
 
 
         password = split[1];

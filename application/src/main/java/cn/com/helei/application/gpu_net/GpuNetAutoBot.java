@@ -54,17 +54,17 @@ public class GpuNetAutoBot extends DefaultMenuCMDLineDepinBot<GpuNetConfig> {
 
 
     @Override
-    protected CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode) {
+    public CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode) {
         return null;
     }
 
     @Override
-    protected CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext) {
+    public CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext) {
         return null;
     }
 
     @Override
-    protected boolean doAccountClaim(AccountContext accountContext) {
+    public boolean doAccountClaim(AccountContext accountContext) {
         return false;
     }
 
@@ -86,7 +86,7 @@ public class GpuNetAutoBot extends DefaultMenuCMDLineDepinBot<GpuNetConfig> {
             String twitterName = accountContext.getTwitter().getUsername();
 
             JSONObject body = new JSONObject();
-            body.put("email", accountContext.getClientAccount().getEmail());
+            body.put("email", accountContext.getAccountBaseInfo().getEmail());
             body.put("solanaAddress", solAddress);
             body.put("twitterHandle", twitterName);
 
@@ -133,7 +133,7 @@ public class GpuNetAutoBot extends DefaultMenuCMDLineDepinBot<GpuNetConfig> {
             try {
                 if (futures.get(i).get()) {
                     successCount++;
-                    errorAccount.add(accounts.get(i).getClientAccount().getId());
+                    errorAccount.add(accounts.get(i).getAccountBaseInfo().getId());
                 }
             } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);

@@ -9,5 +9,4 @@ public class TeneoDepinConfig extends WSDepinBotConfig {
 
     private String apiKey;
 
-    private String registerEmailPath;
 }

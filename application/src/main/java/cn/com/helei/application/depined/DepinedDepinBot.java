@@ -27,17 +27,17 @@ public class DepinedDepinBot extends DefaultMenuCMDLineDepinBot<DepinedConfig> {
     }
 
     @Override
-    protected CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode) {
+    public CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode) {
         return null;
     }
 
     @Override
-    protected CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext) {
+    public CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext) {
         return null;
     }
 
     @Override
-    protected boolean doAccountClaim(AccountContext accountContext) {
+    public boolean doAccountClaim(AccountContext accountContext) {
         return false;
     }
 

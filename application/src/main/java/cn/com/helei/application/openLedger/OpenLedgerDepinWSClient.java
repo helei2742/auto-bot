@@ -92,8 +92,8 @@ public class OpenLedgerDepinWSClient extends BaseDepinWSClient<String, String> {
          * @return JSONObject
          */
         private @NotNull JSONObject buildHeartBeatMessageContext() {
-            OpenLedgerConfig.OpenLedgerAccount openLedgerAccount = (OpenLedgerConfig.OpenLedgerAccount)
-                    accountContext.getClientAccount();
+            OpenLedgerConfig.OpenLedgerAccountBaseInfo openLedgerAccount = (OpenLedgerConfig.OpenLedgerAccountBaseInfo)
+                    accountContext.getAccountBaseInfo();
 
 
             JSONObject heartBeatMessage = new JSONObject();
