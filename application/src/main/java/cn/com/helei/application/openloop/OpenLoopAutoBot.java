@@ -1,35 +1,25 @@
 package cn.com.helei.application.openloop;
 
-import cn.com.helei.bot.core.bot.DefaultMenuCMDLineDepinBot;
-import cn.com.helei.bot.core.commandMenu.CommandMenuNode;
-import cn.com.helei.bot.core.commandMenu.DefaultMenuType;
+import cn.com.helei.bot.core.bot.RestTaskAutoBot;
 import cn.com.helei.bot.core.dto.account.AccountContext;
 
 import cn.com.helei.bot.core.exception.DepinBotStartException;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
+import javax.mail.Message;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 
 @Slf4j
-public class OpenLoopDepinBot extends DefaultMenuCMDLineDepinBot<OpenLoopConfig> {
+public class OpenLoopAutoBot extends RestTaskAutoBot {
 
     private final OpenLoopApi openLoopApi;
 
-    public OpenLoopDepinBot(String configClassPath) {
+    public OpenLoopAutoBot(String configClassPath) {
         super(OpenLoopConfig.loadYamlConfig(configClassPath));
 
         openLoopApi = new OpenLoopApi(this);
-    }
-
-
-    @Override
-    protected void addCustomMenuNode(List<DefaultMenuType> defaultMenuTypes, CommandMenuNode mainMenu) {
-        defaultMenuTypes.add(DefaultMenuType.REGISTER);
-        defaultMenuTypes.add(DefaultMenuType.LOGIN);
-        defaultMenuTypes.add(DefaultMenuType.START_ACCOUNT_CLAIM);
     }
 
     @Override
@@ -57,10 +47,23 @@ public class OpenLoopDepinBot extends DefaultMenuCMDLineDepinBot<OpenLoopConfig>
         }
     }
 
+    @Override
+    public CompletableFuture<Boolean> updateAccountRewordInfo(AccountContext accountContext) {
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> verifierAccountEmail(AccountContext accountContext, Message message) {
+        return null;
+    }
+
 
     public static void main(String[] args) throws DepinBotStartException {
-        OpenLoopDepinBot openLoopDepinBot = new OpenLoopDepinBot("openloop.yaml");
+        OpenLoopAutoBot openLoopDepinBot = new OpenLoopAutoBot("openloop.yaml");
         openLoopDepinBot.init();
-        openLoopDepinBot.start();
+//        defaultMenuTypes.add(DefaultMenuType.REGISTER);
+//        defaultMenuTypes.add(DefaultMenuType.LOGIN);
+//        defaultMenuTypes.add(DefaultMenuType.START_ACCOUNT_CLAIM);
+//        openLoopDepinBot.start();
     }
 }

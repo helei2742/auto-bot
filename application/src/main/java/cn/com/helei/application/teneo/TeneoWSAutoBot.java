@@ -1,41 +1,44 @@
 package cn.com.helei.application.teneo;
 
-import cn.com.helei.bot.core.BaseDepinWSClient;
-import cn.com.helei.bot.core.SimpleDepinWSClient;
-import cn.com.helei.bot.core.bot.WSMenuCMDLineDepinBot;
-import cn.com.helei.bot.core.commandMenu.CommandMenuNode;
-import cn.com.helei.bot.core.commandMenu.DefaultMenuType;
+import cn.com.helei.bot.core.BaseBotWSClient;
+import cn.com.helei.bot.core.SimpleBotWSClient;
+import cn.com.helei.bot.core.bot.WSTaskAutoBot;
+import cn.com.helei.bot.core.bot.view.MenuCMDLineAutoBot;
+import cn.com.helei.bot.core.config.BaseDepinBotConfig;
 import cn.com.helei.bot.core.dto.account.AccountContext;
 import cn.com.helei.bot.core.dto.ConnectStatusInfo;
 import cn.com.helei.bot.core.exception.DepinBotStartException;
 import cn.com.helei.bot.core.netty.constants.WebsocketClientStatus;
+import cn.com.helei.bot.core.supporter.commandMenu.DefaultMenuType;
 import com.alibaba.fastjson.JSONObject;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import lombok.extern.slf4j.Slf4j;
 
 
+import javax.mail.Message;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
-public class TeneoWSDepinBot extends WSMenuCMDLineDepinBot<TeneoDepinConfig, JSONObject, JSONObject> {
+public class TeneoWSAutoBot extends WSTaskAutoBot<TeneoDepinConfig, JSONObject, JSONObject> {
+
 
     private final TeneoApi teneoApi;
 
-    public TeneoWSDepinBot(TeneoDepinConfig config) {
+    public TeneoWSAutoBot(TeneoDepinConfig config) {
         super(config);
 
         this.teneoApi = new TeneoApi(this);
     }
 
     @Override
-    public BaseDepinWSClient<JSONObject, JSONObject> buildAccountWSClient(AccountContext accountContext) {
+    public BaseBotWSClient<JSONObject, JSONObject> buildAccountWSClient(AccountContext accountContext) {
 
         accountContext.setConnectUrl("wss://secure.ws.teneo.pro/websocket?accessToken="
                 + accountContext.getParam("token") + "&version=v0.2");
 
-        SimpleDepinWSClient simpleDepinWSClient = new SimpleDepinWSClient(this, accountContext);
+        SimpleBotWSClient simpleDepinWSClient = new SimpleBotWSClient(this, accountContext);
 
         DefaultHttpHeaders headers = new DefaultHttpHeaders();
         Map<String, String> originHeaders = accountContext.getBrowserEnv().getHeaders();
@@ -50,7 +53,7 @@ public class TeneoWSDepinBot extends WSMenuCMDLineDepinBot<TeneoDepinConfig, JSO
     }
 
     @Override
-    public void whenAccountClientStatusChange(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient, WebsocketClientStatus clientStatus) {
+    public void whenAccountClientStatusChange(BaseBotWSClient<JSONObject, JSONObject> depinWSClient, WebsocketClientStatus clientStatus) {
 
         final AccountContext accountContext = depinWSClient.getAccountContext();
 
@@ -71,7 +74,7 @@ public class TeneoWSDepinBot extends WSMenuCMDLineDepinBot<TeneoDepinConfig, JSO
                         accountContext.getName(), accountContext.getProxy().getAddressStr());
                 accountContext.getConnectStatusInfo().getRestart().incrementAndGet();
             }
-            case SHUTDOWN ->{
+            case SHUTDOWN -> {
                 log.warn("账户[{}]-proxy[{}] 工作已停止",
                         accountContext.getName(), accountContext.getProxy().getAddressStr());
             }
@@ -79,12 +82,12 @@ public class TeneoWSDepinBot extends WSMenuCMDLineDepinBot<TeneoDepinConfig, JSO
     }
 
     @Override
-    public void whenAccountReceiveResponse(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient, Object id, JSONObject response) {
+    public void whenAccountReceiveResponse(BaseBotWSClient<JSONObject, JSONObject> depinWSClient, Object id, JSONObject response) {
 
     }
 
     @Override
-    public void whenAccountReceiveMessage(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient, JSONObject message) {
+    public void whenAccountReceiveMessage(BaseBotWSClient<JSONObject, JSONObject> depinWSClient, JSONObject message) {
         String type = message.getString("message");
         AccountContext accountContext = depinWSClient.getAccountContext();
 
@@ -117,7 +120,7 @@ public class TeneoWSDepinBot extends WSMenuCMDLineDepinBot<TeneoDepinConfig, JSO
     }
 
     @Override
-    public JSONObject getHeartbeatMessage(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient) {
+    public JSONObject getHeartbeatMessage(BaseBotWSClient<JSONObject, JSONObject> depinWSClient) {
         ConnectStatusInfo connectStatusInfo = depinWSClient.getAccountContext().getConnectStatusInfo();
         connectStatusInfo.getHeartBeat().incrementAndGet();
 
@@ -132,15 +135,6 @@ public class TeneoWSDepinBot extends WSMenuCMDLineDepinBot<TeneoDepinConfig, JSO
     }
 
     @Override
-    protected void addCustomMenuNode(List<DefaultMenuType> defaultMenuTypes, CommandMenuNode mainMenu) {
-        defaultMenuTypes.add(DefaultMenuType.LOGIN);
-        defaultMenuTypes.add(DefaultMenuType.REGISTER);
-        defaultMenuTypes.add(DefaultMenuType.START_ACCOUNT_CLAIM);
-
-        mainMenu.addSubMenu(new CommandMenuNode("验证邮箱", "开始验证注册邮箱", teneoApi::verifierEmail));
-    }
-
-    @Override
     public CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode) {
         return teneoApi.registerAccount(accountContext, inviteCode);
     }
@@ -150,13 +144,32 @@ public class TeneoWSDepinBot extends WSMenuCMDLineDepinBot<TeneoDepinConfig, JSO
         return teneoApi.login(accountContext);
     }
 
+    @Override
+    public CompletableFuture<Boolean> updateAccountRewordInfo(AccountContext accountContext) {
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> verifierAccountEmail(AccountContext accountContext, Message message) {
+        return teneoApi.verifierEmail(accountContext, message);
+    }
+
     public static void main(String[] args) throws DepinBotStartException {
         TeneoDepinConfig teneoDepinConfig = TeneoDepinConfig.loadYamlConfig("bot.app.teneo", "teneo/teneo.yaml", TeneoDepinConfig.class);
+        TeneoWSAutoBot teneoWSDepinBot = new TeneoWSAutoBot(teneoDepinConfig);
 
-        TeneoWSDepinBot teneoWSDepinBot = new TeneoWSDepinBot(teneoDepinConfig);
 
-        teneoWSDepinBot.init();
+        MenuCMDLineAutoBot<BaseDepinBotConfig> menuCMDLineAutoBot = new MenuCMDLineAutoBot<>(teneoWSDepinBot,
+                List.of(DefaultMenuType.REGISTER, DefaultMenuType.VERIFIER, DefaultMenuType.LOGIN, DefaultMenuType.START_ACCOUNT_CLAIM));
 
-        teneoWSDepinBot.start();
+
+        menuCMDLineAutoBot.start();
+//        teneoWSDepinBot.start();
+//
+//        defaultMenuTypes.add(DefaultMenuType.LOGIN);
+//        defaultMenuTypes.add(DefaultMenuType.REGISTER);
+//        defaultMenuTypes.add(DefaultMenuType.VERIFIER);
+//        defaultMenuTypes.add(DefaultMenuType.START_ACCOUNT_CLAIM);
+
     }
 }

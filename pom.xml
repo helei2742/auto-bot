@@ -12,7 +12,6 @@
     <modules>
         <module>core</module>
         <module>application</module>
-        <module>mail</module>
     </modules>
 
     <properties>

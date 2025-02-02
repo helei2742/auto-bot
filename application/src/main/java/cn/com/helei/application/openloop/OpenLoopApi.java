@@ -17,9 +17,9 @@ public class OpenLoopApi {
 
     private static final Random random = new Random();
 
-    private final OpenLoopDepinBot openLoopDepinBot;
+    private final OpenLoopAutoBot openLoopDepinBot;
 
-    public OpenLoopApi(OpenLoopDepinBot openLoopDepinBot) {
+    public OpenLoopApi(OpenLoopAutoBot openLoopDepinBot) {
         this.openLoopDepinBot = openLoopDepinBot;
     }
 

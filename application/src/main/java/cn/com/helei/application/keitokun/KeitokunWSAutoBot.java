@@ -1,14 +1,16 @@
 package cn.com.helei.application.keitokun;
 
-import cn.com.helei.bot.core.BaseDepinWSClient;
-import cn.com.helei.bot.core.SimpleDepinWSClient;
-import cn.com.helei.bot.core.bot.WSMenuCMDLineDepinBot;
-import cn.com.helei.bot.core.commandMenu.CommandMenuNode;
-import cn.com.helei.bot.core.commandMenu.DefaultMenuType;
+import cn.com.helei.bot.core.BaseBotWSClient;
+import cn.com.helei.bot.core.SimpleBotWSClient;
+import cn.com.helei.bot.core.bot.WSTaskAutoBot;
+import cn.com.helei.bot.core.bot.view.MenuCMDLineAutoBot;
+import cn.com.helei.bot.core.config.BaseDepinBotConfig;
+import cn.com.helei.bot.core.supporter.commandMenu.DefaultMenuType;
 import cn.com.helei.bot.core.dto.account.AccountContext;
 import cn.com.helei.bot.core.dto.ConnectStatusInfo;
 import cn.com.helei.bot.core.exception.DepinBotStartException;
 import cn.com.helei.bot.core.netty.constants.WebsocketClientStatus;
+import cn.com.helei.bot.core.supporter.commandMenu.MenuNodeMethod;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSONArray;
@@ -16,6 +18,7 @@ import com.alibaba.fastjson.JSONObject;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.mail.Message;
 import java.io.File;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,7 +27,7 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JSONObject, JSONObject> {
+public class KeitokunWSAutoBot extends WSTaskAutoBot<KeitokunConfig, JSONObject, JSONObject> {
 
     private final static String TODAY_REMAINING_TAP_KEY = "remaining_tap";
 
@@ -34,15 +37,15 @@ public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JS
 
     private final static String UID_KEY = "uid";
 
-    private final static Map<BaseDepinWSClient<JSONObject, JSONObject>, Integer> clientNeedSendAmount = new ConcurrentHashMap<>();
+    private final static Map<BaseBotWSClient<JSONObject, JSONObject>, Integer> clientNeedSendAmount = new ConcurrentHashMap<>();
 
-    private final static Map<BaseDepinWSClient<JSONObject, JSONObject>, Integer> requestIdMap = new ConcurrentHashMap<>();
+    private final static Map<BaseBotWSClient<JSONObject, JSONObject>, Integer> requestIdMap = new ConcurrentHashMap<>();
 
     private final Random random = new Random();
 
     private final Semaphore accountSemaphore;
 
-    public KeitokunWSDepinBot(KeitokunConfig config) {
+    public KeitokunWSAutoBot(KeitokunConfig config) {
         super(config);
         accountSemaphore = new Semaphore(config.getConcurrentCount());
     }
@@ -114,7 +117,7 @@ public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JS
 
 
     @Override
-    public BaseDepinWSClient<JSONObject, JSONObject> buildAccountWSClient(AccountContext accountContext) {
+    public BaseBotWSClient<JSONObject, JSONObject> buildAccountWSClient(AccountContext accountContext) {
         String prefix = accountContext.getSimpleInfo();
 
         // Step 1 检查是否有uid
@@ -150,7 +153,7 @@ public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JS
         log.info("{}-uid[{}] 开始创建ws客户端", prefix, uid);
 
         // Step 3 创建ws客户端
-        SimpleDepinWSClient simpleDepinWSClient = new SimpleDepinWSClient(this, accountContext);
+        SimpleBotWSClient simpleDepinWSClient = new SimpleBotWSClient(this, accountContext);
 
         requestIdMap.put(simpleDepinWSClient, 0);
         simpleDepinWSClient.setAllIdleTimeSecond(getBotConfig().getAutoClaimIntervalSeconds() * 2);
@@ -171,7 +174,7 @@ public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JS
     }
 
     @Override
-    public void whenAccountClientStatusChange(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient, WebsocketClientStatus clientStatus) {
+    public void whenAccountClientStatusChange(BaseBotWSClient<JSONObject, JSONObject> depinWSClient, WebsocketClientStatus clientStatus) {
         AccountContext accountContext = depinWSClient.getAccountContext();
 
         String printPrefix = accountContext.getSimpleInfo() + "-" + accountContext.getParam(UID_KEY);
@@ -194,7 +197,7 @@ public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JS
     }
 
     @Override
-    public void whenAccountReceiveResponse(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient, Object id, JSONObject response) {
+    public void whenAccountReceiveResponse(BaseBotWSClient<JSONObject, JSONObject> depinWSClient, Object id, JSONObject response) {
         Integer cmd = response.getInteger("cmd");
         JSONObject data = response.getJSONObject("data");
 
@@ -238,12 +241,12 @@ public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JS
     }
 
     @Override
-    public void whenAccountReceiveMessage(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient, JSONObject message) {
+    public void whenAccountReceiveMessage(BaseBotWSClient<JSONObject, JSONObject> depinWSClient, JSONObject message) {
 
     }
 
     @Override
-    public JSONObject getHeartbeatMessage(BaseDepinWSClient<JSONObject, JSONObject> depinWSClient) {
+    public JSONObject getHeartbeatMessage(BaseBotWSClient<JSONObject, JSONObject> depinWSClient) {
         int sendAmount = clientNeedSendAmount.getOrDefault(depinWSClient, 500);
 
         AccountContext accountContext = depinWSClient.getAccountContext();
@@ -275,16 +278,6 @@ public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JS
         return frame;
     }
 
-
-    @Override
-    protected void addCustomMenuNode(List<DefaultMenuType> defaultMenuTypes, CommandMenuNode mainMenu) {
-        defaultMenuTypes.add(DefaultMenuType.START_ACCOUNT_CLAIM);
-        defaultMenuTypes.add(DefaultMenuType.REGISTER);
-
-        mainMenu.addSubMenu(new CommandMenuNode("自动完成任务", "开始自动完成任务", this::autoClaimTask));
-    }
-
-
     @Override
     public CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode) {
         return null;
@@ -292,6 +285,16 @@ public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JS
 
     @Override
     public CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext) {
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> updateAccountRewordInfo(AccountContext accountContext) {
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> verifierAccountEmail(AccountContext accountContext, Message message) {
         return null;
     }
 
@@ -305,6 +308,7 @@ public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JS
      *
      * @return String
      */
+    @MenuNodeMethod(title = "自动完成任务", description = "开始自动完成任务")
     private String autoClaimTask() {
         // Step 1 遍历账户
         getAccounts().forEach(account -> {
@@ -444,9 +448,10 @@ public class KeitokunWSDepinBot extends WSMenuCMDLineDepinBot<KeitokunConfig, JS
     }
 
     public static void main(String[] args) throws DepinBotStartException {
-        KeitokunWSDepinBot mKeitokunWSDepinBot = new KeitokunWSDepinBot(KeitokunConfig.loadYamlConfig("keitokun/keitokun.yaml"));
+        KeitokunWSAutoBot mKeitokunWSDepinBot = new KeitokunWSAutoBot(KeitokunConfig.loadYamlConfig("keitokun/keitokun.yaml"));
 
-        mKeitokunWSDepinBot.init();
-        mKeitokunWSDepinBot.start();
+        MenuCMDLineAutoBot<BaseDepinBotConfig> menuCMDLineAutoBot = new MenuCMDLineAutoBot<>(mKeitokunWSDepinBot, List.of(DefaultMenuType.START_ACCOUNT_CLAIM));
+
+        menuCMDLineAutoBot.start();
     }
 }

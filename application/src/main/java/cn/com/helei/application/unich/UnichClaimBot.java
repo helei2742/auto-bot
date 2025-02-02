@@ -1,71 +1,67 @@
 package cn.com.helei.application.unich;
 
-import cn.com.helei.bot.core.bot.DefaultMenuCMDLineDepinBot;
-import cn.com.helei.bot.core.commandMenu.CommandMenuNode;
-import cn.com.helei.bot.core.commandMenu.DefaultMenuType;
+import cn.com.helei.bot.core.bot.RestTaskAutoBot;
+import cn.com.helei.bot.core.bot.view.MenuCMDLineAutoBot;
+import cn.com.helei.bot.core.config.BaseDepinBotConfig;
+import cn.com.helei.bot.core.dto.account.AccountBaseInfo;
 import cn.com.helei.bot.core.dto.account.AccountContext;
-import cn.com.helei.bot.core.exception.DepinBotInitException;
 import cn.com.helei.bot.core.exception.DepinBotStartException;
 import cn.com.helei.bot.core.pool.network.NetworkProxy;
 import cn.hutool.core.util.BooleanUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
+import javax.mail.Message;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
 @Slf4j
-public class UnichClaimBot extends DefaultMenuCMDLineDepinBot<UnichConfig> {
+public class UnichClaimBot extends RestTaskAutoBot {
 
+    private static final String TOKEN_KEY = "token";
 
     public UnichClaimBot(UnichConfig botConfig) {
         super(botConfig);
     }
-//
-//    @Override
-//    protected void mainAccountCreateHandler(List<AccountContext> mainAccounts) {
-//
-//        AccountContext accountContext = new AccountContext();
-//        accountContext.setParam("token", "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2NzkyMzA5M2ZkNWFjM2E2YWQ3M2VjOTMiLCJzaWduZWRBdCI6MTczNzczNDM0MTAzMiwiaWQiOiI0U1FLVE1ZTlUyQ1VDSDBTIiwidHlwZSI6ImFjY2Vzc1Rva2VuIn0.8Buae8mnHJ0Ur3eUPdaHXCwCjNbOc-a90xvJKSSZ-DI");
-//
-//        AccountBaseInfo accountBaseInfo = new AccountBaseInfo();
-//        accountBaseInfo.setId(-1);
-//        accountBaseInfo.setEmail("914577981@qq.com");
-//
-//        accountContext.setClientAccount(accountBaseInfo);
-//    }
+
 
     @Override
-    protected void doInit() throws DepinBotInitException {
-        super.doInit();
+    protected void typedAccountsLoadedHandler(Map<String, List<AccountContext>> typedAccountMap) {
+        Map<String, List<String>> tokensMap = ((UnichConfig) getBaseDepinBotConfig()).getTokens();
 
-        // 将tokens加载到对应的accountContext
-        List<AccountContext> accounts = getAccounts();
+        typedAccountMap.forEach((type, accountContextList) -> {
+            List<String> tokens = tokensMap.get(type);
 
-        List<String> tokens = getBotConfig().getTokens();
-        if (tokens == null) return;
-
-        for (int i = 0; i < tokens.size(); i++) {
-            if (i < accounts.size()) {
-                accounts.get(i).setParam("token", tokens.get(i));
+            if (tokens != null) {
+                for (int i = 0; i < Math.min(tokens.size(), accountContextList.size()); i++) {
+                    accountContextList.get(i).setParam(TOKEN_KEY, tokens.get(i));
+                }
             }
-        }
+
+            AccountContext accountContext = loadMainAccount();
+
+            accountContextList.add(accountContext);
+        });
     }
 
+    @NotNull
+    private AccountContext loadMainAccount() {
+        AccountContext accountContext = new AccountContext();
+        accountContext.setParam("token", "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2NzkyMzA5M2ZkNWFjM2E2YWQ3M2VjOTMiLCJzaWduZWRBdCI6MTczNzczNDM0MTAzMiwiaWQiOiI0U1FLVE1ZTlUyQ1VDSDBTIiwidHlwZSI6ImFjY2Vzc1Rva2VuIn0.8Buae8mnHJ0Ur3eUPdaHXCwCjNbOc-a90xvJKSSZ-DI");
+        accountContext.setProxy(getStaticProxyPool().getLessUsedItem(1).getFirst());
+        accountContext.setBrowserEnv(getBrowserEnvPool().getLessUsedItem(1).getFirst());
+        AccountBaseInfo accountBaseInfo = new AccountBaseInfo();
+        accountBaseInfo.setId(-1);
+        accountBaseInfo.setEmail("914577981@qq.com");
 
-    @Override
-    protected void buildMenuNode(CommandMenuNode mainManu) {
-        super.buildMenuNode(mainManu);
-        mainManu.addSubMenu(new CommandMenuNode("领取社交奖励", "开始领取社交奖励...", this::startClaimSocialReward));
+        accountContext.setAccountBaseInfo(accountBaseInfo);
+        return accountContext;
     }
 
-    @Override
-    protected void addCustomMenuNode(List<DefaultMenuType> defaultMenuTypes, CommandMenuNode mainMenu) {
-        defaultMenuTypes.add(DefaultMenuType.START_ACCOUNT_CLAIM);
-    }
 
     @Override
     public CompletableFuture<Boolean> registerAccount(AccountContext accountContext, String inviteCode) {
@@ -117,13 +113,23 @@ public class UnichClaimBot extends DefaultMenuCMDLineDepinBot<UnichConfig> {
         return false;
     }
 
+    @Override
+    public CompletableFuture<Boolean> updateAccountRewordInfo(AccountContext accountContext) {
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> verifierAccountEmail(AccountContext accountContext, Message message) {
+        return null;
+    }
+
     /**
      * 开始领取社交任务
      *
      * @return print str
      */
     private String startClaimSocialReward() {
-        Semaphore semaphore = new Semaphore(getBotConfig().getConcurrentCount());
+        Semaphore semaphore = new Semaphore(getBaseDepinBotConfig().getConcurrentCount());
 
         getAccounts().stream()
                 .filter(accountContext -> !BooleanUtil.toBoolean(accountContext.getParam("social_completed")))
@@ -271,6 +277,9 @@ public class UnichClaimBot extends DefaultMenuCMDLineDepinBot<UnichConfig> {
         UnichClaimBot unichClaimBot = new UnichClaimBot(UnichConfig.loadYamlConfig(List.of("depin", "app", "unich"), "unich.yaml"));
         unichClaimBot.init();
 
-        unichClaimBot.start();
+        MenuCMDLineAutoBot<BaseDepinBotConfig> bot = new MenuCMDLineAutoBot<>(unichClaimBot,
+                List.of()
+                );
+
     }
 }
