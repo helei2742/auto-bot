@@ -37,7 +37,4 @@ build/
 ### Mac OS ###
 .DS_Store
 
-config/
-data/
-
-bot/
+botData/
