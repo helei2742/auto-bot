@@ -60,10 +60,10 @@ public class BaseAutoBotConfig {
 
     private List<TypedAccountConfig> accountConfigs;
 
-    private Map<String, String> configMap = new HashMap<>();
+    private Map<String, Object> configMap = new HashMap<>();
 
     public String getConfig(String key) {
-        return configMap.get(key);
+        return String.valueOf(configMap.get(key));
     }
 
     public void setConfig(String key, String value) {

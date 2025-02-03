@@ -211,7 +211,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
                     accountContext.getAccountBaseInfo().setSignUp(true);
                 }
             } catch (InterruptedException | ExecutionException e) {
-                log.error("注册[{}]账号[{}]发生错误, {}", type, accountContext.getName(), e.getMessage());
+                log.error("注册[{}]账号[{}]发生错误", type, accountContext.getName(), e);
             }
         }
 

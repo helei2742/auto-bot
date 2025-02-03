@@ -91,12 +91,8 @@ public class RestApiClient {
 
             Request.Builder builder = new Request.Builder();
 
-            if (headers != null) {
-                for (Map.Entry<String, String> header : headers.entrySet()) {
-                    builder.addHeader(header.getKey(), header.getValue());
-                }
-            }
-            MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+
+            MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
             RequestBody requestBody = null;
             if (body != null) {
@@ -113,7 +109,14 @@ public class RestApiClient {
                 builder.method(upperCase, requestBody);
             }
 
-            Request request = builder.build();
+            if (headers != null) {
+                for (Map.Entry<String, String> header : headers.entrySet()) {
+                    builder.addHeader(header.getKey(), header.getValue());
+                }
+            }
+            Request request = builder
+
+                    .build();
 
             log.debug("创建请求 url[{}], method[{}]成功，开始请求服务器", url, method);
 

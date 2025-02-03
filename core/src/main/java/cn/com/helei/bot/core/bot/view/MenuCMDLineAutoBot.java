@@ -132,9 +132,12 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
                 .addSubMenu(interInvite)
                 .addSubMenu(typeSelect)
                 .addSubMenu(new CommandMenuNode(
+                        true,
                         "开始注册",
                         "开始注册所有账号...",
-                        () -> getBot().registerTypeAccount(getBot().getBaseAutoBotConfig().getConfig(REGISTER_TYPE_KEY))
+                        () -> {
+                            return getBot().registerTypeAccount(getBot().getBaseAutoBotConfig().getConfig(REGISTER_TYPE_KEY));
+                        }
                 ));
     }
 
@@ -281,8 +284,8 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
      * @return 邀请码
      */
     private String printCurrentRegisterConfig() {
-        String inviteCode = getBotConfig().getConfigMap().get(INVITE_CODE_KEY);
-        String registerType = getBotConfig().getConfigMap().get(REGISTER_TYPE_KEY);
+        String inviteCode = (String) getBotConfig().getConfigMap().get(INVITE_CODE_KEY);
+        String registerType = (String) getBotConfig().getConfigMap().get(REGISTER_TYPE_KEY);
 
         return "(当前邀请码为:" + inviteCode + ")\n"
                 + "(当前注册类型为:" + registerType + ")\n";

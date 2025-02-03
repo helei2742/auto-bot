@@ -34,7 +34,7 @@ public abstract class CommandLineAutoBot {
 
     public CommandLineAutoBot(AccountManageAutoBot bot) {
         this.bot = bot;
-        this.botConfig = new BaseAutoBotConfig();
+        this.botConfig = bot.getBaseAutoBotConfig();
 
         this.mainManu = new CommandMenuNode(
                 "主菜单",

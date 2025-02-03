@@ -10,7 +10,7 @@ import java.util.List;
 public class FileUtil {
 
 
-    public static final String RESOURCE_ROOT_DIR = System.getProperty("user.dir") + File.separator + "bot";
+    public static final String RESOURCE_ROOT_DIR = System.getProperty("user.dir") + File.separator + "botData";
 
     public static String getConfigDirResourcePath(List<String> path, String fileName) {
         StringBuilder sb = new StringBuilder(RESOURCE_ROOT_DIR);
