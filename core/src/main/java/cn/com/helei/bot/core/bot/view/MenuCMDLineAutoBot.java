@@ -2,7 +2,7 @@ package cn.com.helei.bot.core.bot.view;
 
 
 import cn.com.helei.bot.core.bot.base.AccountManageAutoBot;
-import cn.com.helei.bot.core.config.BaseDepinBotConfig;
+import cn.com.helei.bot.core.config.BaseAutoBotConfig;
 import cn.com.helei.bot.core.supporter.AccountInfoPrinter;
 import cn.com.helei.bot.core.supporter.commandMenu.CommandMenuNode;
 import cn.com.helei.bot.core.supporter.commandMenu.DefaultMenuType;
@@ -21,7 +21,7 @@ import static cn.com.helei.bot.core.constants.MapConfigKey.*;
 
 
 @Slf4j
-public class MenuCMDLineAutoBot<C extends BaseDepinBotConfig> extends CommandLineAutoBot {
+public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLineAutoBot {
     /**
      * 刷新节点
      */
@@ -134,7 +134,7 @@ public class MenuCMDLineAutoBot<C extends BaseDepinBotConfig> extends CommandLin
                 .addSubMenu(new CommandMenuNode(
                         "开始注册",
                         "开始注册所有账号...",
-                        () -> getBot().registerTypeAccount(getBot().getBaseDepinBotConfig().getConfig(REGISTER_TYPE_KEY))
+                        () -> getBot().registerTypeAccount(getBot().getBaseAutoBotConfig().getConfig(REGISTER_TYPE_KEY))
                 ));
     }
 

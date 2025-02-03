@@ -1,6 +1,6 @@
 package cn.com.helei.application.openloop;
 
-import cn.com.helei.bot.core.config.BaseDepinBotConfig;
+import cn.com.helei.bot.core.config.BaseAutoBotConfig;
 import cn.com.helei.bot.core.config.SystemConfig;
 import cn.com.helei.bot.core.util.YamlConfigLoadUtil;
 import lombok.Data;
@@ -12,7 +12,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
 @Data
-public class OpenLoopConfig  extends BaseDepinBotConfig {
+public class OpenLoopConfig  extends BaseAutoBotConfig {
 
     private String inviteCode;
 

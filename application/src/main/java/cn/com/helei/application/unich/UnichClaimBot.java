@@ -2,14 +2,22 @@ package cn.com.helei.application.unich;
 
 import cn.com.helei.bot.core.bot.RestTaskAutoBot;
 import cn.com.helei.bot.core.bot.view.MenuCMDLineAutoBot;
-import cn.com.helei.bot.core.config.BaseDepinBotConfig;
+import cn.com.helei.bot.core.config.BaseAutoBotConfig;
+import cn.com.helei.bot.core.constants.MapConfigKey;
 import cn.com.helei.bot.core.dto.account.AccountBaseInfo;
 import cn.com.helei.bot.core.dto.account.AccountContext;
 import cn.com.helei.bot.core.exception.DepinBotStartException;
+import cn.com.helei.bot.core.exception.LoginException;
 import cn.com.helei.bot.core.pool.network.NetworkProxy;
+import cn.com.helei.bot.core.supporter.commandMenu.DefaultMenuType;
+import cn.com.helei.bot.core.supporter.commandMenu.MenuNodeMethod;
+import cn.com.helei.bot.core.util.captcha.TwoCaptchaSolverFactory;
 import cn.hutool.core.util.BooleanUtil;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.twocaptcha.TwoCaptcha;
+import com.twocaptcha.captcha.GeeTestV4;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,30 +30,13 @@ import java.util.concurrent.*;
 @Slf4j
 public class UnichClaimBot extends RestTaskAutoBot {
 
-    private static final String TOKEN_KEY = "token";
+    private static final String TOKEN_EXPIRE_TIME_KEY = "token_expire_time";
+
+    private final UnichConfig unichConfig;
 
     public UnichClaimBot(UnichConfig botConfig) {
         super(botConfig);
-    }
-
-
-    @Override
-    protected void typedAccountsLoadedHandler(Map<String, List<AccountContext>> typedAccountMap) {
-        Map<String, List<String>> tokensMap = ((UnichConfig) getBaseDepinBotConfig()).getTokens();
-
-        typedAccountMap.forEach((type, accountContextList) -> {
-            List<String> tokens = tokensMap.get(type);
-
-            if (tokens != null) {
-                for (int i = 0; i < Math.min(tokens.size(), accountContextList.size()); i++) {
-                    accountContextList.get(i).setParam(TOKEN_KEY, tokens.get(i));
-                }
-            }
-
-            AccountContext accountContext = loadMainAccount();
-
-            accountContextList.add(accountContext);
-        });
+        this.unichConfig = botConfig;
     }
 
     @NotNull
@@ -70,15 +61,111 @@ public class UnichClaimBot extends RestTaskAutoBot {
 
     @Override
     public CompletableFuture<String> requestTokenOfAccount(AccountContext accountContext) {
-        return null;
+
+        String expireStr = accountContext.getParam(TOKEN_EXPIRE_TIME_KEY);
+        String originToken = accountContext.getParam(MapConfigKey.TOKEN_KEY);
+
+        if (StrUtil.isNotBlank(originToken)) {
+            try {
+                long expire = Long.parseLong(expireStr);
+                if (System.currentTimeMillis() < expire) {
+                    log.info("{} 已有token无需打码", expireStr);
+                    return CompletableFuture.completedFuture(originToken);
+                }
+            } catch (Exception e) {
+                accountContext.removeParam(TOKEN_EXPIRE_TIME_KEY);
+                accountContext.removeParam(MapConfigKey.TOKEN_KEY);
+            }
+        }
+
+        return CompletableFuture
+                // Step 1 打码，获取参数
+                .supplyAsync(() -> {
+                    TwoCaptcha solver = TwoCaptchaSolverFactory
+                            .getTwoCaptchaSolver(unichConfig.getCaptcha2ApiKey(), accountContext.getProxy());
+
+                    GeeTestV4 captcha = new GeeTestV4();
+                    captcha.setCaptchaId(unichConfig.getCaptchaId());
+                    captcha.setUrl(unichConfig.getCaptchaUrl());
+
+                    try {
+                        log.info("{} 开始打码", accountContext.getSimpleInfo());
+                        solver.solve(captcha);
+
+                        String code = captcha.getCode();
+                        if (StrUtil.isNotBlank(code)) {
+                            log.info("{} 打码成功,", accountContext.getSimpleInfo());
+                            return code;
+                        } else {
+                            throw new LoginException("打码失败");
+                        }
+                    } catch (Exception e) {
+                        throw new LoginException("打码失败", e);
+                    }
+                }, getExecutorService())
+                .thenApplyAsync(code -> {
+                    // Step 2 构造参数请求登录
+                    JSONObject body = JSONObject.parseObject(code);
+                    body.remove("captcha_id");
+                    body.put("email", accountContext.getAccountBaseInfo().getEmail());
+                    String password = accountContext.getAccountBaseInfo().getPassword();
+
+                    boolean flag = false;
+                    for (int i = 0; i < password.length(); i++) {
+                        if (password.charAt(i) > 0 && password.charAt(i) <= 9) {
+                            flag = true;
+                            break;
+                        }
+                    }
+                    if (!flag) password = password + "1";
+
+                    body.put("password", password);
+
+                    Map<String, String> headers = accountContext.getBrowserEnv().getHeaders();
+                    headers.put("Origin", "https://unich.com");
+                    headers.put("referer", "https://unich.com/");
+
+                    try {
+                        return syncRequest(
+                                accountContext.getProxy(),
+                                "https://api.unich.com/airdrop/user/v1/auth/sign-in",
+                                "post",
+                                headers,
+                                null,
+                                body,
+                                () -> accountContext.getSimpleInfo() + " 正在登录获取token"
+                        ).thenApplyAsync(response -> {
+                            JSONObject result = JSONObject.parseObject(response);
+
+                            if (result.getString("code").equals("OK")) {
+                                JSONObject data = result.getJSONObject("data");
+                                String token = data.getString("accessToken");
+                                log.info("{} 获取token成功, {}", accountContext.getSimpleInfo(), token);
+
+                                accountContext.setParam(TOKEN_EXPIRE_TIME_KEY, String.valueOf(data.getLong("accessTokenExpireAt")));
+                                return token;
+                            } else {
+                                throw new LoginException(String.format("获取token失败, %s", response));
+                            }
+                        }).get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        throw new LoginException("登录获取token发生异常", e);
+                    }
+                });
     }
 
     @Override
     public boolean doAccountClaim(AccountContext accountContext) {
+        String token = accountContext.getParam(MapConfigKey.TOKEN_KEY);
+
+        if (StrUtil.isBlank(token)) {
+            log.error("{} 没有token", accountContext.getSimpleInfo());
+            return false;
+        }
+
         String listUrl = "https://api.unich.com/airdrop/user/v1/mining/start";
 
         NetworkProxy proxy = accountContext.getProxy();
-        String token = accountContext.getParam("token");
 
         Map<String, String> headers = accountContext.getBrowserEnv().getHeaders();
         headers.put("Authorization", "Bearer " + token);
@@ -106,7 +193,7 @@ public class UnichClaimBot extends RestTaskAutoBot {
                         log.error("{} mining请求失败", printPrefix);
                     }
                 }, getExecutorService()).exceptionally(throwable -> {
-                    log.error("{} mining请求失败", printPrefix, throwable);
+                    log.error("{} mining请求失败, {}", printPrefix, throwable.getMessage());
                     return null;
                 });
 
@@ -128,8 +215,9 @@ public class UnichClaimBot extends RestTaskAutoBot {
      *
      * @return print str
      */
+    @MenuNodeMethod(title = "领取社交奖励", description = "开始领取社交奖励")
     private String startClaimSocialReward() {
-        Semaphore semaphore = new Semaphore(getBaseDepinBotConfig().getConcurrentCount());
+        Semaphore semaphore = new Semaphore(getBaseAutoBotConfig().getConcurrentCount());
 
         getAccounts().stream()
                 .filter(accountContext -> !BooleanUtil.toBoolean(accountContext.getParam("social_completed")))
@@ -181,6 +269,7 @@ public class UnichClaimBot extends RestTaskAutoBot {
 
         return "已开始领取账户社交奖励任务, 共[{}]" + getAccounts().size() + "个账户";
     }
+
 
     private CompletableFuture<List<String>> queryAccountUnClaimedTaskIds(NetworkProxy proxy, Map<String, String> headers, String printPrefix) {
         String listUrl = "https://api.unich.com/airdrop/user/v1/social/list-by-user";
@@ -275,11 +364,10 @@ public class UnichClaimBot extends RestTaskAutoBot {
 
     public static void main(String[] args) throws DepinBotStartException {
         UnichClaimBot unichClaimBot = new UnichClaimBot(UnichConfig.loadYamlConfig(List.of("depin", "app", "unich"), "unich.yaml"));
-        unichClaimBot.init();
+        MenuCMDLineAutoBot<BaseAutoBotConfig> bot = new MenuCMDLineAutoBot<>(unichClaimBot,
+                List.of(DefaultMenuType.START_ACCOUNT_CLAIM, DefaultMenuType.LOGIN)
+        );
 
-        MenuCMDLineAutoBot<BaseDepinBotConfig> bot = new MenuCMDLineAutoBot<>(unichClaimBot,
-                List.of()
-                );
-
+        bot.start();
     }
 }

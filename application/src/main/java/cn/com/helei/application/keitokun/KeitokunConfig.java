@@ -1,6 +1,6 @@
 package cn.com.helei.application.keitokun;
 
-import cn.com.helei.bot.core.config.WSDepinBotConfig;
+import cn.com.helei.bot.core.config.WSAutoBotConfig;
 import cn.com.helei.bot.core.config.SystemConfig;
 import cn.com.helei.bot.core.util.YamlConfigLoadUtil;
 import lombok.Data;
@@ -12,7 +12,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @ToString(callSuper = true)
-public class KeitokunConfig extends WSDepinBotConfig {
+public class KeitokunConfig extends WSAutoBotConfig {
 
     private List<String> extraAccounts;
 

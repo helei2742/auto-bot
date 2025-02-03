@@ -1,7 +1,7 @@
 package cn.com.helei.bot.core.bot;
 
 import cn.com.helei.bot.core.BaseBotWSClient;
-import cn.com.helei.bot.core.config.WSDepinBotConfig;
+import cn.com.helei.bot.core.config.WSAutoBotConfig;
 import cn.com.helei.bot.core.dto.account.AccountContext;
 import cn.com.helei.bot.core.exception.DepinBotStatusException;
 import cn.com.helei.bot.core.netty.constants.WebsocketClientStatus;
@@ -16,7 +16,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 
 @Slf4j
-public abstract class WSTaskAutoBot<C extends WSDepinBotConfig, Req, Resp> extends RestTaskAutoBot {
+public abstract class WSTaskAutoBot<C extends WSAutoBotConfig, Req, Resp> extends RestTaskAutoBot {
 
     /**
      * WS链接完成数量
@@ -182,7 +182,7 @@ public abstract class WSTaskAutoBot<C extends WSDepinBotConfig, Req, Resp> exten
      * @param key key
      */
     protected void addWSRuntimeInfoCount(String key) {
-        getDepinBotRuntimeInfo().getKeyValueInfoMap().compute(key, (k1, v1) -> {
+        getAutoBotRuntimeInfo().getKeyValueInfoMap().compute(key, (k1, v1) -> {
             if (v1 == null) {
                 v1 = 0;
             }

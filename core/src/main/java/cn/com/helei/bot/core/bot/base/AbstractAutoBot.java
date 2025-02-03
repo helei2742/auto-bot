@@ -1,13 +1,13 @@
 package cn.com.helei.bot.core.bot.base;
 
-import cn.com.helei.bot.core.config.BaseDepinBotConfig;
+import cn.com.helei.bot.core.config.BaseAutoBotConfig;
 import cn.com.helei.bot.core.config.SystemConfig;
 import cn.com.helei.bot.core.constants.DepinBotStatus;
-import cn.com.helei.bot.core.dto.DepinBotRuntimeInfo;
+import cn.com.helei.bot.core.dto.AutoBotRuntimeInfo;
 import cn.com.helei.bot.core.pool.env.BrowserEnvPool;
 import cn.com.helei.bot.core.exception.DepinBotInitException;
-import cn.com.helei.bot.core.exception.DepinBotStartException;
 import cn.com.helei.bot.core.exception.DepinBotStatusException;
+import cn.com.helei.bot.core.pool.network.AbstractProxyPool;
 import cn.com.helei.bot.core.pool.network.DynamicProxyPool;
 import cn.com.helei.bot.core.pool.network.NetworkProxy;
 import cn.com.helei.bot.core.pool.network.StaticProxyPool;
@@ -21,7 +21,6 @@ import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
@@ -29,6 +28,8 @@ import java.util.function.Supplier;
 @Slf4j
 @Getter
 public abstract class AbstractAutoBot {
+
+
     /**
      * 执行异步任务的线程池
      */
@@ -58,7 +59,7 @@ public abstract class AbstractAutoBot {
     /**
      * 配置
      */
-    private final BaseDepinBotConfig baseDepinBotConfig;
+    private final BaseAutoBotConfig baseAutoBotConfig;
 
     /**
      * 状态
@@ -73,58 +74,63 @@ public abstract class AbstractAutoBot {
     /**
      * bot运行时信息
      */
-    private final DepinBotRuntimeInfo depinBotRuntimeInfo;
+    private final AutoBotRuntimeInfo autoBotRuntimeInfo;
 
-    public AbstractAutoBot(BaseDepinBotConfig baseDepinBotConfig) {
-        if (StrUtil.isBlank(baseDepinBotConfig.getName())) throw new IllegalArgumentException("bot 名字不能为空");
+    public AbstractAutoBot(BaseAutoBotConfig baseAutoBotConfig) {
+        if (StrUtil.isBlank(baseAutoBotConfig.getName())) throw new IllegalArgumentException("bot 名字不能为空");
 
-        this.baseDepinBotConfig = baseDepinBotConfig;
-        this.executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory(baseDepinBotConfig.getName() + "-executor"));
+        this.baseAutoBotConfig = baseAutoBotConfig;
+        this.executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory(baseAutoBotConfig.getName() + "-executor"));
 
         this.staticProxyPool = StaticProxyPool.loadYamlPool(
-                baseDepinBotConfig.getStaticPoolConfig(),
+                baseAutoBotConfig.getStaticPoolConfig(),
                 "bot.network.proxy-static",
                 StaticProxyPool.class
         );
         this.dynamicProxyPool = DynamicProxyPool.loadYamlPool(
-                baseDepinBotConfig.getDynamicProxyConfig(),
+                baseAutoBotConfig.getDynamicProxyConfig(),
                 "bot.network.proxy-dynamic",
                 DynamicProxyPool.class
         );
         this.browserEnvPool = BrowserEnvPool.loadYamlPool(
-                baseDepinBotConfig.getBrowserEnvPoolConfig(),
+                baseAutoBotConfig.getBrowserEnvPoolConfig(),
                 "bot.browser",
                 BrowserEnvPool.class
         );
         this.twitterPool = TwitterPool.loadYamlPool(
-                baseDepinBotConfig.getTwitterPoolConfig(),
+                baseAutoBotConfig.getTwitterPoolConfig(),
                 "bot.twitter",
                 TwitterPool.class
         );
 
         this.networkSyncControllerMap = new ConcurrentHashMap<>();
 
-        this.depinBotRuntimeInfo = new DepinBotRuntimeInfo();
+        this.autoBotRuntimeInfo = new AutoBotRuntimeInfo();
     }
 
     public void init() {
         updateState(DepinBotStatus.INIT);
         try {
+            // 检查代理是否可用
+//            checkPoolProxy();
+
             doInit();
 
             //更新状态
             updateState(DepinBotStatus.INIT_FINISH);
         } catch (Exception e) {
-            log.error("初始化DepinBot[{}}发生错误", getBaseDepinBotConfig().getName(), e);
+            log.error("初始化DepinBot[{}}发生错误", getBaseAutoBotConfig().getName(), e);
             updateState(DepinBotStatus.INIT_ERROR);
         }
     }
+
+
+
 
     /**
      * 初始化方法
      */
     protected abstract void doInit() throws DepinBotInitException;
-
 
 
     /**
@@ -171,12 +177,12 @@ public abstract class AbstractAutoBot {
     ) {
 
         Semaphore networkController = networkSyncControllerMap
-                .compute(proxy == null ? NetworkProxy.DEFAULT : proxy, (k, v) -> {
-            if (v == null) {
-                v = new Semaphore(baseDepinBotConfig.getConcurrentCount());
-            }
-            return v;
-        });
+                .compute(proxy == null ? AbstractProxyPool.DEFAULT_PROXY : proxy, (k, v) -> {
+                    if (v == null) {
+                        v = new Semaphore(baseAutoBotConfig.getConcurrentCount());
+                    }
+                    return v;
+                });
 
 
         return CompletableFuture.supplyAsync(() -> {
@@ -213,7 +219,7 @@ public abstract class AbstractAutoBot {
      */
     public String printBotRuntimeInfo() {
         StringBuilder sb = new StringBuilder();
-        getDepinBotRuntimeInfo().getKeyValueInfoMap().forEach((k, v) -> {
+        getAutoBotRuntimeInfo().getKeyValueInfoMap().forEach((k, v) -> {
             sb.append(k).append(": ").append(v).append("\n");
         });
         return sb.toString();
@@ -225,9 +231,8 @@ public abstract class AbstractAutoBot {
      * @return String
      */
     public String getAppConfigDir() {
-        return FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_APP_PATH, getBaseDepinBotConfig().getName());
+        return FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_APP_PATH, getBaseAutoBotConfig().getName());
     }
-
 
 
     /**
@@ -266,5 +271,10 @@ public abstract class AbstractAutoBot {
         } else {
             throw new DepinBotStatusException(String.format("Depin Bot Status不能从[%s]->[%s]", status, newStatus));
         }
+    }
+
+    public void checkPoolProxy() throws InterruptedException {
+        AbstractProxyPool.checkProxyUsable(staticProxyPool, 5);
+        AbstractProxyPool.checkProxyUsable(dynamicProxyPool, 5);
     }
 }

@@ -1,12 +1,15 @@
 package cn.com.helei.application.openloop;
 
 import cn.com.helei.bot.core.bot.RestTaskAutoBot;
+import cn.com.helei.bot.core.bot.view.MenuCMDLineAutoBot;
 import cn.com.helei.bot.core.dto.account.AccountContext;
 
 import cn.com.helei.bot.core.exception.DepinBotStartException;
+import cn.com.helei.bot.core.supporter.commandMenu.DefaultMenuType;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.mail.Message;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -60,10 +63,10 @@ public class OpenLoopAutoBot extends RestTaskAutoBot {
 
     public static void main(String[] args) throws DepinBotStartException {
         OpenLoopAutoBot openLoopDepinBot = new OpenLoopAutoBot("openloop.yaml");
-        openLoopDepinBot.init();
-//        defaultMenuTypes.add(DefaultMenuType.REGISTER);
-//        defaultMenuTypes.add(DefaultMenuType.LOGIN);
-//        defaultMenuTypes.add(DefaultMenuType.START_ACCOUNT_CLAIM);
-//        openLoopDepinBot.start();
+        MenuCMDLineAutoBot<OpenLoopConfig> menuCMDLineAutoBot = new MenuCMDLineAutoBot<>(openLoopDepinBot,
+                List.of(DefaultMenuType.REGISTER, DefaultMenuType.LOGIN, DefaultMenuType.START_ACCOUNT_CLAIM));
+
+        menuCMDLineAutoBot.start();
+
     }
 }

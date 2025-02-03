@@ -3,6 +3,7 @@ package cn.com.helei.bot.core.util;
 import cn.com.helei.bot.core.pool.network.NetworkProxy;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 
@@ -12,6 +13,7 @@ import java.net.SocketTimeoutException;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 
 @Slf4j
@@ -19,6 +21,7 @@ public class RestApiClient {
 
     private static final int RETRY_TIMES = 1;
 
+    @Getter
     private final OkHttpClient okHttpClient;
 
     private final ExecutorService executorService;
@@ -29,11 +32,18 @@ public class RestApiClient {
     ) {
         this.executorService = executorService;
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        builder
+                // 连接超时
+                .connectTimeout(30, TimeUnit.SECONDS)
+                // 读取超时
+                .readTimeout(30, TimeUnit.SECONDS)
+                // 写入超时
+                .writeTimeout(45, TimeUnit.SECONDS);
 
         if (proxy != null) {
             builder.proxy(new Proxy(Proxy.Type.HTTP, proxy.getAddress()));
             if (StrUtil.isNotBlank(proxy.getUsername())) {
-                builder .proxyAuthenticator((route, response) -> {
+                builder.proxyAuthenticator((route, response) -> {
                     String credential = Credentials.basic(proxy.getUsername(), proxy.getPassword());
                     return response.request().newBuilder()
                             .header("Proxy-Authorization", credential)

@@ -4,7 +4,7 @@ import cn.com.helei.bot.core.BaseBotWSClient;
 import cn.com.helei.bot.core.SimpleBotWSClient;
 import cn.com.helei.bot.core.bot.WSTaskAutoBot;
 import cn.com.helei.bot.core.bot.view.MenuCMDLineAutoBot;
-import cn.com.helei.bot.core.config.BaseDepinBotConfig;
+import cn.com.helei.bot.core.config.BaseAutoBotConfig;
 import cn.com.helei.bot.core.dto.account.AccountContext;
 import cn.com.helei.bot.core.dto.ConnectStatusInfo;
 import cn.com.helei.bot.core.exception.DepinBotStartException;
@@ -21,12 +21,12 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
-public class TeneoWSAutoBot extends WSTaskAutoBot<TeneoDepinConfig, JSONObject, JSONObject> {
+public class TeneoWSAutoBot extends WSTaskAutoBot<TeneoAutoConfig, JSONObject, JSONObject> {
 
 
     private final TeneoApi teneoApi;
 
-    public TeneoWSAutoBot(TeneoDepinConfig config) {
+    public TeneoWSAutoBot(TeneoAutoConfig config) {
         super(config);
 
         this.teneoApi = new TeneoApi(this);
@@ -155,11 +155,11 @@ public class TeneoWSAutoBot extends WSTaskAutoBot<TeneoDepinConfig, JSONObject, 
     }
 
     public static void main(String[] args) throws DepinBotStartException {
-        TeneoDepinConfig teneoDepinConfig = TeneoDepinConfig.loadYamlConfig("bot.app.teneo", "teneo/teneo.yaml", TeneoDepinConfig.class);
+        TeneoAutoConfig teneoDepinConfig = TeneoAutoConfig.loadYamlConfig("bot.app.teneo", "teneo/teneo.yaml", TeneoAutoConfig.class);
         TeneoWSAutoBot teneoWSDepinBot = new TeneoWSAutoBot(teneoDepinConfig);
 
 
-        MenuCMDLineAutoBot<BaseDepinBotConfig> menuCMDLineAutoBot = new MenuCMDLineAutoBot<>(teneoWSDepinBot,
+        MenuCMDLineAutoBot<BaseAutoBotConfig> menuCMDLineAutoBot = new MenuCMDLineAutoBot<>(teneoWSDepinBot,
                 List.of(DefaultMenuType.REGISTER, DefaultMenuType.VERIFIER, DefaultMenuType.LOGIN, DefaultMenuType.START_ACCOUNT_CLAIM));
 
 

@@ -96,4 +96,8 @@ public class AccountContext {
     public String getSimpleInfo() {
         return String.format("%s-账户[%s]-代理[%s]", getAccountBaseInfo().getId(), getName(), getProxy() == null ? "NO_PROXY" : getProxy().getAddressStr());
     }
+
+    public void removeParam(String key) {
+        params.remove(key);
+    }
 }

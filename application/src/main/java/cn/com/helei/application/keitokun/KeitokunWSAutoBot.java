@@ -4,7 +4,7 @@ import cn.com.helei.bot.core.BaseBotWSClient;
 import cn.com.helei.bot.core.SimpleBotWSClient;
 import cn.com.helei.bot.core.bot.WSTaskAutoBot;
 import cn.com.helei.bot.core.bot.view.MenuCMDLineAutoBot;
-import cn.com.helei.bot.core.config.BaseDepinBotConfig;
+import cn.com.helei.bot.core.config.BaseAutoBotConfig;
 import cn.com.helei.bot.core.supporter.commandMenu.DefaultMenuType;
 import cn.com.helei.bot.core.dto.account.AccountContext;
 import cn.com.helei.bot.core.dto.ConnectStatusInfo;
@@ -37,7 +37,9 @@ public class KeitokunWSAutoBot extends WSTaskAutoBot<KeitokunConfig, JSONObject,
 
     private final static String UID_KEY = "uid";
 
-    private final static Map<BaseBotWSClient<JSONObject, JSONObject>, Integer> clientNeedSendAmount = new ConcurrentHashMap<>();
+    private final static int noResponsePingLimit = 10;
+
+    private final static Map<BaseBotWSClient<JSONObject, JSONObject>, Integer> clientNoResponsePingCount = new ConcurrentHashMap<>();
 
     private final static Map<BaseBotWSClient<JSONObject, JSONObject>, Integer> requestIdMap = new ConcurrentHashMap<>();
 
@@ -168,8 +170,6 @@ public class KeitokunWSAutoBot extends WSTaskAutoBot<KeitokunConfig, JSONObject,
 
         simpleDepinWSClient.setHeaders(httpHeaders);
 
-        clientNeedSendAmount.put(simpleDepinWSClient, Integer.parseInt(accountContext.getParam(TODAY_REMAINING_TAP_KEY)));
-
         return simpleDepinWSClient;
     }
 
@@ -247,15 +247,21 @@ public class KeitokunWSAutoBot extends WSTaskAutoBot<KeitokunConfig, JSONObject,
 
     @Override
     public JSONObject getHeartbeatMessage(BaseBotWSClient<JSONObject, JSONObject> depinWSClient) {
-        int sendAmount = clientNeedSendAmount.getOrDefault(depinWSClient, 500);
-
         AccountContext accountContext = depinWSClient.getAccountContext();
 
-        if (sendAmount <= 0) {
-            log.info("{} 发送心跳已达到上限，关闭客户端", depinWSClient.getAccountContext().getSimpleInfo());
-            depinWSClient.shutdown();
+        Integer count = clientNoResponsePingCount.compute(depinWSClient, (k, v) -> {
+            if (v != null && v >= noResponsePingLimit) {
+                return null;
+            }
+            return v == null ? 1 : v + 1;
+        });
+
+        if (count == null) {
+            log.warn("{} 长时间未收到pong，关闭客户端", depinWSClient.getAccountContext().getSimpleInfo());
+            depinWSClient.close();
             return null;
         }
+
 
         JSONObject frame = new JSONObject();
         frame.put("cmd", 1001);
@@ -264,8 +270,6 @@ public class KeitokunWSAutoBot extends WSTaskAutoBot<KeitokunConfig, JSONObject,
 
         JSONObject data = new JSONObject();
         int randomClickTimes = getRandomClickTimes();
-
-        clientNeedSendAmount.put(depinWSClient, sendAmount - randomClickTimes);
 
         data.put("amount", randomClickTimes);
         data.put("collectNum", randomClickTimes);
@@ -450,7 +454,7 @@ public class KeitokunWSAutoBot extends WSTaskAutoBot<KeitokunConfig, JSONObject,
     public static void main(String[] args) throws DepinBotStartException {
         KeitokunWSAutoBot mKeitokunWSDepinBot = new KeitokunWSAutoBot(KeitokunConfig.loadYamlConfig("keitokun/keitokun.yaml"));
 
-        MenuCMDLineAutoBot<BaseDepinBotConfig> menuCMDLineAutoBot = new MenuCMDLineAutoBot<>(mKeitokunWSDepinBot, List.of(DefaultMenuType.START_ACCOUNT_CLAIM));
+        MenuCMDLineAutoBot<BaseAutoBotConfig> menuCMDLineAutoBot = new MenuCMDLineAutoBot<>(mKeitokunWSDepinBot, List.of(DefaultMenuType.START_ACCOUNT_CLAIM));
 
         menuCMDLineAutoBot.start();
     }

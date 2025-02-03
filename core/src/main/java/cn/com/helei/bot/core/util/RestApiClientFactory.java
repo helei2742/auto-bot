@@ -14,7 +14,13 @@ public class RestApiClientFactory {
 
     private static final ExecutorService executor = Executors.newThreadPerTaskExecutor(new NamedThreadFactory("rest-api-client"));
 
+    public static final RestApiClient DEFAULT = new RestApiClient(null, executor);
+
     public static RestApiClient getClient(NetworkProxy proxy) {
+        if (proxy == null) {
+            return DEFAULT;
+        }
+
         return CLIENTS.compute(proxy, (k, v)->{
             if (v == null) {
                 v = new RestApiClient(proxy, executor);

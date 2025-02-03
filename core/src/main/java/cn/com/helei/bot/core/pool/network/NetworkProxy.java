@@ -1,6 +1,7 @@
 package cn.com.helei.bot.core.pool.network;
 
 import cn.com.helei.bot.core.pool.AbstractYamlLineItem;
+import com.alibaba.fastjson.JSONObject;
 import lombok.*;
 
 import java.net.InetSocketAddress;
@@ -10,8 +11,6 @@ import java.net.SocketAddress;
 @Setter
 @NoArgsConstructor
 public class NetworkProxy extends AbstractYamlLineItem {
-
-    public static final NetworkProxy DEFAULT = new NetworkProxy();
 
     private ProxyType proxyType;
 
@@ -24,6 +23,10 @@ public class NetworkProxy extends AbstractYamlLineItem {
     private String username;
 
     private String password;
+
+    private volatile boolean usable = true;
+
+    private JSONObject metadata;
 
     public NetworkProxy(Object originLine) {
         String proxyUrl = (String) originLine;

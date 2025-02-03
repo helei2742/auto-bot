@@ -1,11 +1,11 @@
 package cn.com.helei.application.teneo;
 
-import cn.com.helei.bot.core.config.WSDepinBotConfig;
+import cn.com.helei.bot.core.config.WSAutoBotConfig;
 import lombok.*;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class TeneoDepinConfig extends WSDepinBotConfig {
+public class TeneoAutoConfig extends WSAutoBotConfig {
 
     private String apiKey;
 

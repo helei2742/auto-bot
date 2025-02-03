@@ -1,8 +1,9 @@
 package cn.com.helei.bot.core.bot.base;
 
 import cn.com.helei.bot.core.config.AccountMailConfig;
-import cn.com.helei.bot.core.config.BaseDepinBotConfig;
+import cn.com.helei.bot.core.config.BaseAutoBotConfig;
 import cn.com.helei.bot.core.config.TypedAccountConfig;
+import cn.com.helei.bot.core.constants.MapConfigKey;
 import cn.com.helei.bot.core.dto.account.AccountContext;
 import cn.com.helei.bot.core.dto.account.AccountBaseInfo;
 import cn.com.helei.bot.core.exception.RewardQueryException;
@@ -76,12 +77,12 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
     private final Set<String> startedAccountType = new ConcurrentHashSet<>();
 
 
-    public AccountManageAutoBot(BaseDepinBotConfig baseDepinBotConfig) {
-        super(baseDepinBotConfig);
+    public AccountManageAutoBot(BaseAutoBotConfig baseAutoBotConfig) {
+        super(baseAutoBotConfig);
 
-        this.persistenceManager = new AccountPersistenceManager(baseDepinBotConfig.getName());
+        this.persistenceManager = new AccountPersistenceManager(baseAutoBotConfig.getName());
         this.accountTimerTaskMap = new ConcurrentHashMap<>();
-        this.taskSyncController = new Semaphore(baseDepinBotConfig.getConcurrentCount());
+        this.taskSyncController = new Semaphore(baseAutoBotConfig.getConcurrentCount());
     }
 
     @Override
@@ -182,6 +183,10 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
         // Step 2 遍历不同类型下的所有账户
         List<CompletableFuture<Boolean>> futures = accountContexts.stream()
                 .map(account -> {
+                    if (!checkAccountProxyUsable(type, account)) {
+                        return CompletableFuture.completedFuture(false);
+                    }
+
                     // 账户注册过，
                     if (BooleanUtil.isTrue(account.getAccountBaseInfo().getSignUp())) {
                         log.warn("[{}]账户[{}]-email[{}]注册过", type, account.getName(),
@@ -189,7 +194,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
 
                         return CompletableFuture.completedFuture(false);
                     } else {
-                        return registerAccount(account, getBaseDepinBotConfig().getConfig(INVITE_CODE_KEY));
+                        return registerAccount(account, getBaseAutoBotConfig().getConfig(INVITE_CODE_KEY));
                     }
                 }).toList();
 
@@ -215,11 +220,12 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
         return sb.append("]").toString();
     }
 
+
     public String verifierEmail(String type) {
         List<AccountContext> accounts = getTypedAccountMap().get(type);
 
         // Step 1  获取type类型的邮件设置
-        BaseDepinBotConfig botConfig = getBaseDepinBotConfig();
+        BaseAutoBotConfig botConfig = getBaseAutoBotConfig();
 
         Optional<AccountMailConfig> first = botConfig.getAccountConfigs().stream()
                 .filter(accountConfig -> type.equals(accountConfig.getType()))
@@ -303,9 +309,24 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
         List<AccountContext> accountContexts = typedAccountMap.get(type);
 
         log.info("开始获取[{}]类型账号token", type);
+        Semaphore semaphore = new Semaphore(getBaseAutoBotConfig().getConcurrentCount());
 
         List<CompletableFuture<String>> futures = accountContexts.stream()
-                .map(this::requestTokenOfAccount).toList();
+                .map(accountContext -> {
+                    try {
+                        semaphore.acquire();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    if(!checkAccountProxyUsable(type, accountContext)) {
+                        semaphore.release();
+                        return CompletableFuture.completedFuture("");
+                    }
+
+                    return requestTokenOfAccount(accountContext)
+                            .whenComplete((token, throwable) -> semaphore.release());
+                }).toList();
 
         int successCount = 0;
         for (int i = 0; i < futures.size(); i++) {
@@ -315,10 +336,10 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
                 String token = future.get();
                 if (StrUtil.isNotBlank(token)) {
                     successCount++;
-                    accountContext.getParams().put("token", token);
+                    accountContext.getParams().put(MapConfigKey.TOKEN_KEY, token);
                 }
             } catch (InterruptedException | ExecutionException e) {
-                log.error("[{}] 账号[{}]获取token发生错误, {}", type, accountContext.getName(), e.getMessage());
+                log.error("[{}] {} 获取token发生错误", type, accountContext.getSimpleInfo(), e);
             }
         }
 
@@ -366,15 +387,17 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
         log.info("开始[{}]账户claim", type);
 
         accountContexts.forEach(account -> {
-            account.getConnectStatusInfo().setStartDateTime(LocalDateTime.now());
+            if (checkAccountProxyUsable(type, account)) {
+                account.getConnectStatusInfo().setStartDateTime(LocalDateTime.now());
 
-            // 添加定时任务
-            addTimer(
-                    () -> doAccountClaim(account),
-                    getBaseDepinBotConfig().getAutoClaimIntervalSeconds(),
-                    TimeUnit.SECONDS,
-                    account
-            );
+                // 添加定时任务
+                addTimer(
+                        () -> doAccountClaim(account),
+                        getBaseAutoBotConfig().getAutoClaimIntervalSeconds(),
+                        TimeUnit.SECONDS,
+                        account
+                );
+            }
         });
     }
 
@@ -404,7 +427,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
                         }
                     }
                     try {
-                        TimeUnit.SECONDS.sleep(getBaseDepinBotConfig().getAccountRewardRefreshIntervalSeconds());
+                        TimeUnit.SECONDS.sleep(getBaseAutoBotConfig().getAccountRewardRefreshIntervalSeconds());
                     } catch (InterruptedException e) {
                         log.error("等待执行账户查询时发生异常", e);
                     }
@@ -424,21 +447,21 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
 
             // Step 2 没有保存的数据，加载新的
             if (typedAccountMap == null || typedAccountMap.isEmpty()) {
-                log.info("bot[{}]加载新账户数据", getBaseDepinBotConfig().getName());
+                log.info("bot[{}]加载新账户数据", getBaseAutoBotConfig().getName());
                 // Step 2.1 加载新的
                 typedAccountMap = loadNewAccountContexts();
 
                 // Step 2.2 持久化
                 persistenceManager.persistenceAccountContexts(typedAccountMap);
             } else {
-                log.info("bot[{}]使用历史账户数据", getBaseDepinBotConfig().getName());
+                log.info("bot[{}]使用历史账户数据", getBaseAutoBotConfig().getName());
             }
 
 
             // Step 3 加载到bot
             registerAccountsInBot(typedAccountMap,
                     accountContext -> AccountPersistenceManager.getAccountContextPersistencePath(
-                            getBaseDepinBotConfig().getName(), accountContext.getAccountBaseInfo().getType(), accountContext
+                            getBaseAutoBotConfig().getName(), accountContext.getAccountBaseInfo().getType(), accountContext
                     )
             );
 
@@ -469,7 +492,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
      */
     private Map<String, List<AccountContext>> loadNewAccountContexts() {
         // Step 0 获取配置
-        BaseDepinBotConfig botConfig = getBaseDepinBotConfig();
+        BaseAutoBotConfig botConfig = getBaseAutoBotConfig();
         List<TypedAccountConfig> accountConfigs = botConfig.getAccountConfigs();
 
         Map<String, List<AccountContext>> typedAccountContextMap = new HashMap<>();
@@ -563,11 +586,10 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
                     newAccountContexts.add(accountContext);
                 });
 
-        // Step 2 账号没代理的尝试给他设置代理
-        if (!noProxyIds.isEmpty() && proxyPool != null) {
+        // Step 2 账号没代理并且为动态代理的，的尝试给他设置动态代理
+        if (!noProxyIds.isEmpty() && proxyPool != null && proxyType.equals(ProxyType.DYNAMIC)) {
             log.warn("以下账号没有配置代理，将随机选择一个代理进行使用");
 
-            // 静态代理，给账户分配使用，用完不重复分配
             List<NetworkProxy> lessUsedItem = proxyPool.getLessUsedItem(noProxyIds.size());
 
             for (int i = 0; i < noProxyIds.size(); i++) {
@@ -623,5 +645,17 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+
+    private static boolean checkAccountProxyUsable(String type, AccountContext account) {
+        if (true) return true;
+
+        if (account.getProxy() != null && BooleanUtil.isFalse(account.getProxy().isUsable())) {
+            log.warn("[{}]账户[{}]-email[{}]代理不可用", type, account.getName(),
+                    account.getAccountBaseInfo().getEmail());
+            return false;
+        }
+        return true;
     }
 }

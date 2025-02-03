@@ -10,4 +10,5 @@ public class MapConfigKey {
 
     public static final String EMAIL_VERIFIER_TYPE = "email_verifier_type";
 
+    public static final String TOKEN_KEY = "token";
 }
