@@ -135,17 +135,13 @@ public class KeitokunWSAutoBot extends WSTaskAutoBot<KeitokunConfig, JSONObject,
         String remainingTapStr = accountContext.getParam(TODAY_REMAINING_TAP_KEY);
         String accountSaveDay = accountContext.getParam(TODAY_KEY);
 
-        // 今天还有没点击的,或者就没点击、没点击完的
-        if (accountSaveDay == null || remainingTapStr == null
-                || !accountSaveDay.equals(today) || Integer.parseInt(remainingTapStr) > 0
-        ) {
+        // 新的一天
+        if (accountSaveDay == null || !accountSaveDay.equals(today) || StrUtil.isBlank(remainingTapStr)) {
             accountContext.setParam(TODAY_KEY, LocalDate.now().toString());
             accountContext.setConnectUrl(getBotConfig().getWsBaseUrl() + "?uid=" + accountContext.getParam(UID_KEY));
-
-            if (StrUtil.isNotBlank(remainingTapStr) && Integer.parseInt(remainingTapStr) == 0) {
-                accountContext.setParam(TODAY_REMAINING_TAP_KEY, "500");
-            }
-
+            accountContext.setParam(TODAY_REMAINING_TAP_KEY, "500");
+        } else if(Integer.parseInt(remainingTapStr) > 0){ // 日内没点击完
+            accountContext.setConnectUrl(getBotConfig().getWsBaseUrl() + "?uid=" + accountContext.getParam(UID_KEY));
         } else {
             // 今天点击完的
             log.warn("{} 今日点击已完成", prefix);
