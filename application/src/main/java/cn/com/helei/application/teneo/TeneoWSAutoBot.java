@@ -129,7 +129,7 @@ public class TeneoWSAutoBot extends WSTaskAutoBot<TeneoAutoConfig, JSONObject, J
 
         if (sendCountMap.compute(accountContext, (k, v) -> {
             if (v == null) return 1;
-            else if (v >= 6 * 10 * 16) {
+            else if (v >= 15*6) {
                 depinWSClient.close();
                 return null;
             } else {
