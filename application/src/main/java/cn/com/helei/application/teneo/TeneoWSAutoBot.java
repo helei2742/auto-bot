@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 
 
 import javax.mail.Message;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -23,6 +24,7 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class TeneoWSAutoBot extends WSTaskAutoBot<TeneoAutoConfig, JSONObject, JSONObject> {
 
+    private final Map<AccountContext, Integer> sendCountMap = new HashMap<>();
 
     private final TeneoApi teneoApi;
 
@@ -68,6 +70,8 @@ public class TeneoWSAutoBot extends WSTaskAutoBot<TeneoAutoConfig, JSONObject, J
                         accountContext.getName(), accountContext.getProxy().getAddressStr());
 
                 depinWSClient.sendMessage(getHeartbeatMessage(depinWSClient));
+
+                sendCountMap.put(accountContext, 1);
             }
             case STOP -> {
                 log.warn("账户[{}]-proxy[{}]已断开连接",
@@ -121,7 +125,21 @@ public class TeneoWSAutoBot extends WSTaskAutoBot<TeneoAutoConfig, JSONObject, J
 
     @Override
     public JSONObject getHeartbeatMessage(BaseBotWSClient<JSONObject, JSONObject> depinWSClient) {
-        ConnectStatusInfo connectStatusInfo = depinWSClient.getAccountContext().getConnectStatusInfo();
+        AccountContext accountContext = depinWSClient.getAccountContext();
+
+        if (sendCountMap.compute(accountContext, (k, v) -> {
+            if (v == null) return 1;
+            else if (v >= 6 * 10 * 16) {
+                depinWSClient.close();
+                return null;
+            } else {
+                return v + 1;
+            }
+        }) == null) {
+            return null;
+        }
+
+        ConnectStatusInfo connectStatusInfo = accountContext.getConnectStatusInfo();
         connectStatusInfo.getHeartBeat().incrementAndGet();
 
         // 错误心跳数提前加上
@@ -130,7 +148,8 @@ public class TeneoWSAutoBot extends WSTaskAutoBot<TeneoAutoConfig, JSONObject, J
         JSONObject ping = new JSONObject();
         ping.put("type", "ping");
 
-        log.info("{} 发送ping", depinWSClient.getAccountContext().getSimpleInfo());
+        log.info("{} 发送ping", accountContext.getSimpleInfo());
+
         return ping;
     }
 
