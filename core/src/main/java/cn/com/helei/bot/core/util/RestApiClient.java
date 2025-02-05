@@ -1,6 +1,6 @@
 package cn.com.helei.bot.core.util;
 
-import cn.com.helei.bot.core.pool.network.NetworkProxy;
+import cn.com.helei.bot.core.entity.ProxyInfo;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
@@ -27,7 +27,7 @@ public class RestApiClient {
     private final ExecutorService executorService;
 
     public RestApiClient(
-            NetworkProxy proxy,
+            ProxyInfo proxy,
             ExecutorService executorService
     ) {
         this.executorService = executorService;

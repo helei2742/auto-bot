@@ -33,7 +33,7 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
     @Setter
     private Consumer<CommandMenuNode> addCustomMenuNode;
 
-    public MenuCMDLineAutoBot(AccountManageAutoBot bot,  List<DefaultMenuType> defaultMenuTypes) {
+    public MenuCMDLineAutoBot(AccountManageAutoBot bot, List<DefaultMenuType> defaultMenuTypes) {
         super(bot);
         this.defaultMenuTypes = new ArrayList<>(defaultMenuTypes);
 
@@ -83,9 +83,11 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
                 case PROXY_LIST -> buildProxyListMenuNode();
                 case BROWSER_ENV_LIST -> buildBrowserListMenuNode();
                 case START_ACCOUNT_CLAIM -> buildStartAccountConnectMenuNode();
+                case IMPORT -> buildImportMenuNode();
             });
         }
     }
+
 
     /**
      * 构建注册菜单节点
@@ -181,8 +183,8 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
     private CommandMenuNode buildProxyListMenuNode() {
         return new CommandMenuNode(
                 "查看代理列表",
-                "当前代理列表文件:" + getBot().getStaticProxyPool().getConfigClassPath(),
-                getBot().getStaticProxyPool()::printPool
+                "当前代理列表:",
+                null
         ).addSubMenu(REFRESH_NODE);
     }
 
@@ -194,8 +196,8 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
     private CommandMenuNode buildBrowserListMenuNode() {
         return new CommandMenuNode(
                 "查看浏览器环境列表",
-                "当前代理列表文件:" + getBot().getBrowserEnvPool().getConfigClassPath(),
-                getBot().getBrowserEnvPool()::printPool
+                "当前浏览器环境:",
+                null
         ).addSubMenu(REFRESH_NODE);
     }
 
@@ -277,6 +279,46 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
         return menuNode;
     }
 
+    /**
+     * 导入菜单节点
+     *
+     * @return CommandMenuNode
+     */
+    private CommandMenuNode buildImportMenuNode() {
+
+        return new CommandMenuNode("导入", "请选择要导入的数据", null)
+                .addSubMenu(buildImportBaseAccountMenuNode())
+                .addSubMenu(buildImportProxyMenuNode())
+                .addSubMenu(buildImportBrowserEnvMenuNode());
+    }
+
+    /**
+     * 导入浏览器环境菜单节点
+     *
+     * @return CommandMenuNode
+     */
+    private CommandMenuNode buildImportBrowserEnvMenuNode() {
+        return new CommandMenuNode(true, "导入浏览器环境", null, null);
+    }
+
+    /**
+     * 导入代理信息
+     *
+     * @return CommandMenuNode
+     */
+    private CommandMenuNode buildImportProxyMenuNode() {
+        return new CommandMenuNode(true, "导入代理", null, null);
+
+    }
+
+    /**
+     * 导入账号基本信息
+     *
+     * @return CommandMenuNode
+     */
+    private CommandMenuNode buildImportBaseAccountMenuNode() {
+        return new CommandMenuNode(true, "导入账号基本信息", null, null);
+    }
 
     /**
      * 打印当前的邀请码

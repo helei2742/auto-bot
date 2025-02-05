@@ -3,7 +3,7 @@ package cn.com.helei.bot.core.bot.view;
 import cn.com.helei.bot.core.bot.base.AccountManageAutoBot;
 import cn.com.helei.bot.core.config.BaseAutoBotConfig;
 import cn.com.helei.bot.core.constants.DepinBotStatus;
-import cn.com.helei.bot.core.exception.DepinBotStartException;
+import cn.com.helei.bot.core.util.exception.DepinBotStartException;
 import cn.com.helei.bot.core.supporter.commandMenu.CommandMenuNode;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

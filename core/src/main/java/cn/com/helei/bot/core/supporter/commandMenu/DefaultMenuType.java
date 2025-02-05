@@ -10,4 +10,7 @@ public enum DefaultMenuType {
     ACCOUNT_LIST,
     PROXY_LIST,
     BROWSER_ENV_LIST,
+
+    IMPORT
+
 }

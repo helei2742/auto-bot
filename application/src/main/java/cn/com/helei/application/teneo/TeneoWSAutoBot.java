@@ -1,14 +1,14 @@
 package cn.com.helei.application.teneo;
 
-import cn.com.helei.bot.core.BaseBotWSClient;
-import cn.com.helei.bot.core.SimpleBotWSClient;
+import cn.com.helei.bot.core.supporter.netty.BaseBotWSClient;
+import cn.com.helei.bot.core.supporter.netty.SimpleBotWSClient;
 import cn.com.helei.bot.core.bot.WSTaskAutoBot;
 import cn.com.helei.bot.core.bot.view.MenuCMDLineAutoBot;
 import cn.com.helei.bot.core.config.BaseAutoBotConfig;
 import cn.com.helei.bot.core.dto.account.AccountContext;
 import cn.com.helei.bot.core.dto.ConnectStatusInfo;
-import cn.com.helei.bot.core.exception.DepinBotStartException;
-import cn.com.helei.bot.core.netty.constants.WebsocketClientStatus;
+import cn.com.helei.bot.core.util.exception.DepinBotStartException;
+import cn.com.helei.bot.core.supporter.netty.constants.WebsocketClientStatus;
 import cn.com.helei.bot.core.supporter.commandMenu.DefaultMenuType;
 import com.alibaba.fastjson.JSONObject;
 import io.netty.handler.codec.http.DefaultHttpHeaders;

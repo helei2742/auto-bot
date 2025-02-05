@@ -2,7 +2,7 @@ package cn.com.helei.application.unich;
 
 import cn.com.helei.bot.core.constants.MapConfigKey;
 import cn.com.helei.bot.core.dto.account.AccountContext;
-import cn.com.helei.bot.core.exception.LoginException;
+import cn.com.helei.bot.core.util.exception.LoginException;
 import cn.com.helei.bot.core.pool.network.NetworkProxy;
 import cn.com.helei.bot.core.util.captcha.TwoCaptchaSolverFactory;
 import cn.hutool.core.util.BooleanUtil;

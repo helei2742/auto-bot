@@ -1,10 +1,10 @@
 package cn.com.helei.bot.core.bot;
 
-import cn.com.helei.bot.core.BaseBotWSClient;
+import cn.com.helei.bot.core.supporter.netty.BaseBotWSClient;
 import cn.com.helei.bot.core.config.WSAutoBotConfig;
-import cn.com.helei.bot.core.dto.account.AccountContext;
-import cn.com.helei.bot.core.exception.DepinBotStatusException;
-import cn.com.helei.bot.core.netty.constants.WebsocketClientStatus;
+import cn.com.helei.bot.core.entity.AccountContext;
+import cn.com.helei.bot.core.util.exception.DepinBotStatusException;
+import cn.com.helei.bot.core.supporter.netty.constants.WebsocketClientStatus;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 

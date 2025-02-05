@@ -13,6 +13,11 @@ import java.util.Map;
 public class BaseAutoBotConfig {
 
     /**
+     * 项目id
+     */
+    private Integer projectId;
+
+    /**
      * 名字
      */
     private String name;

@@ -1,10 +1,9 @@
 package cn.com.helei.application.teneo;
 
-import cn.com.helei.bot.core.bot.base.AccountManageAutoBot;
 import cn.com.helei.bot.core.constants.MapConfigKey;
 import cn.com.helei.bot.core.dto.account.AccountContext;
-import cn.com.helei.bot.core.exception.LoginException;
-import cn.com.helei.bot.core.exception.RegisterException;
+import cn.com.helei.bot.core.util.exception.LoginException;
+import cn.com.helei.bot.core.util.exception.RegisterException;
 import cn.com.helei.bot.core.pool.network.NetworkProxy;
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;

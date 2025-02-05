@@ -5,7 +5,7 @@ import cn.com.helei.bot.core.bot.view.MenuCMDLineAutoBot;
 import cn.com.helei.bot.core.config.BaseAutoBotConfig;
 import cn.com.helei.bot.core.dto.account.AccountBaseInfo;
 import cn.com.helei.bot.core.dto.account.AccountContext;
-import cn.com.helei.bot.core.exception.DepinBotStartException;
+import cn.com.helei.bot.core.util.exception.DepinBotStartException;
 import cn.com.helei.bot.core.supporter.commandMenu.DefaultMenuType;
 import cn.com.helei.bot.core.supporter.commandMenu.MenuNodeMethod;
 import lombok.extern.slf4j.Slf4j;

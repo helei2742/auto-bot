@@ -4,14 +4,10 @@ import cn.com.helei.bot.core.config.BaseAutoBotConfig;
 import cn.com.helei.bot.core.config.SystemConfig;
 import cn.com.helei.bot.core.constants.DepinBotStatus;
 import cn.com.helei.bot.core.dto.AutoBotRuntimeInfo;
-import cn.com.helei.bot.core.pool.env.BrowserEnvPool;
-import cn.com.helei.bot.core.exception.DepinBotInitException;
-import cn.com.helei.bot.core.exception.DepinBotStatusException;
-import cn.com.helei.bot.core.pool.network.AbstractProxyPool;
-import cn.com.helei.bot.core.pool.network.DynamicProxyPool;
-import cn.com.helei.bot.core.pool.network.NetworkProxy;
-import cn.com.helei.bot.core.pool.network.StaticProxyPool;
-import cn.com.helei.bot.core.pool.twitter.TwitterPool;
+import cn.com.helei.bot.core.entity.ProxyInfo;
+import cn.com.helei.bot.core.supporter.botapi.BotApi;
+import cn.com.helei.bot.core.util.exception.DepinBotInitException;
+import cn.com.helei.bot.core.util.exception.DepinBotStatusException;
 import cn.com.helei.bot.core.util.FileUtil;
 import cn.com.helei.bot.core.util.NamedThreadFactory;
 import cn.com.helei.bot.core.util.RestApiClientFactory;
@@ -19,6 +15,7 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
@@ -29,32 +26,12 @@ import java.util.function.Supplier;
 @Getter
 public abstract class AbstractAutoBot {
 
+    private static final ProxyInfo DEFAULT_PROXY = new ProxyInfo();
 
     /**
      * 执行异步任务的线程池
      */
     private final ExecutorService executorService;
-
-    /**
-     * 静态代理池
-     */
-    private final StaticProxyPool staticProxyPool;
-
-    /**
-     * 动态代理池
-     */
-    private final DynamicProxyPool dynamicProxyPool;
-
-    /**
-     * 浏览器环境池
-     */
-    private final BrowserEnvPool browserEnvPool;
-
-
-    /**
-     * 推特池
-     */
-    private final TwitterPool twitterPool;
 
     /**
      * 配置
@@ -69,12 +46,15 @@ public abstract class AbstractAutoBot {
     /**
      * 代理并发控制
      */
-    private final Map<NetworkProxy, Semaphore> networkSyncControllerMap;
+    private final Map<ProxyInfo, Semaphore> networkSyncControllerMap;
 
     /**
      * bot运行时信息
      */
     private final AutoBotRuntimeInfo autoBotRuntimeInfo;
+
+    @Setter
+    private BotApi botApi;
 
     public AbstractAutoBot(BaseAutoBotConfig baseAutoBotConfig) {
         if (StrUtil.isBlank(baseAutoBotConfig.getName())) throw new IllegalArgumentException("bot 名字不能为空");
@@ -82,38 +62,13 @@ public abstract class AbstractAutoBot {
         this.baseAutoBotConfig = baseAutoBotConfig;
         this.executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory(baseAutoBotConfig.getName() + "-executor"));
 
-        this.staticProxyPool = StaticProxyPool.loadYamlPool(
-                baseAutoBotConfig.getStaticPoolConfig(),
-                "bot.network.proxy-static",
-                StaticProxyPool.class
-        );
-        this.dynamicProxyPool = DynamicProxyPool.loadYamlPool(
-                baseAutoBotConfig.getDynamicProxyConfig(),
-                "bot.network.proxy-dynamic",
-                DynamicProxyPool.class
-        );
-        this.browserEnvPool = BrowserEnvPool.loadYamlPool(
-                baseAutoBotConfig.getBrowserEnvPoolConfig(),
-                "bot.browser",
-                BrowserEnvPool.class
-        );
-        this.twitterPool = TwitterPool.loadYamlPool(
-                baseAutoBotConfig.getTwitterPoolConfig(),
-                "bot.twitter",
-                TwitterPool.class
-        );
-
         this.networkSyncControllerMap = new ConcurrentHashMap<>();
-
         this.autoBotRuntimeInfo = new AutoBotRuntimeInfo();
     }
 
     public void init() {
         updateState(DepinBotStatus.INIT);
         try {
-            // 检查代理是否可用
-//            checkPoolProxy();
-
             doInit();
 
             //更新状态
@@ -145,7 +100,7 @@ public abstract class AbstractAutoBot {
      * @return CompletableFuture<String> response str
      */
     public CompletableFuture<String> syncRequest(
-            NetworkProxy proxy,
+            ProxyInfo proxy,
             String url,
             String method,
             Map<String, String> headers,
@@ -167,7 +122,7 @@ public abstract class AbstractAutoBot {
      * @return CompletableFuture<Response> String
      */
     public CompletableFuture<String> syncRequest(
-            NetworkProxy proxy,
+            ProxyInfo proxy,
             String url,
             String method,
             Map<String, String> headers,
@@ -177,7 +132,7 @@ public abstract class AbstractAutoBot {
     ) {
 
         Semaphore networkController = networkSyncControllerMap
-                .compute(proxy == null ? AbstractProxyPool.DEFAULT_PROXY : proxy, (k, v) -> {
+                .compute(proxy == null ? DEFAULT_PROXY : proxy, (k, v) -> {
                     if (v == null) {
                         v = new Semaphore(baseAutoBotConfig.getConcurrentCount());
                     }
@@ -271,10 +226,5 @@ public abstract class AbstractAutoBot {
         } else {
             throw new DepinBotStatusException(String.format("Depin Bot Status不能从[%s]->[%s]", status, newStatus));
         }
-    }
-
-    public void checkPoolProxy() throws InterruptedException {
-        AbstractProxyPool.checkProxyUsable(staticProxyPool, 5);
-        AbstractProxyPool.checkProxyUsable(dynamicProxyPool, 5);
     }
 }

@@ -1,12 +1,12 @@
 package cn.com.helei.bot.core.supporter;
 
 import cn.com.helei.bot.core.dto.ConnectStatusInfo;
-import cn.com.helei.bot.core.dto.RewordInfo;
-import cn.com.helei.bot.core.dto.account.AccountContext;
 import cn.com.helei.bot.core.dto.account.AccountPrintDto;
-import cn.com.helei.bot.core.pool.env.BrowserEnv;
-import cn.com.helei.bot.core.pool.network.NetworkProxy;
-import cn.com.helei.bot.core.util.table.CommandLineTablePrintHelper;
+import cn.com.helei.bot.core.entity.AccountContext;
+import cn.com.helei.bot.core.entity.BrowserEnv;
+import cn.com.helei.bot.core.entity.ProxyInfo;
+import cn.com.helei.bot.core.entity.RewordInfo;
+import cn.com.helei.bot.core.util.tableprinter.CommandLineTablePrintHelper;
 
 import java.util.List;
 import java.util.Map;
@@ -29,7 +29,7 @@ public class AccountInfoPrinter {
             sb.append(type).append(" 账户列表\n");
 
             List<AccountPrintDto> list = accountContexts.stream().map(accountContext -> {
-                NetworkProxy proxy = accountContext.getProxy();
+                ProxyInfo proxy = accountContext.getProxy();
                 BrowserEnv browserEnv = accountContext.getBrowserEnv();
 
                 return AccountPrintDto
@@ -38,7 +38,7 @@ public class AccountInfoPrinter {
                         .name(accountContext.getName())
                         .proxyInfo(proxy == null ? "NO_PROXY" : proxy.getId() + "-" + proxy.getAddressStr())
                         .browserEnvInfo(String.valueOf(browserEnv == null ? "NO_ENV" : browserEnv.getId()))
-                        .signUp(accountContext.getAccountBaseInfo().getSignUp())
+                        .signUp(accountContext.getSignUp())
                         .build();
             }).toList();
 

@@ -1,6 +1,7 @@
 package cn.com.helei.bot.core.bot.base;
 
-import cn.com.helei.bot.core.dto.account.AccountContext;
+
+import cn.com.helei.bot.core.entity.AccountContext;
 
 import javax.mail.Message;
 import java.util.concurrent.CompletableFuture;

@@ -1,7 +1,7 @@
 package cn.com.helei.application.openloop;
 
 import cn.com.helei.bot.core.dto.account.AccountContext;
-import cn.com.helei.bot.core.exception.LoginException;
+import cn.com.helei.bot.core.util.exception.LoginException;
 import cn.com.helei.bot.core.pool.network.NetworkProxy;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;

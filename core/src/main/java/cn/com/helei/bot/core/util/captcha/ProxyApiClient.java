@@ -1,6 +1,6 @@
 package cn.com.helei.bot.core.util.captcha;
 
-import cn.com.helei.bot.core.pool.network.NetworkProxy;
+import cn.com.helei.bot.core.entity.ProxyInfo;
 import cn.com.helei.bot.core.util.RestApiClient;
 import cn.com.helei.bot.core.util.RestApiClientFactory;
 import com.twocaptcha.ApiClient;
@@ -18,7 +18,7 @@ public class ProxyApiClient extends ApiClient {
 
     private final OkHttpClient proxyOkHttpClient;
 
-    public ProxyApiClient(NetworkProxy proxy) {
+    public ProxyApiClient(ProxyInfo proxy) {
         RestApiClient client = RestApiClientFactory.getClient(proxy);
         this.proxyOkHttpClient = client == null ? new OkHttpClient() : client.getOkHttpClient();
     }

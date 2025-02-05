@@ -4,37 +4,27 @@ import cn.com.helei.bot.core.config.AccountMailConfig;
 import cn.com.helei.bot.core.config.BaseAutoBotConfig;
 import cn.com.helei.bot.core.config.TypedAccountConfig;
 import cn.com.helei.bot.core.constants.MapConfigKey;
-import cn.com.helei.bot.core.dto.account.AccountContext;
-import cn.com.helei.bot.core.dto.account.AccountBaseInfo;
-import cn.com.helei.bot.core.exception.RewardQueryException;
-import cn.com.helei.bot.core.pool.env.BrowserEnv;
-import cn.com.helei.bot.core.exception.DepinBotInitException;
-import cn.com.helei.bot.core.pool.env.BrowserEnvPool;
-import cn.com.helei.bot.core.pool.network.AbstractProxyPool;
-import cn.com.helei.bot.core.pool.network.NetworkProxy;
-import cn.com.helei.bot.core.pool.network.ProxyType;
-import cn.com.helei.bot.core.pool.twitter.TwitterPool;
+import cn.com.helei.bot.core.entity.AccountBaseInfo;
+import cn.com.helei.bot.core.entity.AccountContext;
+import cn.com.helei.bot.core.util.exception.RewardQueryException;
+import cn.com.helei.bot.core.util.exception.DepinBotInitException;
 import cn.com.helei.bot.core.supporter.mail.constants.MailProtocolType;
 import cn.com.helei.bot.core.supporter.mail.factory.MailReaderFactory;
 import cn.com.helei.bot.core.supporter.mail.reader.MailReader;
 import cn.com.helei.bot.core.supporter.persistence.AccountPersistenceManager;
 import cn.com.helei.bot.core.util.ClosableTimerTask;
-import cn.com.helei.bot.core.util.FileUtil;
 import cn.hutool.core.collection.ConcurrentHashSet;
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static cn.com.helei.bot.core.constants.MapConfigKey.EMAIL_VERIFIED_KEY;
@@ -42,12 +32,6 @@ import static cn.com.helei.bot.core.constants.MapConfigKey.INVITE_CODE_KEY;
 
 @Slf4j
 public abstract class AccountManageAutoBot extends AbstractAutoBot implements AccountAutoBot {
-
-
-    /**
-     * 持久化管理器
-     */
-    private final AccountPersistenceManager persistenceManager;
 
     /**
      * 账号列表
@@ -59,7 +43,6 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
      * 是否允许账户收益查询
      */
     private final AtomicBoolean isRunningAccountRewardQuery = new AtomicBoolean(true);
-
 
     /**
      * 存放账户对应的addTimer添加的任务
@@ -76,11 +59,15 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
      */
     private final Set<String> startedAccountType = new ConcurrentHashSet<>();
 
+    /**
+     * 持久化管理器
+     */
+    @Setter
+    private AccountPersistenceManager persistenceManager;
 
     public AccountManageAutoBot(BaseAutoBotConfig baseAutoBotConfig) {
         super(baseAutoBotConfig);
 
-        this.persistenceManager = new AccountPersistenceManager(baseAutoBotConfig.getName());
         this.accountTimerTaskMap = new ConcurrentHashMap<>();
         this.taskSyncController = new Semaphore(baseAutoBotConfig.getConcurrentCount());
     }
@@ -183,12 +170,8 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
         // Step 2 遍历不同类型下的所有账户
         List<CompletableFuture<Boolean>> futures = accountContexts.stream()
                 .map(account -> {
-                    if (!checkAccountProxyUsable(type, account)) {
-                        return CompletableFuture.completedFuture(false);
-                    }
-
                     // 账户注册过，
-                    if (BooleanUtil.isTrue(account.getAccountBaseInfo().getSignUp())) {
+                    if (BooleanUtil.isTrue(account.getSignUp())) {
                         log.warn("[{}]账户[{}]-email[{}]注册过", type, account.getName(),
                                 account.getAccountBaseInfo().getEmail());
 
@@ -208,7 +191,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
                 if (future.get()) {
                     //注册成功
                     successCount++;
-                    accountContext.getAccountBaseInfo().setSignUp(true);
+                    accountContext.setSignUp(true);
                 }
             } catch (InterruptedException | ExecutionException e) {
                 log.error("注册[{}]账号[{}]发生错误", type, accountContext.getName(), e);
@@ -253,7 +236,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
                         String emailVerified = accountContext.getParam(EMAIL_VERIFIED_KEY);
 
                         // 注册的、验证状态为false的才需要验证邮件
-                        return BooleanUtil.isTrue(accountContext.getAccountBaseInfo().getSignUp())
+                        return BooleanUtil.isTrue(accountContext.getSignUp())
                                 && emailVerified != null && BooleanUtil.isFalse(Boolean.valueOf(emailVerified));
                     })
                     .map(accountContext -> CompletableFuture.supplyAsync(() -> {
@@ -319,10 +302,6 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
                         throw new RuntimeException(e);
                     }
 
-                    if(!checkAccountProxyUsable(type, accountContext)) {
-                        semaphore.release();
-                        return CompletableFuture.completedFuture("");
-                    }
 
                     return requestTokenOfAccount(accountContext)
                             .whenComplete((token, throwable) -> semaphore.release());
@@ -387,17 +366,15 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
         log.info("开始[{}]账户claim", type);
 
         accountContexts.forEach(account -> {
-            if (checkAccountProxyUsable(type, account)) {
-                account.getConnectStatusInfo().setStartDateTime(LocalDateTime.now());
+            account.getConnectStatusInfo().setStartDateTime(LocalDateTime.now());
 
-                // 添加定时任务
-                addTimer(
-                        () -> doAccountClaim(account),
-                        getBaseAutoBotConfig().getAutoClaimIntervalSeconds(),
-                        TimeUnit.SECONDS,
-                        account
-                );
-            }
+            // 添加定时任务
+            addTimer(
+                    () -> doAccountClaim(account),
+                    getBaseAutoBotConfig().getAutoClaimIntervalSeconds(),
+                    TimeUnit.SECONDS,
+                    account
+            );
         });
     }
 
@@ -441,15 +418,17 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
      * 初始化账号方法
      */
     private void initAccounts() throws DepinBotInitException {
+        Integer projectId = getBaseAutoBotConfig().getProjectId();
+
         try {
             // Step 1 获取持久化的
-            Map<String, List<AccountContext>> typedAccountMap = persistenceManager.loadAccountContexts();
+            Map<String, List<AccountContext>> typedAccountMap = persistenceManager.loadAccountContexts(projectId);
 
             // Step 2 没有保存的数据，加载新的
             if (typedAccountMap == null || typedAccountMap.isEmpty()) {
                 log.info("bot[{}]加载新账户数据", getBaseAutoBotConfig().getName());
                 // Step 2.1 加载新的
-                typedAccountMap = loadNewAccountContexts();
+                typedAccountMap = persistenceManager.createAccountContexts(projectId, getBaseAutoBotConfig().getAccountConfigs());
 
                 // Step 2.2 持久化
                 persistenceManager.persistenceAccountContexts(typedAccountMap);
@@ -459,11 +438,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
 
 
             // Step 3 加载到bot
-            registerAccountsInBot(typedAccountMap,
-                    accountContext -> AccountPersistenceManager.getAccountContextPersistencePath(
-                            getBaseAutoBotConfig().getName(), accountContext.getAccountBaseInfo().getType(), accountContext
-                    )
-            );
+            registerAccountsInBot(typedAccountMap);
 
             typedAccountsLoadedHandler(typedAccountMap);
 
@@ -479,183 +454,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
      *
      * @param typedAccountMap typedAccountMap
      */
-    private void registerAccountsInBot(Map<String, List<AccountContext>> typedAccountMap, Function<AccountContext, String> getSavePath) {
-        typedAccountMap.forEach((type, list) -> {
-            persistenceManager.registerPersistenceListener(list, getSavePath);
-        });
-    }
-
-    /**
-     * 加载新的账户上下文列表，从配置文件中
-     *
-     * @return Map<String, List < AccountContext>>
-     */
-    private Map<String, List<AccountContext>> loadNewAccountContexts() {
-        // Step 0 获取配置
-        BaseAutoBotConfig botConfig = getBaseAutoBotConfig();
-        List<TypedAccountConfig> accountConfigs = botConfig.getAccountConfigs();
-
-        Map<String, List<AccountContext>> typedAccountContextMap = new HashMap<>();
-
-        // 根据配置加载账号
-        for (TypedAccountConfig accountConfig : accountConfigs) {
-            String type = accountConfig.getType();
-
-            List<AccountBaseInfo> accountBaseInfos = loadBaseAccountInfoFromFile(type, accountConfig.getAccountFileUserDirPath());
-            // Step 1 初始化账号
-
-            // 加载账户配置文件中的主账户
-            List<AccountContext> mainAccounts = buildAccountContext(accountConfig.getProxyType(), accountBaseInfos);
-
-            typedAccountContextMap.put(type, mainAccounts);
-        }
-
-        return typedAccountContextMap;
-    }
-
-
-    /**
-     * 构建depinClientAccounts
-     *
-     * @param accountBaseInfos depinClientAccounts
-     * @return AccountContext
-     */
-    private List<AccountContext> buildAccountContext(ProxyType proxyType, List<AccountBaseInfo> accountBaseInfos) {
-        List<AccountContext> newAccountContexts = new ArrayList<>();
-
-        List<AccountContext> noProxyIds = new ArrayList<>();
-        List<AccountContext> noBrowserEnvIds = new ArrayList<>();
-
-        AbstractProxyPool proxyPool = switch (proxyType) {
-            case STATIC -> getStaticProxyPool();
-            case DYNAMIC -> getDynamicProxyPool();
-            case NO -> null;
-        };
-
-        BrowserEnvPool browserEnvPool = getBrowserEnvPool();
-        TwitterPool twitterPool = getTwitterPool();
-
-        accountBaseInfos
-                .forEach(depinClientAccount -> {
-                    AccountContext accountContext = AccountContext.builder()
-                            .accountBaseInfo(depinClientAccount)
-                            .params(new HashMap<>())
-                            .build();
-
-                    Integer id = depinClientAccount.getId();
-
-
-                    // 代理设置
-                    if (proxyPool == null) {
-                        log.debug("账户[{}]不使用代理", accountContext.getAccountBaseInfo().getName());
-                    } else if (depinClientAccount.getProxyId() != null) {
-                        NetworkProxy proxy = proxyPool.getItem(depinClientAccount.getProxyId());
-                        accountContext.setProxy(proxy);
-
-                        log.info("账号:{},将使用代理:{}[{}]", accountContext.getName(),
-                                proxy.getProxyType(), proxy.getAddressStr());
-                    } else if (id != null && id < proxyPool.size()) {
-                        accountContext.getAccountBaseInfo().setProxyId(id);
-                        NetworkProxy proxy = proxyPool.getItem(id);
-
-                        accountContext.setProxy(proxy);
-                        log.info("账号:{},将使用代理:{}[{}]", accountContext.getName(),
-                                proxy.getProxyType(), proxy.getAddressStr());
-                    } else {
-                        noProxyIds.add(accountContext);
-                    }
-
-                    // 账号没有配置浏览器环境
-                    if (depinClientAccount.getBrowserEnvId() != null) {
-                        accountContext.setBrowserEnv(browserEnvPool.getItem(depinClientAccount.getBrowserEnvId()));
-                    } else if (id != null && id < browserEnvPool.size()) {
-                        accountContext.getAccountBaseInfo().setBrowserEnvId(id);
-                        accountContext.setBrowserEnv(browserEnvPool.getItem(id));
-                    } else {
-                        noBrowserEnvIds.add(accountContext);
-                    }
-
-                    // 添加推特
-                    if (depinClientAccount.getTwitterId() != null) {
-                        accountContext.setTwitter(twitterPool.getItem(depinClientAccount.getTwitterId()));
-                    } else if (id != null && id < twitterPool.size()) {
-                        accountContext.getAccountBaseInfo().setTwitterId(id);
-                        accountContext.setTwitter(twitterPool.getItem(id));
-                    }
-
-                    newAccountContexts.add(accountContext);
-                });
-
-        // Step 2 账号没代理并且为动态代理的，的尝试给他设置动态代理
-        if (!noProxyIds.isEmpty() && proxyPool != null && proxyType.equals(ProxyType.DYNAMIC)) {
-            log.warn("以下账号没有配置代理，将随机选择一个代理进行使用");
-
-            List<NetworkProxy> lessUsedItem = proxyPool.getLessUsedItem(noProxyIds.size());
-
-            for (int i = 0; i < noProxyIds.size(); i++) {
-                AccountContext accountContext = noProxyIds.get(i);
-
-                NetworkProxy proxy = lessUsedItem.get(i);
-                accountContext.setProxy(proxy);
-
-                log.info("账号:{},将使用代理:{}[{}]", accountContext.getName(), proxy.getProxyType(), proxy.getAddressStr());
-            }
-        }
-
-        // Step 3 账号没浏览器环境的尝试给他设置浏览器环境
-        if (!noBrowserEnvIds.isEmpty()) {
-            log.warn("以下账号没有配置浏览器环境，将随机选择一个浏览器环境使用");
-            List<BrowserEnv> lessUsedBrowserEnv = browserEnvPool.getLessUsedItem(noBrowserEnvIds.size());
-            for (int i = 0; i < noBrowserEnvIds.size(); i++) {
-                AccountContext accountContext = noBrowserEnvIds.get(i);
-
-                BrowserEnv browserEnv = lessUsedBrowserEnv.get(i);
-                accountContext.setBrowserEnv(browserEnv);
-
-                log.warn("账号:{},将使用浏览器环境:{}", accountContext.getName(), browserEnv);
-            }
-        }
-
-        return newAccountContexts;
-    }
-
-    /**
-     * 从文件加载账户基础信息
-     *
-     * @param type                   type
-     * @param accountFileUserDirPath accountFileUserDirPath
-     * @return List<AccountBaseInfo>
-     */
-    private List<AccountBaseInfo> loadBaseAccountInfoFromFile(String type, String accountFileUserDirPath) {
-        String resourcePath = FileUtil.getConfigDirResourcePath(List.of(), accountFileUserDirPath);
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(resourcePath))) {
-            List<AccountBaseInfo> accountBaseInfos = new ArrayList<>();
-
-            String line;
-            int id = 0;
-            while ((line = reader.readLine()) != null) {
-                AccountBaseInfo baseInfo = new AccountBaseInfo(line);
-                baseInfo.setId(id++);
-                baseInfo.setType(type);
-                accountBaseInfos.add(baseInfo);
-            }
-
-            return accountBaseInfos;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-    private static boolean checkAccountProxyUsable(String type, AccountContext account) {
-        if (true) return true;
-
-        if (account.getProxy() != null && BooleanUtil.isFalse(account.getProxy().isUsable())) {
-            log.warn("[{}]账户[{}]-email[{}]代理不可用", type, account.getName(),
-                    account.getAccountBaseInfo().getEmail());
-            return false;
-        }
-        return true;
+    private void registerAccountsInBot(Map<String, List<AccountContext>> typedAccountMap) {
+        typedAccountMap.forEach(persistenceManager::registerPersistenceListener);
     }
 }
