@@ -2,7 +2,7 @@ package cn.com.helei.bot.core.supporter.netty;
 
 import cn.com.helei.bot.core.bot.WSTaskAutoBot;
 import cn.com.helei.bot.core.config.BaseAutoBotConfig;
-import cn.com.helei.bot.core.dto.account.AccountContext;
+import cn.com.helei.bot.core.entity.AccountContext;
 import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
 import lombok.Setter;

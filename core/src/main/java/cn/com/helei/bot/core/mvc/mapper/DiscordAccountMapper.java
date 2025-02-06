@@ -13,4 +13,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  */
 public interface DiscordAccountMapper extends BaseMapper<DiscordAccount> {
 
+    Integer insertOrUpdate(DiscordAccount discordAccount);
+
 }

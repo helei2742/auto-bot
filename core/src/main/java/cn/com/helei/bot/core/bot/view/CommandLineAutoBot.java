@@ -56,7 +56,7 @@ public abstract class CommandLineAutoBot {
         Thread commandInputThread = new Thread(() -> {
             try {
                 doExecute();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 log.error("启动bot发生错误", e);
             } finally {
                 startLatch.countDown();
@@ -110,9 +110,16 @@ public abstract class CommandLineAutoBot {
         //Step 2 不断监听控制台输入
         while (true) {
             boolean inputAccept = true;
-
             //Step 2.1 获取输入
-            String choice = reader.readLine("\n<\n" + getInvokeActionAndMenuNodePrintStr(currentMenuNode) + "请选择>").trim();
+            String choice;
+            try {
+                choice = reader.readLine("\n<\n" + getInvokeActionAndMenuNodePrintStr(currentMenuNode) + "请选择>").trim();
+            } catch (Exception e) {
+                log.error("进入菜单节点[{}]发生异常", currentMenuNode.getTittle(), e);
+                currentMenuNode = menuNodeStack.pop();
+                continue;
+            }
+
             try {
                 //Step 2.2 退出
                 if ("exit".equals(choice)) {

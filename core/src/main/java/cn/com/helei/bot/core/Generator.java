@@ -9,7 +9,7 @@ public class Generator {
     public static void main(String[] args) {
         FastAutoGenerator
                 //数据库配置
-                .create("jdbc:sqlite:D:\\workspace\\DepinBot\\untitled\\botData\\db\\autobot.db"
+                .create("jdbc:sqlite:///Users/helei/develop/ideaworkspace/depinbot/DepinBot/botData/db/auto_bot.db"
                         , ""
                         , "")
                 //全局配置
@@ -19,7 +19,7 @@ public class Generator {
                             //开启swagger模式，这里就不开了
 //                        .enableSwagger()
                             //设置最终的代码输出路径，这边是输出到D盘目录下
-                            .outputDir("D:\\workspace\\DepinBot\\untitled\\core\\src\\main\\java");
+                            .outputDir("/Users/helei/develop/ideaworkspace/depinbot/DepinBot");
                 })
                 //包设置，也就是设置代码生成后的包名
                 .packageConfig(builder -> {
@@ -31,7 +31,10 @@ public class Generator {
                 //设置生成策略
                 .strategyConfig(builder -> {
                     //设置要生成代码的表名，可以设置多个，这里设置一个
-                    builder.addInclude("t_reword_info")
+                    builder.addInclude("t_reword_info", "t_account_base_info", "t_browser_env",
+                                    "t_discord_account", "t_project_account_context",
+                            "t_proxy_info","t_telegram_account","t_twitter_account"
+                            )
                             //设置要过滤的表前缀，在生成实体类的时候可以自动去除
                             .addTablePrefix("t_")
                             //设置要过滤的字段前缀

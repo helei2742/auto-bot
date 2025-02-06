@@ -35,6 +35,7 @@ public abstract class AbstractPersistenceManager implements AccountPersistenceMa
      */
     @Override
     public void registerPersistenceListener(String type, List<AccountContext> accountContexts) {
+        if (accountContexts == null || accountContexts.isEmpty()) return;
         accountContexts.replaceAll(accountContext -> bindPersistenceAnnoListener(type, accountContext));
     }
 

@@ -45,22 +45,23 @@ public class BaseAutoBotConfig {
     /**
      * 网络代理池配置文件名
      */
-    private String staticPoolConfig = "proxy-static.yaml";
-
-    /**
-     * 动态代理池配置文件名
-     */
-    private String dynamicProxyConfig = "proxy-dynamic.yaml";
+    private String proxyFileBotConfigPath = "proxy.xlsx";
 
     /**
      * 浏览器环境池配置文件名
      */
-    private String browserEnvPoolConfig = "browser-env.yaml";
+    private String browserEnvFileBotConfigPath = "browser_env.xlsx";
 
     /**
      * 推特配置文件
      */
-    private String twitterPoolConfig = "twitter.yaml";
+    private String twitterFileBotConfigPath = "twitter_account.xlsx";
+
+    private String discordFileBotConfigPath = "discord_account.xlsx";
+
+    private String telegramFileBotConfigPath = "telegram_account.xlsx";
+
+    private String baseAccountFileBotConfigPath = "base_account.xlsx";
 
 
     private List<TypedAccountConfig> accountConfigs;

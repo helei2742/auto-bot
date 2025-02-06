@@ -1,7 +1,9 @@
 package cn.com.helei.bot.core.supporter.netty;
 
-import cn.com.helei.bot.core.dto.account.AccountContext;
+import cn.com.helei.bot.core.config.SystemConfig;
 import cn.com.helei.bot.core.constants.ConnectStatus;
+import cn.com.helei.bot.core.constants.MapConfigKey;
+import cn.com.helei.bot.core.entity.AccountContext;
 import cn.com.helei.bot.core.supporter.netty.base.AbstractWebsocketClient;
 import cn.com.helei.bot.core.supporter.netty.constants.WebsocketClientStatus;
 import lombok.Getter;
@@ -24,7 +26,7 @@ public abstract class BaseBotWSClient<Req, Resp> extends AbstractWebsocketClient
             AccountContext accountContext,
             BaseBotWSClientHandler<Req, Resp> handler
     ) {
-        super(accountContext.getConnectUrl(), handler);
+        super(accountContext.getParam(MapConfigKey.CONNECT_URL_KEY), handler);
 
         super.setName(accountContext.getName());
         super.setProxy(accountContext.getProxy());

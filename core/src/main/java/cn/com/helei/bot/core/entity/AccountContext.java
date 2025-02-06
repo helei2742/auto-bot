@@ -1,16 +1,13 @@
 package cn.com.helei.bot.core.entity;
 
 import cn.com.helei.bot.core.dto.ConnectStatusInfo;
-import cn.com.helei.bot.core.util.typehandler.LocalDateTimeTYpeHandler;
+import cn.com.helei.bot.core.util.typehandler.LocalDateTimeTypeHandler;
 import cn.com.helei.bot.core.util.typehandler.MapTextTypeHandler;
 import cn.com.helei.bot.core.supporter.propertylisten.PropertyChangeListenField;
 import com.alibaba.fastjson.annotation.JSONField;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 
-import java.time.LocalDateTime;
+        import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,33 +39,17 @@ public class AccountContext {
     @TableField("account_base_info_id")
     private Integer accountBaseInfoId;
 
-    private AccountBaseInfo accountBaseInfo;
-
-    @TableField("reward_id")
-    private Integer rewardId;
-
-    @PropertyChangeListenField
-    private RewordInfo rewordInfo = new RewordInfo();
-
     @TableField("twitter_id")
     private Integer twitterId;
-
-    private TwitterAccount twitter;
 
     @TableField("discord_id")
     private Integer discordId;
 
-    private DiscordAccount discord;
-
     @TableField("proxy_id")
     private Integer proxyId;
 
-    private ProxyInfo proxy;
-
     @TableField("browser_env_id")
     private Integer browserEnvId;
-
-    private BrowserEnv browserEnv;
 
     @TableField("telegram_id")
     private Integer telegramId;
@@ -76,28 +57,56 @@ public class AccountContext {
     @TableField("wallet_id")
     private Integer walletId;
 
-    @PropertyChangeListenField
+    @TableField("reward_id")
+    private Integer rewardId;
+
     @TableField("status")
+    @PropertyChangeListenField
     private Integer status;
 
-    @PropertyChangeListenField
     @TableField("usable")
+    @PropertyChangeListenField
     private boolean usable = true;
 
-    @PropertyChangeListenField
     @JSONField(serialize = true, deserialize = true)
     @TableField(value = "params", typeHandler = MapTextTypeHandler.class)
+    @PropertyChangeListenField
     private Map<String, String> params = new HashMap<>();
 
-    @TableField(value = "insert_datetime", typeHandler = LocalDateTimeTYpeHandler.class)
+    @TableField(value = "insert_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT)
     private LocalDateTime insertDatetime;
 
-    @TableField(value = "update_datetime", typeHandler = LocalDateTimeTYpeHandler.class)
+    @TableField(value = "update_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateDatetime;
 
-    @TableField("is_valid")
+    @TableField(value = "is_valid", fill = FieldFill.INSERT)
+    @TableLogic
     private Integer isValid;
 
+
+    @TableField(exist = false)
+    @PropertyChangeListenField
+    private RewordInfo rewordInfo = new RewordInfo();
+
+    @TableField(exist = false)
+    private AccountBaseInfo accountBaseInfo;
+
+    @TableField(exist = false)
+    private TwitterAccount twitter;
+
+    @TableField(exist = false)
+    private DiscordAccount discord;
+
+    @TableField(exist = false)
+    private TelegramAccount telegram;
+
+    @TableField(exist = false)
+    private ProxyInfo proxy;
+
+    @TableField(exist = false)
+    private BrowserEnv browserEnv;
+
+    @TableField(exist = false)
     private final ConnectStatusInfo connectStatusInfo = new ConnectStatusInfo();
 
     public String getParam(String key) {

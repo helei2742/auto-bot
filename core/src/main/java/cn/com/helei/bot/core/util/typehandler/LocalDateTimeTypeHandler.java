@@ -10,7 +10,7 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-public class LocalDateTimeTYpeHandler extends BaseTypeHandler<LocalDateTime> {
+public class LocalDateTimeTypeHandler extends BaseTypeHandler<LocalDateTime> {
 
     private static final DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
 

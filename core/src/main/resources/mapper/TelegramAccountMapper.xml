@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.com.helei.bot.core.mvc.mapper.TelegramAccountMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="cn.com.helei.bot.core.entity.TelegramAccount">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="phone_prefix" property="phonePrefix"/>
+        <result column="phone" property="phone"/>
+        <result column="token" property="token"/>
+        <result column="params" property="params"/>
+        <result column="insert_datetime" property="insertDatetime"/>
+        <result column="update_datetime" property="updateDatetime"/>
+        <result column="is_valid" property="isValid"/>
+    </resultMap>
+
+    <select id="insertOrUpdate" parameterType="cn.com.helei.bot.core.entity.TelegramAccount" resultType="java.lang.Integer">
+        INSERT INTO t_telegram_account
+        (username, password, phone_prefix, phone, token, params, insert_datetime, update_datetime, is_valid)
+        VALUES (#{username}, #{password}, #{phonePrefix}, #{phone}, #{token}, #{params}, #{insertDatetime},
+                #{updateDatetime}, #{isValid})
+        ON CONFLICT(phone_prefix, phone) DO
+        UPDATE SET
+            username = excluded.username,
+            password = excluded.password,
+            token = excluded.token,
+            params = excluded.params,
+            update_datetime = excluded.update_datetime;
+    </select>
+</mapper>

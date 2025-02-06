@@ -13,4 +13,5 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  */
 public interface BrowserEnvMapper extends BaseMapper<BrowserEnv> {
 
+    Integer insertOrUpdate(BrowserEnv browserEnv);
 }

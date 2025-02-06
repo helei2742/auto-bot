@@ -1,13 +1,13 @@
 package cn.com.helei.bot.core.entity;
 
-import cn.com.helei.bot.core.util.typehandler.LocalDateTimeTYpeHandler;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import cn.com.helei.bot.core.util.typehandler.LocalDateTimeTypeHandler;
+import com.alibaba.excel.annotation.ExcelProperty;
+import com.baomidou.mybatisplus.annotation.*;
 
-import java.time.LocalDateTime;
+        import java.time.LocalDateTime;
+import java.util.Map;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,36 +21,44 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@Builder
 @TableName("t_discord_account")
 public class DiscordAccount {
 
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
-    @TableField("email")
-    private String email;
-
     @TableField("password")
+    @ExcelProperty("password")
     private String password;
 
     @TableField("username")
+    @ExcelProperty("username")
     private String username;
 
     @TableField("bind_email")
+    @ExcelProperty("bind_email")
     private String bindEmail;
 
     @TableField("bind_email_password")
+    @ExcelProperty("bind_email_password")
     private String bindEmailPassword;
 
     @TableField("token")
+    @ExcelProperty("token")
     private String token;
 
-    @TableField(value = "insert_datetime", typeHandler = LocalDateTimeTYpeHandler.class)
+    @TableField("params")
+    private Map<String, Object> params;
+
+    @TableField(value = "insert_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT)
     private LocalDateTime insertDatetime;
 
-    @TableField(value = "update_datetime", typeHandler = LocalDateTimeTYpeHandler.class)
+    @TableField(value = "update_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateDatetime;
 
-    @TableField("is_valid")
+    @TableField(value = "is_valid", fill = FieldFill.INSERT)
+    @TableLogic
     private Integer isValid;
+
 }

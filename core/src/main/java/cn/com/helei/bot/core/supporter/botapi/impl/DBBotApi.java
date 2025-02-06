@@ -1,6 +1,7 @@
-package cn.com.helei.bot.core.supporter.botapi;
+package cn.com.helei.bot.core.supporter.botapi.impl;
 
 import cn.com.helei.bot.core.mvc.service.*;
+import cn.com.helei.bot.core.supporter.botapi.BotApi;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Component;
 @Getter
 @Component
 public class DBBotApi implements BotApi {
+
     @Autowired
     private IAccountBaseInfoService accountBaseInfoService;
 
@@ -28,4 +30,7 @@ public class DBBotApi implements BotApi {
 
     @Autowired
     private IRewordInfoService rewordInfoService;
+
+    @Autowired
+    private DBImportService importService;
 }

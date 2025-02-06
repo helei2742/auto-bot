@@ -16,8 +16,4 @@ public class TypedAccountConfig {
 
     private ProxyType proxyType = ProxyType.NO;
 
-    private AccountMailConfig mail;
-
-    private String accountFileUserDirPath;
-
 }

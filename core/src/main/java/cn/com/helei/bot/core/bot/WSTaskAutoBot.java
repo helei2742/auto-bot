@@ -1,5 +1,6 @@
 package cn.com.helei.bot.core.bot;
 
+import cn.com.helei.bot.core.supporter.botapi.BotApi;
 import cn.com.helei.bot.core.supporter.netty.BaseBotWSClient;
 import cn.com.helei.bot.core.config.WSAutoBotConfig;
 import cn.com.helei.bot.core.entity.AccountContext;
@@ -41,8 +42,8 @@ public abstract class WSTaskAutoBot<C extends WSAutoBotConfig, Req, Resp> extend
     @Getter
     private final C botConfig;
 
-    public WSTaskAutoBot(C config) {
-        super(config);
+    public WSTaskAutoBot(C config, BotApi botApi) {
+        super(config, botApi);
 
         this.botConfig = config;
         this.wsConnectSemaphore = new Semaphore(config.getWsConnectCount());

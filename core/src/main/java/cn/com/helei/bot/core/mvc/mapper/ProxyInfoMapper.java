@@ -13,4 +13,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  */
 public interface ProxyInfoMapper extends BaseMapper<ProxyInfo> {
 
+    Integer insertOrUpdate(ProxyInfo proxyInfo);
+
 }

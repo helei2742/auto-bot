@@ -12,10 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Consumer;
+import java.util.*;
+        import java.util.function.Consumer;
 
 import static cn.com.helei.bot.core.constants.MapConfigKey.*;
 
@@ -289,7 +287,11 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
         return new CommandMenuNode("导入", "请选择要导入的数据", null)
                 .addSubMenu(buildImportBaseAccountMenuNode())
                 .addSubMenu(buildImportProxyMenuNode())
-                .addSubMenu(buildImportBrowserEnvMenuNode());
+                .addSubMenu(buildImportBrowserEnvMenuNode())
+                .addSubMenu(buildImportTwitterMenuNode())
+                .addSubMenu(buildImportDiscordMenuNode())
+                .addSubMenu(buildImportTelegramMenuNode())
+                ;
     }
 
     /**
@@ -298,7 +300,14 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
      * @return CommandMenuNode
      */
     private CommandMenuNode buildImportBrowserEnvMenuNode() {
-        return new CommandMenuNode(true, "导入浏览器环境", null, null);
+
+        return new CommandMenuNode(true, "导入浏览器环境", null, () -> {
+            String filePath = getBotConfig().getBrowserEnvFileBotConfigPath();
+
+            getBot().getBotApi().getImportService().importBrowserEnvFromExcel(filePath);
+
+            return "浏览器环境导入完成";
+        });
     }
 
     /**
@@ -307,8 +316,12 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
      * @return CommandMenuNode
      */
     private CommandMenuNode buildImportProxyMenuNode() {
-        return new CommandMenuNode(true, "导入代理", null, null);
+        return new CommandMenuNode(true, "导入代理", null, () -> {
 
+            getBot().getBotApi().getImportService().importProxyFromExcel(getBotConfig().getProxyFileBotConfigPath());
+
+            return "代理导入完成";
+        });
     }
 
     /**
@@ -317,7 +330,54 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
      * @return CommandMenuNode
      */
     private CommandMenuNode buildImportBaseAccountMenuNode() {
-        return new CommandMenuNode(true, "导入账号基本信息", null, null);
+        return new CommandMenuNode(true, "导入账号基本信息", null, () -> {
+
+            Map<String, Integer> result = getBot().getBotApi().getImportService().importAccountBaseInfoFromExcel(getBotConfig().getBaseAccountFileBotConfigPath());
+
+            return "账号基本信息导入完成，" + result ;
+        });
+    }
+
+
+    /**
+     * 导入twitter账号基本信息
+     *
+     * @return CommandMenuNode
+     */
+    private CommandMenuNode buildImportTwitterMenuNode() {
+        return new CommandMenuNode(true, "导入twitter账号", null, () -> {
+            getBot().getBotApi().getImportService().importTwitterFromExcel(getBotConfig().getTwitterFileBotConfigPath());
+            return "twitter导入完成";
+        });
+    }
+
+
+    /**
+     * 导入discord账号基本信息
+     *
+     * @return CommandMenuNode
+     */
+    private CommandMenuNode buildImportDiscordMenuNode() {
+        return new CommandMenuNode(true, "导入discord账号", null, () -> {
+
+            getBot().getBotApi().getImportService().importDiscordFromExcel(getBotConfig().getDiscordFileBotConfigPath());
+
+            return "discord导入完成";
+        });
+    }
+
+    /**
+     * 导入Telegram账号基本信息
+     *
+     * @return CommandMenuNode
+     */
+    private CommandMenuNode buildImportTelegramMenuNode() {
+        return new CommandMenuNode(true, "导入Telegram账号", null, () -> {
+
+            getBot().getBotApi().getImportService().importTelegramFormExcel(getBotConfig().getTelegramFileBotConfigPath());
+
+            return "Telegram导入完成";
+        });
     }
 
     /**

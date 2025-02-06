@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -22,13 +23,15 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Slf4j
-@Service
 public class DBAccountPersistenceManager extends AbstractPersistenceManager {
 
     private final ExecutorService executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory("database-"));
 
-    @Autowired
-    private BotApi botApi;;
+    private final BotApi botApi;;
+
+    public DBAccountPersistenceManager(BotApi botApi) {
+        this.botApi = botApi;
+    }
 
     @Override
     public void init() {
@@ -44,6 +47,9 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
 
     @Override
     public Map<String, List<AccountContext>> createAccountContexts(Integer projectId, List<TypedAccountConfig> accountConfigs) {
+        if (accountConfigs == null || accountConfigs.isEmpty())
+            return new HashMap<>();
+
         // Step 1 按类型遍历
         return accountConfigs.stream().collect(Collectors.toMap(TypedAccountConfig::getType, typedAccountConfig -> {
             String type = typedAccountConfig.getType();

@@ -1,16 +1,13 @@
 package cn.com.helei.bot.core.entity;
 
-import cn.com.helei.bot.core.util.typehandler.LocalDateTimeTYpeHandler;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import cn.com.helei.bot.core.util.typehandler.LocalDateTimeTypeHandler;
+import com.alibaba.excel.annotation.ExcelProperty;
+import com.baomidou.mybatisplus.annotation.*;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * <p>
@@ -22,6 +19,7 @@ import java.time.LocalDateTime;
  */
 @Getter
 @Setter
+@Builder
 @TableName("t_account_base_info")
 @AllArgsConstructor
 @NoArgsConstructor
@@ -34,23 +32,29 @@ public class AccountBaseInfo {
     private String type;
 
     @TableField("name")
+    @ExcelProperty("name")
     private String name;
 
     @TableField("email")
+    @ExcelProperty("email")
     private String email;
 
     @TableField("password")
+    @ExcelProperty("password")
     private String password;
 
-    @TableField(value = "insert_datetime", typeHandler = LocalDateTimeTYpeHandler.class)
+    @TableField("params")
+    private Map<String, Object> params = new HashMap<>();
+
+    @TableField(value = "insert_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT)
     private LocalDateTime insertDatetime;
 
-    @TableField(value = "update_datetime", typeHandler = LocalDateTimeTYpeHandler.class)
+    @TableField(value = "update_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateDatetime;
 
-    @TableField("is_valid")
+    @TableField(value = "is_valid", fill = FieldFill.INSERT)
+    @TableLogic
     private Integer isValid;
-
 
 
     public AccountBaseInfo(Object originLine) {

@@ -1,14 +1,11 @@
 package cn.com.helei.bot.core.entity;
 
-import cn.com.helei.bot.core.util.typehandler.LocalDateTimeTYpeHandler;
+import cn.com.helei.bot.core.util.typehandler.LocalDateTimeTypeHandler;
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson.JSONObject;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.alibaba.excel.annotation.ExcelProperty;
+import com.baomidou.mybatisplus.annotation.*;
 
-import java.time.LocalDateTime;
+        import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,24 +30,28 @@ public class BrowserEnv {
     private Integer id;
 
     @TableField("user_agent")
+    @ExcelProperty("user_agent")
     private String userAgent;
 
-    @TableField("other_header_json")
-    private JSONObject otherHeaderJson;
+    @TableField("other_header")
+    @ExcelProperty("other_header")
+    private Map<String, Object> otherHeader;
 
-    @TableField(value = "insert_datetime", typeHandler = LocalDateTimeTYpeHandler.class)
+    @TableField(value = "insert_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT)
     private LocalDateTime insertDatetime;
 
-    @TableField(value = "update_datetime", typeHandler = LocalDateTimeTYpeHandler.class)
+    @TableField(value = "update_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateDatetime;
 
-    @TableField("is_valid")
+    @TableField(value = "is_valid", fill = FieldFill.INSERT)
+    @TableLogic
     private Integer isValid;
+
 
     public Map<String, String> getHeaders() {
         HashMap<String, String> map = new HashMap<>();
         map.put("User-Agent", userAgent);
-        otherHeaderJson.forEach((k,v)-> map.put(k, StrUtil.toString(v)));
+        otherHeader.forEach((k, v)-> map.put(k, StrUtil.toString(v)));
         return map;
     }
 }

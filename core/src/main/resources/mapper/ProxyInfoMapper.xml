@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.com.helei.bot.core.mvc.mapper.ProxyInfoMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="cn.com.helei.bot.core.entity.ProxyInfo">
+        <id column="id" property="id"/>
+        <result column="proxy_type" property="proxyType"/>
+        <result column="proxy_protocol" property="proxyProtocol"/>
+        <result column="host" property="host"/>
+        <result column="port" property="port"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="usable" property="usable"/>
+        <result column="params" property="params"/>
+        <result column="insert_datetime" property="insertDatetime"/>
+        <result column="update_datetime" property="updateDatetime"/>
+        <result column="is_valid" property="isValid"/>
+    </resultMap>
+
+
+    <select id="insertOrUpdate" parameterType="cn.com.helei.bot.core.entity.ProxyInfo" resultType="java.lang.Integer">
+        INSERT INTO t_proxy_info
+        (proxy_type, proxy_protocol, host, port, username, password, usable, params, insert_datetime, update_datetime,
+         is_valid)
+        VALUES (#{proxyType}, #{proxyProtocol}, #{host}, #{port}, #{username}, #{password}, #{usable}, #{params},
+                #{insertDatetime}, #{updateDatetime}, #{isValid}) ON CONFLICT(host, port) DO
+        UPDATE SET
+            proxy_type = excluded.proxy_type,
+            proxy_protocol = excluded.proxy_protocol,
+            username = excluded.username,
+            password = excluded.password,
+            usable = excluded.usable,
+            params = excluded.params,
+            update_datetime = excluded.update_datetime;
+    </select>
+</mapper>

@@ -3,6 +3,8 @@ package cn.com.helei.bot.core.mvc.service;
 import cn.com.helei.bot.core.entity.BrowserEnv;
 import com.baomidou.mybatisplus.extension.service.IService;
 
+import java.util.List;
+
 /**
  * <p>
  *  服务类
@@ -13,4 +15,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface IBrowserEnvService extends IService<BrowserEnv> {
 
+    Integer insertOrUpdate(BrowserEnv browserEnv);
+
+    Integer insertOrUpdateBatch(List<BrowserEnv> browserEnvs);
 }

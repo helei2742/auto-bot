@@ -13,4 +13,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  */
 public interface TwitterAccountMapper extends BaseMapper<TwitterAccount> {
 
+    Integer insertOrUpdate(TwitterAccount twitterAccount);
+
 }

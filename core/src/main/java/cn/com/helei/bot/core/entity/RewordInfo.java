@@ -1,13 +1,11 @@
+
 package cn.com.helei.bot.core.entity;
 
-import cn.com.helei.bot.core.util.typehandler.LocalDateTimeTYpeHandler;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import cn.com.helei.bot.core.util.typehandler.LocalDateTimeTypeHandler;
+import com.baomidou.mybatisplus.annotation.*;
 
 
-import lombok.Getter;
+        import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
@@ -40,14 +38,16 @@ public class RewordInfo {
     @TableField("daily_points")
     private Double dailyPoints;
 
-    @TableField(value = "insert_datetime", typeHandler = LocalDateTimeTYpeHandler.class)
+    @TableField(value = "insert_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT)
     private LocalDateTime insertDatetime;
 
-    @TableField(value = "update_datetime", typeHandler = LocalDateTimeTYpeHandler.class)
+    @TableField(value = "update_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateDatetime;
 
-    @TableField("is_valid")
+    @TableField(value = "is_valid", fill = FieldFill.INSERT)
+    @TableLogic
     private Integer isValid;
+
 
 
     public RewordInfo newInstance() {

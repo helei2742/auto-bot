@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.com.helei.bot.core.mvc.mapper.DiscordAccountMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="cn.com.helei.bot.core.entity.DiscordAccount">
+        <id column="id" property="id"/>
+        <result column="password" property="password"/>
+        <result column="username" property="username"/>
+        <result column="bind_email" property="bindEmail"/>
+        <result column="bind_email_password" property="bindEmailPassword"/>
+        <result column="token" property="token"/>
+        <result column="params" property="params"/>
+        <result column="insert_datetime" property="insertDatetime"/>
+        <result column="update_datetime" property="updateDatetime"/>
+        <result column="is_valid" property="isValid"/>
+    </resultMap>
+
+    <select id="insertOrUpdate" parameterType="cn.com.helei.bot.core.entity.DiscordAccount" resultType="java.lang.Integer">
+        INSERT INTO t_discord_account
+        (password, username, bind_email, bind_email_password, token, params, insert_datetime, update_datetime, is_valid)
+        VALUES (#{password}, #{username}, #{bindEmail}, #{bindEmailPassword}, #{token}, #{params}, #{insertDatetime},
+                #{updateDatetime}, #{isValid}) ON CONFLICT(username) DO
+        UPDATE SET
+            password = excluded.password,
+            bind_email = excluded.bind_email,
+            bind_email_password = excluded.bind_email_password,
+            token = excluded.token,
+            params = excluded.params,
+            update_datetime = excluded.update_datetime;
+    </select>
+</mapper>

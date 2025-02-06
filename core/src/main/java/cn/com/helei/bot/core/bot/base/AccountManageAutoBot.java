@@ -6,6 +6,8 @@ import cn.com.helei.bot.core.config.TypedAccountConfig;
 import cn.com.helei.bot.core.constants.MapConfigKey;
 import cn.com.helei.bot.core.entity.AccountBaseInfo;
 import cn.com.helei.bot.core.entity.AccountContext;
+import cn.com.helei.bot.core.supporter.botapi.BotApi;
+import cn.com.helei.bot.core.supporter.persistence.impl.DBAccountPersistenceManager;
 import cn.com.helei.bot.core.util.exception.RewardQueryException;
 import cn.com.helei.bot.core.util.exception.DepinBotInitException;
 import cn.com.helei.bot.core.supporter.mail.constants.MailProtocolType;
@@ -17,13 +19,12 @@ import cn.hutool.core.collection.ConcurrentHashSet;
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+        import java.util.concurrent.*;
+        import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
@@ -62,14 +63,15 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
     /**
      * 持久化管理器
      */
-    @Setter
-    private AccountPersistenceManager persistenceManager;
+    private final AccountPersistenceManager persistenceManager;
 
-    public AccountManageAutoBot(BaseAutoBotConfig baseAutoBotConfig) {
-        super(baseAutoBotConfig);
+    public AccountManageAutoBot(BaseAutoBotConfig baseAutoBotConfig, BotApi botApi) {
+        super(baseAutoBotConfig, botApi);
 
         this.accountTimerTaskMap = new ConcurrentHashMap<>();
         this.taskSyncController = new Semaphore(baseAutoBotConfig.getConcurrentCount());
+
+        this.persistenceManager = new DBAccountPersistenceManager(botApi);
     }
 
     @Override
@@ -210,10 +212,8 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
         // Step 1  获取type类型的邮件设置
         BaseAutoBotConfig botConfig = getBaseAutoBotConfig();
 
-        Optional<AccountMailConfig> first = botConfig.getAccountConfigs().stream()
-                .filter(accountConfig -> type.equals(accountConfig.getType()))
-                .map(TypedAccountConfig::getMail)
-                .findFirst();
+        //TODO
+        Optional<AccountMailConfig> first = null;
 
         if (first.isEmpty()) {
             return "没有找到 " + type + "类型的账户邮件设置";

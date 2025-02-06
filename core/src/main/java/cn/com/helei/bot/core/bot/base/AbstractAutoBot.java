@@ -53,11 +53,12 @@ public abstract class AbstractAutoBot {
      */
     private final AutoBotRuntimeInfo autoBotRuntimeInfo;
 
-    @Setter
-    private BotApi botApi;
+    @Getter
+    private final BotApi botApi;
 
-    public AbstractAutoBot(BaseAutoBotConfig baseAutoBotConfig) {
+    public AbstractAutoBot(BaseAutoBotConfig baseAutoBotConfig, BotApi botApi) {
         if (StrUtil.isBlank(baseAutoBotConfig.getName())) throw new IllegalArgumentException("bot 名字不能为空");
+        this.botApi = botApi;
 
         this.baseAutoBotConfig = baseAutoBotConfig;
         this.executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory(baseAutoBotConfig.getName() + "-executor"));
