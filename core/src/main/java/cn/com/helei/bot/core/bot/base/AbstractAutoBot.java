@@ -1,6 +1,6 @@
 package cn.com.helei.bot.core.bot.base;
 
-import cn.com.helei.bot.core.config.BaseAutoBotConfig;
+import cn.com.helei.bot.core.config.AutoBotConfig;
 import cn.com.helei.bot.core.config.SystemConfig;
 import cn.com.helei.bot.core.constants.DepinBotStatus;
 import cn.com.helei.bot.core.dto.AutoBotRuntimeInfo;
@@ -15,7 +15,6 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
@@ -36,7 +35,7 @@ public abstract class AbstractAutoBot {
     /**
      * 配置
      */
-    private final BaseAutoBotConfig baseAutoBotConfig;
+    private final AutoBotConfig autoBotConfig;
 
     /**
      * 状态
@@ -56,12 +55,12 @@ public abstract class AbstractAutoBot {
     @Getter
     private final BotApi botApi;
 
-    public AbstractAutoBot(BaseAutoBotConfig baseAutoBotConfig, BotApi botApi) {
-        if (StrUtil.isBlank(baseAutoBotConfig.getName())) throw new IllegalArgumentException("bot 名字不能为空");
+    public AbstractAutoBot(AutoBotConfig autoBotConfig, BotApi botApi) {
+        if (StrUtil.isBlank(autoBotConfig.getName())) throw new IllegalArgumentException("bot 名字不能为空");
         this.botApi = botApi;
 
-        this.baseAutoBotConfig = baseAutoBotConfig;
-        this.executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory(baseAutoBotConfig.getName() + "-executor"));
+        this.autoBotConfig = autoBotConfig;
+        this.executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory(autoBotConfig.getName() + "-executor"));
 
         this.networkSyncControllerMap = new ConcurrentHashMap<>();
         this.autoBotRuntimeInfo = new AutoBotRuntimeInfo();
@@ -75,7 +74,7 @@ public abstract class AbstractAutoBot {
             //更新状态
             updateState(DepinBotStatus.INIT_FINISH);
         } catch (Exception e) {
-            log.error("初始化DepinBot[{}}发生错误", getBaseAutoBotConfig().getName(), e);
+            log.error("初始化DepinBot[{}}发生错误", getAutoBotConfig().getName(), e);
             updateState(DepinBotStatus.INIT_ERROR);
         }
     }
@@ -135,7 +134,7 @@ public abstract class AbstractAutoBot {
         Semaphore networkController = networkSyncControllerMap
                 .compute(proxy == null ? DEFAULT_PROXY : proxy, (k, v) -> {
                     if (v == null) {
-                        v = new Semaphore(baseAutoBotConfig.getConcurrentCount());
+                        v = new Semaphore(autoBotConfig.getRuntime().getConcurrentCount());
                     }
                     return v;
                 });
@@ -187,7 +186,7 @@ public abstract class AbstractAutoBot {
      * @return String
      */
     public String getAppConfigDir() {
-        return FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_APP_PATH, getBaseAutoBotConfig().getName());
+        return FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_APP_PATH, getAutoBotConfig().getName());
     }
 
 

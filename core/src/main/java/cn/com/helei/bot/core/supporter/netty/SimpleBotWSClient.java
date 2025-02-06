@@ -1,7 +1,7 @@
 package cn.com.helei.bot.core.supporter.netty;
 
 import cn.com.helei.bot.core.bot.WSTaskAutoBot;
-import cn.com.helei.bot.core.config.BaseAutoBotConfig;
+import cn.com.helei.bot.core.config.AutoBotConfig;
 import cn.com.helei.bot.core.entity.AccountContext;
 import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
@@ -16,7 +16,7 @@ public class SimpleBotWSClient extends BaseBotWSClient<JSONObject, JSONObject> {
     private String idFieldName = "id";
 
     public SimpleBotWSClient(
-            WSTaskAutoBot<? extends BaseAutoBotConfig, JSONObject, JSONObject> bot,
+            WSTaskAutoBot<? extends AutoBotConfig, JSONObject, JSONObject> bot,
             AccountContext accountContext
     ) {
         super(accountContext, new SimpleBotWSClientHandler());

@@ -2,7 +2,7 @@ package cn.com.helei.bot.core.bot.view;
 
 
 import cn.com.helei.bot.core.bot.base.AccountManageAutoBot;
-import cn.com.helei.bot.core.config.BaseAutoBotConfig;
+import cn.com.helei.bot.core.config.AutoBotConfig;
 import cn.com.helei.bot.core.supporter.AccountInfoPrinter;
 import cn.com.helei.bot.core.supporter.commandMenu.CommandMenuNode;
 import cn.com.helei.bot.core.supporter.commandMenu.DefaultMenuType;
@@ -19,7 +19,7 @@ import static cn.com.helei.bot.core.constants.MapConfigKey.*;
 
 
 @Slf4j
-public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLineAutoBot {
+public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAutoBot {
     /**
      * 刷新节点
      */
@@ -135,9 +135,9 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
                         true,
                         "开始注册",
                         "开始注册所有账号...",
-                        () -> {
-                            return getBot().registerTypeAccount(getBot().getBaseAutoBotConfig().getConfig(REGISTER_TYPE_KEY));
-                        }
+                        () -> getBot()
+                                .registerTypeAccount(getBot().getAutoBotConfig()
+                                .getConfig(REGISTER_TYPE_KEY))
                 ));
     }
 
@@ -302,7 +302,7 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
     private CommandMenuNode buildImportBrowserEnvMenuNode() {
 
         return new CommandMenuNode(true, "导入浏览器环境", null, () -> {
-            String filePath = getBotConfig().getBrowserEnvFileBotConfigPath();
+            String filePath = getBotConfig().getFilePathConfig().getBrowserEnvFileBotConfigPath();
 
             getBot().getBotApi().getImportService().importBrowserEnvFromExcel(filePath);
 
@@ -318,7 +318,8 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
     private CommandMenuNode buildImportProxyMenuNode() {
         return new CommandMenuNode(true, "导入代理", null, () -> {
 
-            getBot().getBotApi().getImportService().importProxyFromExcel(getBotConfig().getProxyFileBotConfigPath());
+            getBot().getBotApi().getImportService()
+                    .importProxyFromExcel(getBotConfig().getFilePathConfig().getProxyFileBotConfigPath());
 
             return "代理导入完成";
         });
@@ -332,7 +333,8 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
     private CommandMenuNode buildImportBaseAccountMenuNode() {
         return new CommandMenuNode(true, "导入账号基本信息", null, () -> {
 
-            Map<String, Integer> result = getBot().getBotApi().getImportService().importAccountBaseInfoFromExcel(getBotConfig().getBaseAccountFileBotConfigPath());
+            Map<String, Integer> result = getBot().getBotApi().getImportService()
+                    .importAccountBaseInfoFromExcel(getBotConfig().getFilePathConfig().getBaseAccountFileBotConfigPath());
 
             return "账号基本信息导入完成，" + result ;
         });
@@ -346,7 +348,8 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
      */
     private CommandMenuNode buildImportTwitterMenuNode() {
         return new CommandMenuNode(true, "导入twitter账号", null, () -> {
-            getBot().getBotApi().getImportService().importTwitterFromExcel(getBotConfig().getTwitterFileBotConfigPath());
+            getBot().getBotApi().getImportService()
+                    .importTwitterFromExcel(getBotConfig().getFilePathConfig().getTwitterFileBotConfigPath());
             return "twitter导入完成";
         });
     }
@@ -360,7 +363,7 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
     private CommandMenuNode buildImportDiscordMenuNode() {
         return new CommandMenuNode(true, "导入discord账号", null, () -> {
 
-            getBot().getBotApi().getImportService().importDiscordFromExcel(getBotConfig().getDiscordFileBotConfigPath());
+            getBot().getBotApi().getImportService().importDiscordFromExcel(getBotConfig().getFilePathConfig().getDiscordFileBotConfigPath());
 
             return "discord导入完成";
         });
@@ -374,7 +377,7 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
     private CommandMenuNode buildImportTelegramMenuNode() {
         return new CommandMenuNode(true, "导入Telegram账号", null, () -> {
 
-            getBot().getBotApi().getImportService().importTelegramFormExcel(getBotConfig().getTelegramFileBotConfigPath());
+            getBot().getBotApi().getImportService().importTelegramFormExcel(getBotConfig().getFilePathConfig().getTelegramFileBotConfigPath());
 
             return "Telegram导入完成";
         });
@@ -386,8 +389,8 @@ public class MenuCMDLineAutoBot<C extends BaseAutoBotConfig> extends CommandLine
      * @return 邀请码
      */
     private String printCurrentRegisterConfig() {
-        String inviteCode = (String) getBotConfig().getConfigMap().get(INVITE_CODE_KEY);
-        String registerType = (String) getBotConfig().getConfigMap().get(REGISTER_TYPE_KEY);
+        String inviteCode = (String) getBotConfig().getCustomConfig().get(INVITE_CODE_KEY);
+        String registerType = (String) getBotConfig().getCustomConfig().get(REGISTER_TYPE_KEY);
 
         return "(当前邀请码为:" + inviteCode + ")\n"
                 + "(当前注册类型为:" + registerType + ")\n";

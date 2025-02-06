@@ -3,7 +3,7 @@ package cn.com.helei.bot.view;
 import cn.com.helei.bot.core.AutoBotApplication;
 import cn.com.helei.bot.core.bot.RestTaskAutoBot;
 import cn.com.helei.bot.core.bot.view.MenuCMDLineAutoBot;
-import cn.com.helei.bot.core.config.BaseAutoBotConfig;
+import cn.com.helei.bot.core.config.AutoBotConfig;
 import cn.com.helei.bot.core.config.TypedAccountConfig;
 import cn.com.helei.bot.core.constants.ProxyType;
 import cn.com.helei.bot.core.entity.AccountContext;
@@ -25,23 +25,23 @@ class MenuCMDLineAutoBotTest {
 
     private TestRestAutoBot autoBot;
 
-    private MenuCMDLineAutoBot<BaseAutoBotConfig> menuCMDLineAutoBot;
+    private MenuCMDLineAutoBot<AutoBotConfig> menuCMDLineAutoBot;
 
     @Autowired
     public BotApi botApi;
 
     @BeforeEach
     public  void setUp() throws DepinBotStartException {
-        BaseAutoBotConfig baseAutoBotConfig = new BaseAutoBotConfig();
-        baseAutoBotConfig.setName("test-bot");
+        AutoBotConfig autoBotConfig = new AutoBotConfig();
+        autoBotConfig.setName("test-bot");
 
         TypedAccountConfig typedAccountConfig = new TypedAccountConfig();
         typedAccountConfig.setType("goggle");
         typedAccountConfig.setProxyType(ProxyType.STATIC);
 
-        baseAutoBotConfig.setAccountConfigs(List.of(typedAccountConfig));
+        autoBotConfig.setAccountConfigs(List.of(typedAccountConfig));
 
-        autoBot = new TestRestAutoBot(baseAutoBotConfig, botApi);
+        autoBot = new TestRestAutoBot(autoBotConfig, botApi);
 
         menuCMDLineAutoBot = new MenuCMDLineAutoBot<>(autoBot, List.of(DefaultMenuType.IMPORT));
 
@@ -55,8 +55,8 @@ class MenuCMDLineAutoBotTest {
 
     static class TestRestAutoBot extends RestTaskAutoBot {
 
-        public TestRestAutoBot(BaseAutoBotConfig baseAutoBotConfig, BotApi botApi) {
-            super(baseAutoBotConfig, botApi);
+        public TestRestAutoBot(AutoBotConfig autoBotConfig, BotApi botApi) {
+            super(autoBotConfig, botApi);
         }
 
         @Override

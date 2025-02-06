@@ -1,8 +1,8 @@
 package cn.com.helei.bot.core.bot;
 
+import cn.com.helei.bot.core.config.AutoBotConfig;
 import cn.com.helei.bot.core.supporter.botapi.BotApi;
 import cn.com.helei.bot.core.supporter.netty.BaseBotWSClient;
-import cn.com.helei.bot.core.config.WSAutoBotConfig;
 import cn.com.helei.bot.core.entity.AccountContext;
 import cn.com.helei.bot.core.util.exception.DepinBotStatusException;
 import cn.com.helei.bot.core.supporter.netty.constants.WebsocketClientStatus;
@@ -17,7 +17,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 
 @Slf4j
-public abstract class WSTaskAutoBot<C extends WSAutoBotConfig, Req, Resp> extends RestTaskAutoBot {
+public abstract class WSTaskAutoBot<C extends AutoBotConfig, Req, Resp> extends RestTaskAutoBot {
 
     /**
      * WS链接完成数量
@@ -46,7 +46,7 @@ public abstract class WSTaskAutoBot<C extends WSAutoBotConfig, Req, Resp> extend
         super(config, botApi);
 
         this.botConfig = config;
-        this.wsConnectSemaphore = new Semaphore(config.getWsConnectCount());
+        this.wsConnectSemaphore = new Semaphore(config.getWebsocket().getWsConnectCount());
         this.accountWSClientMap = new ConcurrentHashMap<>();
     }
 
@@ -78,8 +78,8 @@ public abstract class WSTaskAutoBot<C extends WSAutoBotConfig, Req, Resp> extend
                 v = buildAccountWSClient(accountContext);
 
                 if (v != null) {
-                    v.setReconnectCountDownSecond(getBotConfig().getReconnectCountDownSecond());
-                    v.setAllIdleTimeSecond(getBotConfig().getHeartBeatIntervalSecond());
+                    v.setReconnectCountDownSecond(getBotConfig().getWebsocket().getReconnectCountDownSecond());
+                    v.setAllIdleTimeSecond(getBotConfig().getWebsocket().getHeartBeatIntervalSecond());
 
                     // 记录创建的ws数量
                     addWSRuntimeInfoCount(WS_CREATE_COUNT_KEY);
@@ -120,7 +120,7 @@ public abstract class WSTaskAutoBot<C extends WSAutoBotConfig, Req, Resp> extend
         return switch (currentStatus) {
             case NEW, STOP:  // 新创建，停止状态，需要建立连接
                 try {
-                    yield !depinWSClient.connect().get() && getBotConfig().isWsUnlimitedRetry();
+                    yield !depinWSClient.connect().get() && getBotConfig().getWebsocket().isWsUnlimitedRetry();
                 } catch (InterruptedException | ExecutionException e) {
                     log.error("账户[{}]ws链接发生错误", accountName, e);
                     yield true;

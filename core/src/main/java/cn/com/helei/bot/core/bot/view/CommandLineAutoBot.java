@@ -1,7 +1,7 @@
 package cn.com.helei.bot.core.bot.view;
 
 import cn.com.helei.bot.core.bot.base.AccountManageAutoBot;
-import cn.com.helei.bot.core.config.BaseAutoBotConfig;
+import cn.com.helei.bot.core.config.AutoBotConfig;
 import cn.com.helei.bot.core.constants.DepinBotStatus;
 import cn.com.helei.bot.core.util.exception.DepinBotStartException;
 import cn.com.helei.bot.core.supporter.commandMenu.CommandMenuNode;
@@ -26,7 +26,7 @@ import java.util.concurrent.CountDownLatch;
 @Getter
 public abstract class CommandLineAutoBot {
 
-    private final BaseAutoBotConfig botConfig;
+    private final AutoBotConfig botConfig;
 
     private final AccountManageAutoBot bot;
 
@@ -34,11 +34,11 @@ public abstract class CommandLineAutoBot {
 
     public CommandLineAutoBot(AccountManageAutoBot bot) {
         this.bot = bot;
-        this.botConfig = bot.getBaseAutoBotConfig();
+        this.botConfig = bot.getAutoBotConfig();
 
         this.mainManu = new CommandMenuNode(
                 "主菜单",
-                String.format("欢迎使用[%s]-bot", bot.getBaseAutoBotConfig().getName()),
+                String.format("欢迎使用[%s]-bot", bot.getAutoBotConfig().getName()),
                 this::printBanner
         );
     }

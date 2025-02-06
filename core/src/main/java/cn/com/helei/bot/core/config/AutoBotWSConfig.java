@@ -1,14 +1,10 @@
 package cn.com.helei.bot.core.config;
 
-import cn.com.helei.bot.core.util.YamlConfigLoadUtil;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
-import java.util.List;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
-public class WSAutoBotConfig extends BaseAutoBotConfig {
+public class AutoBotWSConfig {
 
     /**
      * ws是否无限重试
@@ -34,13 +30,4 @@ public class WSAutoBotConfig extends BaseAutoBotConfig {
      * 重连减少的间隔
      */
     private int reconnectCountDownSecond = 180;
-
-
-    public static <T> T loadYamlConfig(
-            String prefix,
-            String name,
-            Class<T> tClass
-    ) {
-        return YamlConfigLoadUtil.load(SystemConfig.CONFIG_DIR_APP_PATH, name, List.of(prefix.split("\\.")), tClass);
-    }
 }

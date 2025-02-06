@@ -1,8 +1,7 @@
 package cn.com.helei.bot.core.bot.base;
 
 import cn.com.helei.bot.core.config.AccountMailConfig;
-import cn.com.helei.bot.core.config.BaseAutoBotConfig;
-import cn.com.helei.bot.core.config.TypedAccountConfig;
+import cn.com.helei.bot.core.config.AutoBotConfig;
 import cn.com.helei.bot.core.constants.MapConfigKey;
 import cn.com.helei.bot.core.entity.AccountBaseInfo;
 import cn.com.helei.bot.core.entity.AccountContext;
@@ -65,11 +64,11 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
      */
     private final AccountPersistenceManager persistenceManager;
 
-    public AccountManageAutoBot(BaseAutoBotConfig baseAutoBotConfig, BotApi botApi) {
-        super(baseAutoBotConfig, botApi);
+    public AccountManageAutoBot(AutoBotConfig autoBotConfig, BotApi botApi) {
+        super(autoBotConfig, botApi);
 
         this.accountTimerTaskMap = new ConcurrentHashMap<>();
-        this.taskSyncController = new Semaphore(baseAutoBotConfig.getConcurrentCount());
+        this.taskSyncController = new Semaphore(autoBotConfig.getRuntime().getConcurrentCount());
 
         this.persistenceManager = new DBAccountPersistenceManager(botApi);
     }
@@ -179,7 +178,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
 
                         return CompletableFuture.completedFuture(false);
                     } else {
-                        return registerAccount(account, getBaseAutoBotConfig().getConfig(INVITE_CODE_KEY));
+                        return registerAccount(account, getAutoBotConfig().getConfig(INVITE_CODE_KEY));
                     }
                 }).toList();
 
@@ -210,7 +209,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
         List<AccountContext> accounts = getTypedAccountMap().get(type);
 
         // Step 1  获取type类型的邮件设置
-        BaseAutoBotConfig botConfig = getBaseAutoBotConfig();
+        AutoBotConfig botConfig = getAutoBotConfig();
 
         //TODO
         Optional<AccountMailConfig> first = null;
@@ -292,7 +291,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
         List<AccountContext> accountContexts = typedAccountMap.get(type);
 
         log.info("开始获取[{}]类型账号token", type);
-        Semaphore semaphore = new Semaphore(getBaseAutoBotConfig().getConcurrentCount());
+        Semaphore semaphore = new Semaphore(getAutoBotConfig().getRuntime().getConcurrentCount());
 
         List<CompletableFuture<String>> futures = accountContexts.stream()
                 .map(accountContext -> {
@@ -371,7 +370,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
             // 添加定时任务
             addTimer(
                     () -> doAccountClaim(account),
-                    getBaseAutoBotConfig().getAutoClaimIntervalSeconds(),
+                    getAutoBotConfig().getRuntime().getAutoClaimIntervalSeconds(),
                     TimeUnit.SECONDS,
                     account
             );
@@ -404,7 +403,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
                         }
                     }
                     try {
-                        TimeUnit.SECONDS.sleep(getBaseAutoBotConfig().getAccountRewardRefreshIntervalSeconds());
+                        TimeUnit.SECONDS.sleep(getAutoBotConfig().getRuntime().getAccountRewardRefreshIntervalSeconds());
                     } catch (InterruptedException e) {
                         log.error("等待执行账户查询时发生异常", e);
                     }
@@ -418,7 +417,7 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
      * 初始化账号方法
      */
     private void initAccounts() throws DepinBotInitException {
-        Integer projectId = getBaseAutoBotConfig().getProjectId();
+        Integer projectId = getAutoBotConfig().getProjectId();
 
         try {
             // Step 1 获取持久化的
@@ -426,14 +425,14 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
 
             // Step 2 没有保存的数据，加载新的
             if (typedAccountMap == null || typedAccountMap.isEmpty()) {
-                log.info("bot[{}]加载新账户数据", getBaseAutoBotConfig().getName());
+                log.info("bot[{}]加载新账户数据", getAutoBotConfig().getName());
                 // Step 2.1 加载新的
-                typedAccountMap = persistenceManager.createAccountContexts(projectId, getBaseAutoBotConfig().getAccountConfigs());
+                typedAccountMap = persistenceManager.createAccountContexts(projectId, getAutoBotConfig().getAccountConfigs());
 
                 // Step 2.2 持久化
                 persistenceManager.persistenceAccountContexts(typedAccountMap);
             } else {
-                log.info("bot[{}]使用历史账户数据", getBaseAutoBotConfig().getName());
+                log.info("bot[{}]使用历史账户数据", getAutoBotConfig().getName());
             }
 
 
