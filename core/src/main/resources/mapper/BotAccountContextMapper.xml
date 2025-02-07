@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.com.helei.bot.core.mvc.mapper.BotAccountContextMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="cn.com.helei.bot.core.entity.AccountContext">
+        <id column="id" property="id"/>
+        <result column="bot_id" property="botId"/>
+        <result column="account_base_info_id" property="accountBaseInfoId"/>
+        <result column="twitter_id" property="twitterId"/>
+        <result column="discord_id" property="discordId"/>
+        <result column="proxy_id" property="proxyId"/>
+        <result column="browser_env_id" property="browserEnvId"/>
+        <result column="telegram_id" property="telegramId"/>
+        <result column="wallet_id" property="walletId"/>
+        <result column="reward_id" property="rewardId"/>
+        <result column="status" property="status"/>
+        <result column="params" property="params"/>
+        <result column="insert_datetime" property="insertDatetime"/>
+        <result column="update_datetime" property="updateDatetime"/>
+        <result column="is_valid" property="isValid"/>
+    </resultMap>
+    <select id="insertOrUpdate" parameterType="cn.com.helei.bot.core.entity.AccountBaseInfo"
+            resultType="java.lang.Integer">
+
+        INSERT INTO t_bot_account_context
+        (bot_id, account_base_info_id, twitter_id, discord_id, proxy_id, browser_env_id, telegram_id, wallet_id,
+         reward_id, status, params, insert_datetime, update_datetime, is_valid)
+        VALUES (#{botId}, #{accountBaseInfoId}, #{twitterId}, #{discordId}, #{proxyId}, #{browserEnvId}, #{telegramId},
+                #{walletId}, #{rewardId}, #{status}, #{params}, #{insertDatetime}, #{updateDatetime},
+                #{isValid}) ON CONFLICT(bot_id, account_base_info_id) DO
+        UPDATE SET
+            twitter_id = excluded.twitter_id,
+            discord_id = excluded.discord_id,
+            proxy_id = excluded.proxy_id,
+            browser_env_id = excluded.browser_env_id,
+            telegram_id = excluded.telegram_id,
+            wallet_id = excluded.wallet_id,
+            reward_id = excluded.reward_id,
+            status = excluded.status,
+            params = excluded.params,
+            update_datetime = excluded.update_datetime;
+    </select>
+</mapper>

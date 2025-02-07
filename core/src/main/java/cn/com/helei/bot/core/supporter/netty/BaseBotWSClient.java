@@ -1,6 +1,5 @@
 package cn.com.helei.bot.core.supporter.netty;
 
-import cn.com.helei.bot.core.config.SystemConfig;
 import cn.com.helei.bot.core.constants.ConnectStatus;
 import cn.com.helei.bot.core.constants.MapConfigKey;
 import cn.com.helei.bot.core.entity.AccountContext;
@@ -71,7 +70,6 @@ public abstract class BaseBotWSClient<Req, Resp> extends AbstractWebsocketClient
                     }
                     case STOP, SHUTDOWN -> {
                         accountContext.getConnectStatusInfo().setUpdateDateTime(LocalDateTime.now());
-                        accountContext.setUsable(false);
                         yield ConnectStatus.STOP;
                     }
                 }

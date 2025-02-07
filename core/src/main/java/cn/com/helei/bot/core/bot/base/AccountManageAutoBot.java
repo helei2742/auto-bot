@@ -417,31 +417,28 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot implements Ac
      * 初始化账号方法
      */
     private void initAccounts() throws DepinBotInitException {
-        Integer projectId = getAutoBotConfig().getProjectId();
+        Integer botId = getBotInfo().getId();
+
+        String name = getBotInfo().getName();
 
         try {
             // Step 1 获取持久化的
-            Map<String, List<AccountContext>> typedAccountMap = persistenceManager.loadAccountContexts(projectId);
+            Map<String, List<AccountContext>> typedAccountMap = persistenceManager.loadAccountContexts(botId);
 
             // Step 2 没有保存的数据，加载新的
             if (typedAccountMap == null || typedAccountMap.isEmpty()) {
-                log.info("bot[{}]加载新账户数据", getAutoBotConfig().getName());
-                // Step 2.1 加载新的
-                typedAccountMap = persistenceManager.createAccountContexts(projectId, getAutoBotConfig().getAccountConfigs());
-
-                // Step 2.2 持久化
-                persistenceManager.persistenceAccountContexts(typedAccountMap);
+                log.warn("bot[{}]没有账户数据", name);
             } else {
-                log.info("bot[{}]使用历史账户数据", getAutoBotConfig().getName());
+                log.info("bot[{}]使用历史账户数据", name);
+
+                // Step 3 加载到bot
+                registerAccountsInBot(typedAccountMap);
+
+                typedAccountsLoadedHandler(typedAccountMap);
+
+                this.typedAccountMap.putAll(typedAccountMap);
             }
 
-
-            // Step 3 加载到bot
-            registerAccountsInBot(typedAccountMap);
-
-            typedAccountsLoadedHandler(typedAccountMap);
-
-            this.typedAccountMap.putAll(typedAccountMap);
         } catch (Exception e) {
             throw new DepinBotInitException("初始化账户发生错误", e);
         }

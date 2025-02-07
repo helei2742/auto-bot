@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.com.helei.bot.core.mapper.BotInfoMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="cn.com.helei.bot.core.entity.BotInfo">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="describe" property="describe" />
+        <result column="limit_project_ids" property="limitProjectIds" />
+        <result column="insert_datetime" property="insertDatetime" />
+        <result column="update_datetime" property="updateDatetime" />
+        <result column="is_valid" property="isValid" />
+    </resultMap>
+
+</mapper>

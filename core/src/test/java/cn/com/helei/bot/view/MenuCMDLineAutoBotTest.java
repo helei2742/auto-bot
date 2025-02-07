@@ -2,14 +2,16 @@ package cn.com.helei.bot.view;
 
 import cn.com.helei.bot.core.AutoBotApplication;
 import cn.com.helei.bot.core.bot.RestTaskAutoBot;
+import cn.com.helei.bot.core.bot.anno.BotApplication;
 import cn.com.helei.bot.core.bot.view.MenuCMDLineAutoBot;
 import cn.com.helei.bot.core.config.AutoBotConfig;
-import cn.com.helei.bot.core.config.TypedAccountConfig;
-import cn.com.helei.bot.core.constants.ProxyType;
 import cn.com.helei.bot.core.entity.AccountContext;
 import cn.com.helei.bot.core.supporter.botapi.BotApi;
 import cn.com.helei.bot.core.supporter.commandMenu.DefaultMenuType;
+import cn.com.helei.bot.core.supporter.commandMenu.MenuNodeMethod;
+import cn.com.helei.bot.core.util.YamlConfigLoadUtil;
 import cn.com.helei.bot.core.util.exception.DepinBotStartException;
+import cn.hutool.core.util.RandomUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,16 +34,9 @@ class MenuCMDLineAutoBotTest {
 
     @BeforeEach
     public  void setUp() throws DepinBotStartException {
-        AutoBotConfig autoBotConfig = new AutoBotConfig();
-        autoBotConfig.setName("test-bot");
+        AutoBotConfig load = YamlConfigLoadUtil.load("config.app", "example/example.yaml", "bot.app", AutoBotConfig.class);
 
-        TypedAccountConfig typedAccountConfig = new TypedAccountConfig();
-        typedAccountConfig.setType("goggle");
-        typedAccountConfig.setProxyType(ProxyType.STATIC);
-
-        autoBotConfig.setAccountConfigs(List.of(typedAccountConfig));
-
-        autoBot = new TestRestAutoBot(autoBotConfig, botApi);
+        autoBot = new TestRestAutoBot(load, botApi);
 
         menuCMDLineAutoBot = new MenuCMDLineAutoBot<>(autoBot, List.of(DefaultMenuType.IMPORT));
 
@@ -53,6 +48,7 @@ class MenuCMDLineAutoBotTest {
     }
 
 
+    @BotApplication(name = "test", describe = "dwadwa")
     static class TestRestAutoBot extends RestTaskAutoBot {
 
         public TestRestAutoBot(AutoBotConfig autoBotConfig, BotApi botApi) {
@@ -82,6 +78,12 @@ class MenuCMDLineAutoBotTest {
         @Override
         public CompletableFuture<Boolean> updateAccountRewordInfo(AccountContext accountContext) {
             return null;
+        }
+
+        @MenuNodeMethod(title = "测试", description = "账户1，param -> 随机数")
+        public String test() {
+            getAccounts().get(0).setParam("test", String.valueOf(RandomUtil.randomInt()));
+            return "";
         }
     }
 }

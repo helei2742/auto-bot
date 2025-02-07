@@ -5,13 +5,17 @@ import cn.com.helei.bot.core.mvc.service.*;
 
 public interface BotApi {
 
+    IProjectInfoService getProjectInfoService();
+
+    IBotInfoService getBotInfoService();
+
     IAccountBaseInfoService getAccountBaseInfoService();
 
     IBrowserEnvService getBrowserEnvService();
 
     IDiscordAccountService getDiscordAccountService();
 
-    IProjectAccountContextService getProjectAccountContextService();
+    IBotAccountContextService getBotAccountContextService();
 
     IProxyInfoService getProxyInfoService();
 

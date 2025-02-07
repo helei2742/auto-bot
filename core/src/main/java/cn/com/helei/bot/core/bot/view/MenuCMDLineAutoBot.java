@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-        import java.util.function.Consumer;
+import java.util.function.Consumer;
 
 import static cn.com.helei.bot.core.constants.MapConfigKey.*;
 
@@ -137,7 +137,7 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
                         "开始注册所有账号...",
                         () -> getBot()
                                 .registerTypeAccount(getBot().getAutoBotConfig()
-                                .getConfig(REGISTER_TYPE_KEY))
+                                        .getConfig(REGISTER_TYPE_KEY))
                 ));
     }
 
@@ -285,6 +285,7 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
     private CommandMenuNode buildImportMenuNode() {
 
         return new CommandMenuNode("导入", "请选择要导入的数据", null)
+                .addSubMenu(buildImportBotAccountContextMenuNode())
                 .addSubMenu(buildImportBaseAccountMenuNode())
                 .addSubMenu(buildImportProxyMenuNode())
                 .addSubMenu(buildImportBrowserEnvMenuNode())
@@ -336,7 +337,7 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
             Map<String, Integer> result = getBot().getBotApi().getImportService()
                     .importAccountBaseInfoFromExcel(getBotConfig().getFilePathConfig().getBaseAccountFileBotConfigPath());
 
-            return "账号基本信息导入完成，" + result ;
+            return "账号基本信息导入完成，" + result;
         });
     }
 
@@ -382,6 +383,27 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
             return "Telegram导入完成";
         });
     }
+
+
+    /**
+     * 导入bot使用的账号菜单节点
+     *
+     * @return CommandMenuNode
+     */
+    private CommandMenuNode buildImportBotAccountContextMenuNode() {
+        return new CommandMenuNode(true, "导入bot运行账号", null, () -> {
+
+            getBot().getBotApi().getImportService().importBotAccountContextFromExcel(
+                    getBot().getBotInfo().getId(),
+                    getBotConfig().getAccountConfig().getProxyType(),
+                    getBotConfig().getAccountConfig().getProxyRepeat(),
+                    getBotConfig().getAccountConfig().getConfigFilePath()
+            );
+
+            return "bot运行账号导入完成";
+        });
+    }
+
 
     /**
      * 打印当前的邀请码

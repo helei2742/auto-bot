@@ -1,9 +1,12 @@
 package cn.com.helei.bot.core.entity;
 
 import cn.com.helei.bot.core.dto.ConnectStatusInfo;
+import cn.com.helei.bot.core.supporter.propertylisten.PropertyChangeListenClass;
+import cn.com.helei.bot.core.util.excel.IntegerStringConverter;
 import cn.com.helei.bot.core.util.typehandler.LocalDateTimeTypeHandler;
 import cn.com.helei.bot.core.util.typehandler.MapTextTypeHandler;
 import cn.com.helei.bot.core.supporter.propertylisten.PropertyChangeListenField;
+import com.alibaba.excel.annotation.ExcelProperty;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.baomidou.mybatisplus.annotation.*;
 
@@ -23,38 +26,46 @@ import lombok.*;
  */
 @Getter
 @Setter
-@TableName("t_project_account_context")
+@TableName("t_bot_account_context")
 @NoArgsConstructor
 @Builder
 @AllArgsConstructor
+@PropertyChangeListenClass
 public class AccountContext {
 
 
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
-    @TableField("project_id")
-    private Integer projectId;
+    @TableField("bot_id")
+    private Integer botId;
 
     @TableField("account_base_info_id")
+    @ExcelProperty(value = "account_base_info_id", converter = IntegerStringConverter.class)
     private Integer accountBaseInfoId;
 
     @TableField("twitter_id")
+    @ExcelProperty(value = "twitter_id", converter = IntegerStringConverter.class)
     private Integer twitterId;
 
     @TableField("discord_id")
+    @ExcelProperty(value = "discord_id", converter = IntegerStringConverter.class)
     private Integer discordId;
 
     @TableField("proxy_id")
+    @ExcelProperty(value = "proxy_id", converter = IntegerStringConverter.class)
     private Integer proxyId;
 
     @TableField("browser_env_id")
+    @ExcelProperty(value = "browser_env_id", converter = IntegerStringConverter.class)
     private Integer browserEnvId;
 
     @TableField("telegram_id")
+    @ExcelProperty(value = "telegram_id", converter = IntegerStringConverter.class)
     private Integer telegramId;
 
     @TableField("wallet_id")
+    @ExcelProperty(value = "wallet_id", converter = IntegerStringConverter.class)
     private Integer walletId;
 
     @TableField("reward_id")
@@ -64,14 +75,10 @@ public class AccountContext {
     @PropertyChangeListenField
     private Integer status;
 
-    @TableField("usable")
-    @PropertyChangeListenField
-    private boolean usable = true;
-
     @JSONField(serialize = true, deserialize = true)
     @TableField(value = "params", typeHandler = MapTextTypeHandler.class)
     @PropertyChangeListenField
-    private Map<String, String> params = new HashMap<>();
+    private Map<String, Object> params = new HashMap<>();
 
     @TableField(value = "insert_datetime", typeHandler = LocalDateTimeTypeHandler.class, fill = FieldFill.INSERT)
     private LocalDateTime insertDatetime;
@@ -110,7 +117,7 @@ public class AccountContext {
     private final ConnectStatusInfo connectStatusInfo = new ConnectStatusInfo();
 
     public String getParam(String key) {
-        return params.get(key);
+        return String.valueOf(params.get(key));
     }
 
     public void setParam(String key, String value) {

@@ -20,13 +20,14 @@ spring:
 
 mybatis-plus:
   configuration:
-#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     cache-enabled: true
     map-underscore-to-camel-case: false
   global-config:
     db-config:
       logic-delete-field: isValid  # 全局逻辑删除的实体字段名(since 3.3.0,配置后可以忽略不配置步骤2)
-      logic-delete-value: 0 # 逻辑已删除值(默认为 1)
+      logic-delete-value: 0    # 设置 1 为未删除
+      logic-not-delete-value: 1 # 设置 0 为已删除
   mapper-locations: classpath:/mapper/*.xml
 
 

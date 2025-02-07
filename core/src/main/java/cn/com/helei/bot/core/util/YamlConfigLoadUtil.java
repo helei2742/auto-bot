@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.rmi.MarshalledObject;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,6 +16,21 @@ import java.util.concurrent.ConcurrentHashMap;
 public class YamlConfigLoadUtil {
 
     private static final ConcurrentHashMap<String, Object> LOADED_CONFIG_MAP = new ConcurrentHashMap<>();
+
+    public static <T> T load(
+            String path,
+            String fileName,
+            String prefix,
+            Class<T> clazz
+    ) {
+        return load(
+                Arrays.asList(path.split("\\.")),
+                fileName,
+                Arrays.asList(prefix.split("\\.")),
+                clazz
+        );
+    }
+
 
     public static <T> T load(
             List<String> path,

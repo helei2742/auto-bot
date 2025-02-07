@@ -1,9 +1,11 @@
 package cn.com.helei.bot.core.bot.base;
 
+import cn.com.helei.bot.core.bot.anno.BotApplication;
 import cn.com.helei.bot.core.config.AutoBotConfig;
 import cn.com.helei.bot.core.config.SystemConfig;
 import cn.com.helei.bot.core.constants.DepinBotStatus;
 import cn.com.helei.bot.core.dto.AutoBotRuntimeInfo;
+import cn.com.helei.bot.core.entity.BotInfo;
 import cn.com.helei.bot.core.entity.ProxyInfo;
 import cn.com.helei.bot.core.supporter.botapi.BotApi;
 import cn.com.helei.bot.core.util.exception.DepinBotInitException;
@@ -15,11 +17,14 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.File;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.*;
-import java.util.function.Supplier;
+        import java.util.function.Supplier;
 
 @Slf4j
 @Getter
@@ -55,31 +60,42 @@ public abstract class AbstractAutoBot {
     @Getter
     private final BotApi botApi;
 
-    public AbstractAutoBot(AutoBotConfig autoBotConfig, BotApi botApi) {
-        if (StrUtil.isBlank(autoBotConfig.getName())) throw new IllegalArgumentException("bot 名字不能为空");
-        this.botApi = botApi;
+    /**
+     * bot信息
+     */
+    @Getter
+    @Setter
+    private BotInfo botInfo;
 
+    public AbstractAutoBot(AutoBotConfig autoBotConfig, BotApi botApi) {
         this.autoBotConfig = autoBotConfig;
-        this.executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory(autoBotConfig.getName() + "-executor"));
+        this.botApi = botApi;
 
         this.networkSyncControllerMap = new ConcurrentHashMap<>();
         this.autoBotRuntimeInfo = new AutoBotRuntimeInfo();
+
+        // 解析注解，添加botInfo
+        resolveAnnoAndFillBotInfo();
+
+        this.executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory(botInfo.getName() + "-executor"));
     }
+
 
     public void init() {
         updateState(DepinBotStatus.INIT);
         try {
+            // 查询project是否存在
+//            if (isProjectExist()) return;
+
             doInit();
 
             //更新状态
             updateState(DepinBotStatus.INIT_FINISH);
         } catch (Exception e) {
-            log.error("初始化DepinBot[{}}发生错误", getAutoBotConfig().getName(), e);
+            log.error("初始化Bot[{}]发生错误", botInfo.getName(), e);
             updateState(DepinBotStatus.INIT_ERROR);
         }
     }
-
-
 
 
     /**
@@ -186,7 +202,8 @@ public abstract class AbstractAutoBot {
      * @return String
      */
     public String getAppConfigDir() {
-        return FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_APP_PATH, getAutoBotConfig().getName());
+        return FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_APP_PATH,
+                getAutoBotConfig().getProjectName() + File.separator + botInfo.getName());
     }
 
 
@@ -227,4 +244,38 @@ public abstract class AbstractAutoBot {
             throw new DepinBotStatusException(String.format("Depin Bot Status不能从[%s]->[%s]", status, newStatus));
         }
     }
+
+
+    /**
+     * 解析注解，添加botInfo
+     */
+    private void resolveAnnoAndFillBotInfo() {
+        BotApplication annotation = this.getClass().getAnnotation(BotApplication.class);
+
+        if (annotation != null) {
+            String botName = annotation.name();
+            if (StrUtil.isBlank(botName)) throw new IllegalArgumentException("bot name 不能为空");
+
+            BotInfo dbBotInfo = botApi.getBotInfoService().query().eq("name", botName).one();
+
+            // 查询bot是否存在，不存在则创建
+            if (dbBotInfo == null) {
+                log.warn("不存在[{}]bot info, 自动创建...", botName);
+                botInfo = new BotInfo();
+                botInfo.setDescribe(annotation.describe());
+                botInfo.setLimitProjectIds(Arrays.toString(annotation.limitProjectIds()));
+                botInfo.setName(botName);
+                if (botApi.getBotInfoService().save(botInfo)) {
+                    log.info("自动创建[{}]bot info成功", botName);
+                } else {
+                    throw new RuntimeException("自动创建[" + botName + "]失败");
+                }
+            } else {
+                this.botInfo = dbBotInfo;
+            }
+        } else {
+            throw new IllegalArgumentException("bot 应该带有 @BotApplication注解");
+        }
+    }
+
 }

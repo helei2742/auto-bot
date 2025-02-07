@@ -1,41 +1,39 @@
 bot:
   app:
-    example:
-      projectId: 1
-      name:  example-auto-bot
+    projectName: sahara
+    runtime:
+      concurrentCount: 6
+      autoClaimIntervalSeconds: 60
+      isAccountRewardAutoRefresh: false
+      accountRewardRefreshIntervalSeconds: 600
 
-      runtime:
-        concurrentCount: 6
-        autoClaimIntervalSeconds: 60
-        isAccountRewardAutoRefresh: false
-        accountRewardRefreshIntervalSeconds: 600
+    websocket:
+      wsBaseUrl: wss://example.com
+      wsUnlimitedRetry: false
+      heartBeatIntervalSecond: 30
+      wsConnectCount: 5
+      reconnectCountDownSecond: 180
 
-      websocket:
-        wsBaseUrl: wss://example.com
-        wsUnlimitedRetry: false
-        heartBeatIntervalSecond: 30
-        wsConnectCount: 5
-        reconnectCountDownSecond: 180
+    filePathConfig:
+      proxyFileBotConfigPath: proxy.xlsx
+      browserEnvFileBotConfigPath: browser_env.xlsx
+      twitterFileBotConfigPath: twitter_account.xlsx
+      discordFileBotConfigPath: discord_account.xlsx
+      telegramFileBotConfigPath: telegram_account.xlsx
+      baseAccountFileBotConfigPath: base_account.xlsx
 
+    accountConfig:
+      configFilePath: app/test_project_account.xlsx
 
-      filePathConfig:
-        proxyFileBotConfigPath: proxy.xlsx
-        browserEnvFileBotConfigPath: browser_env.xlsx
-        twitterFileBotConfigPath: twitter_account.xlsx
-        discordFileBotConfigPath: discord_account.xlsx
-        telegramFileBotConfigPath: telegram_account.xlsx
-        baseAccountFileBotConfigPath: base_account.xlsx
-
-
-      customConfig:
-        key1: value1
-        key2: 123
-        key3:
-          - 1
-          - 2
-          - 3
-        key4:
-          - name: hah
-            age: 2
-          - name: ooo
-            age: 3
+    customConfig:
+      key1: value1
+      key2: 123
+      key3:
+        - 1
+        - 2
+        - 3
+      key4:
+        - name: hah
+          age: 2
+        - name: ooo
+          age: 3

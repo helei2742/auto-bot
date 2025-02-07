@@ -9,10 +9,10 @@ import org.springframework.web.bind.annotation.RestController;
  * </p>
  *
  * @author com.helei
- * @since 2025-02-05
+ * @since 2025-02-07
  */
 @RestController
-@RequestMapping("/core/projectAccountContext")
-public class ProjectAccountContextController {
+@RequestMapping("/core/botInfo")
+public class BotInfoController {
 
 }

@@ -1,6 +1,6 @@
 package cn.com.helei.bot.core.mvc.service;
 
-import cn.com.helei.bot.core.entity.AccountContext;
+import cn.com.helei.bot.core.entity.BotInfo;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
@@ -9,8 +9,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * </p>
  *
  * @author com.helei
- * @since 2025-02-05
+ * @since 2025-02-07
  */
-public interface IProjectAccountContextService extends IService<AccountContext> {
+public interface IBotInfoService extends IService<BotInfo> {
 
 }

@@ -1,6 +1,6 @@
 package cn.com.helei.bot.core.mvc.mapper;
 
-import cn.com.helei.bot.core.entity.AccountContext;
+import cn.com.helei.bot.core.entity.ProjectInfo;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
@@ -9,8 +9,8 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * </p>
  *
  * @author com.helei
- * @since 2025-02-05
+ * @since 2025-02-07
  */
-public interface ProjectAccountContextMapper extends BaseMapper<AccountContext> {
+public interface ProjectInfoMapper extends BaseMapper<ProjectInfo> {
 
 }

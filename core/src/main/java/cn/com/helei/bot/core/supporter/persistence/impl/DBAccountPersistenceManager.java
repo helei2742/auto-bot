@@ -10,8 +10,6 @@ import cn.com.helei.bot.core.supporter.propertylisten.PropertyChangeInvocation;
 import cn.com.helei.bot.core.util.NamedThreadFactory;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.List;
@@ -41,11 +39,10 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
     @Override
     public void persistenceAccountContexts(Map<String, List<AccountContext>> typedAccountMap) {
         for (List<AccountContext> values : typedAccountMap.values()) {
-            botApi.getProjectAccountContextService().saveBatch(values);
+            botApi.getBotAccountContextService().saveBatch(values);
         }
     }
 
-    @Override
     public Map<String, List<AccountContext>> createAccountContexts(Integer projectId, List<TypedAccountConfig> accountConfigs) {
         if (accountConfigs == null || accountConfigs.isEmpty())
             return new HashMap<>();
@@ -68,11 +65,15 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
     }
 
     @Override
-    public Map<String, List<AccountContext>> loadAccountContexts(Integer projectId) {
+    public Map<String, List<AccountContext>> loadAccountContexts(Integer botId) {
         // Step 1 加载 projectId 对应的账号
         AccountContext query = new AccountContext();
-        query.setProjectId(projectId);
-        List<AccountContext> accountContexts = botApi.getProjectAccountContextService().list(new QueryWrapper<>(query));
+        query.setBotId(botId);
+        query.setParams(null);
+
+        List<AccountContext> accountContexts = botApi
+                .getBotAccountContextService().
+                list(new QueryWrapper<>(query));
 
         // Step 2 遍历账号，补充对象
         CompletableFuture<?>[] futures = accountContexts.stream()
@@ -95,7 +96,7 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
 
     @Override
     protected void propertyChangeHandler(PropertyChangeInvocation invocation) {
-
+        log.info("对象属性改变了{} {}->{}", invocation.getPropertyName(), invocation.getOldValue(), invocation.getNewValue());
     }
 
 

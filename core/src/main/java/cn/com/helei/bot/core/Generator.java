@@ -9,7 +9,7 @@ public class Generator {
     public static void main(String[] args) {
         FastAutoGenerator
                 //数据库配置
-                .create("jdbc:sqlite:///Users/helei/develop/ideaworkspace/depinbot/DepinBot/botData/db/auto_bot.db"
+                .create("jdbc:sqlite:///Users/helei/develop/ideaworkspace/depinbot/DepinBot/core/botData/db/auto_bot.db"
                         , ""
                         , "")
                 //全局配置
@@ -31,9 +31,7 @@ public class Generator {
                 //设置生成策略
                 .strategyConfig(builder -> {
                     //设置要生成代码的表名，可以设置多个，这里设置一个
-                    builder.addInclude("t_reword_info", "t_account_base_info", "t_browser_env",
-                                    "t_discord_account", "t_project_account_context",
-                            "t_proxy_info","t_telegram_account","t_twitter_account"
+                    builder.addInclude("t_project_info"
                             )
                             //设置要过滤的表前缀，在生成实体类的时候可以自动去除
                             .addTablePrefix("t_")

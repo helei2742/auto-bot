@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.ToString;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Data
@@ -13,14 +12,9 @@ import java.util.Map;
 public class AutoBotConfig {
 
     /**
-     * 项目id
+     * 项目信息
      */
-    private Integer projectId;
-
-    /**
-     * 名字
-     */
-    private String name;
+    private String projectName;
 
     /**
      * 运行时设置
@@ -37,8 +31,10 @@ public class AutoBotConfig {
      */
     private AutoBotConfigFilePathConfig filePathConfig = new AutoBotConfigFilePathConfig();
 
-
-    private List<TypedAccountConfig> accountConfigs;
+    /**
+     * 账户配置
+     */
+    private AutoBotAccountConfig accountConfig = new AutoBotAccountConfig();
 
     /**
      * 自定义配置

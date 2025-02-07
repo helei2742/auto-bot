@@ -6,6 +6,7 @@ import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+
 @Getter
 @Component
 public class DBBotApi implements BotApi {
@@ -26,11 +27,18 @@ public class DBBotApi implements BotApi {
     private IDiscordAccountService discordAccountService;
 
     @Autowired
-    private IProjectAccountContextService projectAccountContextService;
+    private IBotAccountContextService botAccountContextService;
 
     @Autowired
     private IRewordInfoService rewordInfoService;
 
     @Autowired
     private DBImportService importService;
+
+    @Autowired
+    private IProjectInfoService projectInfoService;
+
+    @Autowired
+    private IBotInfoService botInfoService;
+
 }

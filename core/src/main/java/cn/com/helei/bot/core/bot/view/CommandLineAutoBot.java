@@ -38,7 +38,7 @@ public abstract class CommandLineAutoBot {
 
         this.mainManu = new CommandMenuNode(
                 "主菜单",
-                String.format("欢迎使用[%s]-bot", bot.getAutoBotConfig().getName()),
+                String.format("欢迎使用[%s]-bot", getBot().getBotInfo().getName()),
                 this::printBanner
         );
     }
