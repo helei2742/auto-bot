@@ -1,8 +1,6 @@
 package cn.com.helei.bot.core.supporter.persistence.impl;
 
 
-import cn.com.helei.bot.core.config.TypedAccountConfig;
-import cn.com.helei.bot.core.entity.AccountBaseInfo;
 import cn.com.helei.bot.core.entity.AccountContext;
 import cn.com.helei.bot.core.supporter.botapi.BotApi;
 import cn.com.helei.bot.core.supporter.persistence.AbstractPersistenceManager;
@@ -11,21 +9,19 @@ import cn.com.helei.bot.core.util.NamedThreadFactory;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class DBAccountPersistenceManager extends AbstractPersistenceManager {
 
     private final ExecutorService executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory("database-"));
 
-    private final BotApi botApi;;
+    private final BotApi botApi;
+    ;
 
     public DBAccountPersistenceManager(BotApi botApi) {
         this.botApi = botApi;
@@ -37,38 +33,16 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
     }
 
     @Override
-    public void persistenceAccountContexts(Map<String, List<AccountContext>> typedAccountMap) {
-        for (List<AccountContext> values : typedAccountMap.values()) {
-            botApi.getBotAccountContextService().saveBatch(values);
-        }
-    }
-
-    public Map<String, List<AccountContext>> createAccountContexts(Integer projectId, List<TypedAccountConfig> accountConfigs) {
-        if (accountConfigs == null || accountConfigs.isEmpty())
-            return new HashMap<>();
-
-        // Step 1 按类型遍历
-        return accountConfigs.stream().collect(Collectors.toMap(TypedAccountConfig::getType, typedAccountConfig -> {
-            String type = typedAccountConfig.getType();
-
-            // Step 2 根据类型查询对应的AccountBaseInfo
-            AccountBaseInfo query = new AccountBaseInfo();
-            query.setType(type);
-
-            List<AccountBaseInfo> typeBaseInfos = botApi.getAccountBaseInfoService().list(new QueryWrapper<>(query));
-
-            // Step 3 创建AccountCount
-            return typeBaseInfos.stream()
-                    .map(accountBaseInfo -> AccountContext.builder().accountBaseInfo(accountBaseInfo).build())
-                    .toList();
-        }));
+    public void persistenceAccountContexts(List<AccountContext> accountContexts) {
+        botApi.getBotAccountContextService().saveBatch(accountContexts);
     }
 
     @Override
-    public Map<String, List<AccountContext>> loadAccountContexts(Integer botId) {
+    public List<AccountContext> loadAccountContexts(Integer botId, String botKey) {
         // Step 1 加载 projectId 对应的账号
         AccountContext query = new AccountContext();
         query.setBotId(botId);
+        query.setBotKey(botKey);
         query.setParams(null);
 
         List<AccountContext> accountContexts = botApi
@@ -91,12 +65,17 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
         }
 
         // Step 4 按类型分类账号
-        return accountContexts.stream().collect(Collectors.groupingBy(AccountContext::getType));
+        return accountContexts;
     }
 
     @Override
     protected void propertyChangeHandler(PropertyChangeInvocation invocation) {
         log.info("对象属性改变了{} {}->{}", invocation.getPropertyName(), invocation.getOldValue(), invocation.getNewValue());
+
+        Object target = invocation.getTarget();
+        if (target instanceof AccountContext) {
+            botApi.getBotAccountContextService().updateById((AccountContext) target);
+        }
     }
 
 

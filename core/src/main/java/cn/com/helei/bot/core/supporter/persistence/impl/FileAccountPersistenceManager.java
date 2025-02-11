@@ -1,6 +1,6 @@
 //package cn.com.helei.bot.core.supporter.persistence.impl;
 //
-//import cn.com.helei.bot.core.config.TypedAccountConfig;
+//import cn.com.helei.bot.core.dto.config.TypedAccountConfig;
 //import cn.com.helei.bot.core.constants.ProxyType;
 //import cn.com.helei.bot.core.entity.AccountBaseInfo;
 //import cn.com.helei.bot.core.entity.AccountContext;

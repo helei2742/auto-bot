@@ -18,32 +18,27 @@ public class AccountInfoPrinter {
      *
      * @return String
      */
-    public static String printAccountList(Map<String, List<AccountContext>> typedAccountMap) {
+    public static String printAccountList(List<AccountContext> accountContexts) {
 
         StringBuilder sb = new StringBuilder();
 
-        for (Map.Entry<String, List<AccountContext>> entry : typedAccountMap.entrySet()) {
-            String type = entry.getKey();
-            List<AccountContext> accountContexts = entry.getValue();
+        sb.append(" 账户列表\n");
 
-            sb.append(type).append(" 账户列表\n");
+        List<AccountPrintDto> list = accountContexts.stream().map(accountContext -> {
+            ProxyInfo proxy = accountContext.getProxy();
+            BrowserEnv browserEnv = accountContext.getBrowserEnv();
 
-            List<AccountPrintDto> list = accountContexts.stream().map(accountContext -> {
-                ProxyInfo proxy = accountContext.getProxy();
-                BrowserEnv browserEnv = accountContext.getBrowserEnv();
+            return AccountPrintDto
+                    .builder()
+                    .id(accountContext.getAccountBaseInfo().getId())
+                    .name(accountContext.getName())
+                    .proxyInfo(proxy == null ? "NO_PROXY" : proxy.getId() + "-" + proxy.getAddressStr())
+                    .browserEnvInfo(String.valueOf(browserEnv == null ? "NO_ENV" : browserEnv.getId()))
+                    .signUp(accountContext.getSignUp())
+                    .build();
+        }).toList();
 
-                return AccountPrintDto
-                        .builder()
-                        .id(accountContext.getAccountBaseInfo().getId())
-                        .name(accountContext.getName())
-                        .proxyInfo(proxy == null ? "NO_PROXY" : proxy.getId() + "-" + proxy.getAddressStr())
-                        .browserEnvInfo(String.valueOf(browserEnv == null ? "NO_ENV" : browserEnv.getId()))
-                        .signUp(accountContext.getSignUp())
-                        .build();
-            }).toList();
-
-            sb.append(CommandLineTablePrintHelper.generateTableString(list, AccountPrintDto.class)).append("\n");
-        }
+        sb.append(CommandLineTablePrintHelper.generateTableString(list, AccountPrintDto.class)).append("\n");
 
         return sb.toString();
     }
@@ -53,20 +48,15 @@ public class AccountInfoPrinter {
      *
      * @return String
      */
-    public static String printAccountConnectStatusList(Map<String, List<AccountContext>> typedAccountMap) {
+    public static String printAccountConnectStatusList(List<AccountContext> accountContexts) {
         StringBuilder sb = new StringBuilder();
 
-        for (Map.Entry<String, List<AccountContext>> entry : typedAccountMap.entrySet()) {
-            String type = entry.getKey();
-            List<AccountContext> accountContexts = entry.getValue();
+        sb.append(" 账号链接状态列表:\n");
 
-            sb.append(type).append(" 账号链接状态列表:\n");
+        List<ConnectStatusInfo> list = accountContexts.stream()
+                .map(AccountContext::getConnectStatusInfo).toList();
 
-            List<ConnectStatusInfo> list = accountContexts.stream()
-                    .map(AccountContext::getConnectStatusInfo).toList();
-
-            sb.append(CommandLineTablePrintHelper.generateTableString(list, ConnectStatusInfo.class)).append("\n");
-        }
+        sb.append(CommandLineTablePrintHelper.generateTableString(list, ConnectStatusInfo.class)).append("\n");
 
         return sb.toString();
     }
@@ -76,20 +66,15 @@ public class AccountInfoPrinter {
      *
      * @return String
      */
-    public static String printAccountReward(Map<String, List<AccountContext>> typedAccountMap) {
+    public static String printAccountReward(List<AccountContext> accountContexts) {
         StringBuilder sb = new StringBuilder();
 
-        for (Map.Entry<String, List<AccountContext>> entry : typedAccountMap.entrySet()) {
-            String type = entry.getKey();
-            List<AccountContext> accountContexts = entry.getValue();
+        sb.append(" 收益列表:\n");
 
-            sb.append(type).append(" 收益列表:\n");
+        List<RewordInfo> list = accountContexts.stream()
+                .map(accountContext -> accountContext.getRewordInfo().newInstance()).toList();
 
-            List<RewordInfo> list = accountContexts.stream()
-                    .map(accountContext -> accountContext.getRewordInfo().newInstance()).toList();
-
-            sb.append(CommandLineTablePrintHelper.generateTableString(list, RewordInfo.class)).append("\n");
-        }
+        sb.append(CommandLineTablePrintHelper.generateTableString(list, RewordInfo.class)).append("\n");
 
         return sb.toString();
     }

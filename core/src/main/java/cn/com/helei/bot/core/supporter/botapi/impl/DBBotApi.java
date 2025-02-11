@@ -2,6 +2,7 @@ package cn.com.helei.bot.core.supporter.botapi.impl;
 
 import cn.com.helei.bot.core.mvc.service.*;
 import cn.com.helei.bot.core.supporter.botapi.BotApi;
+import cn.com.helei.bot.core.supporter.botapi.BotJobService;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -41,4 +42,6 @@ public class DBBotApi implements BotApi {
     @Autowired
     private IBotInfoService botInfoService;
 
+    @Autowired
+    private BotJobService botJobService;
 }

@@ -8,11 +8,11 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
+        import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http.websocketx.*;
-import io.netty.handler.proxy.HttpProxyHandler;
+        import io.netty.handler.codec.http.websocketx.*;
+        import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
@@ -26,7 +26,7 @@ import javax.net.ssl.SSLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+        import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
@@ -81,6 +81,9 @@ public abstract class AbstractWebsocketClient<P, T> {
      */
     @Setter
     private int reconnectCountDownSecond = 180;
+
+    @Setter
+    private int reconnectLimit = 3;
 
     /**
      * 重链接次数
@@ -254,8 +257,8 @@ public abstract class AbstractWebsocketClient<P, T> {
 
         return CompletableFuture.supplyAsync(() -> {
             //Step 1 重连次数超过限制，关闭
-            if (reconnectTimes.get() >= NettyConstants.RECONNECT_LIMIT) {
-                log.error("reconnect times out of limit [{}], close websocket client", NettyConstants.RECONNECT_LIMIT);
+            if (reconnectTimes.get() >= reconnectLimit) {
+                log.error("reconnect times out of limit [{}], close websocket client", reconnectLimit);
                 close();
                 return false;
             }
@@ -287,7 +290,7 @@ public abstract class AbstractWebsocketClient<P, T> {
 
 
                 //Step 4 链接服务器
-                if (reconnectTimes.incrementAndGet() <= NettyConstants.RECONNECT_LIMIT) {
+                if (reconnectTimes.incrementAndGet() <= reconnectLimit) {
 
                     //Step 4.1 每进行重连都会先将次数加1并设置定时任务将重连次数减1
                     eventLoopGroup.schedule(() -> {

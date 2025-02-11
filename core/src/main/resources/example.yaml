@@ -1,18 +1,7 @@
 bot:
   app:
-    projectName: sahara
-    runtime:
-      concurrentCount: 6
-      autoClaimIntervalSeconds: 60
-      isAccountRewardAutoRefresh: false
-      accountRewardRefreshIntervalSeconds: 600
-
-    websocket:
-      wsBaseUrl: wss://example.com
-      wsUnlimitedRetry: false
-      heartBeatIntervalSecond: 30
-      wsConnectCount: 5
-      reconnectCountDownSecond: 180
+    key: sahara-bot-1
+    botClassName:
 
     filePathConfig:
       proxyFileBotConfigPath: proxy.xlsx

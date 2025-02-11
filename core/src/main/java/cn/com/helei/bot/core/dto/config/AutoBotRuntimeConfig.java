@@ -1,4 +1,4 @@
-package cn.com.helei.bot.core.config;
+package cn.com.helei.bot.core.dto.config;
 
 import lombok.Data;
 

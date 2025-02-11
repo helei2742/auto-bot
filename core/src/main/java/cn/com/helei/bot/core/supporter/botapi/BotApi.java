@@ -24,4 +24,6 @@ public interface BotApi {
     ITwitterAccountService getTwitterAccountService();
 
     ImportService getImportService();
+
+    BotJobService getBotJobService();
 }

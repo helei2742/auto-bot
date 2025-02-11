@@ -1,8 +1,8 @@
 package cn.com.helei.bot.core.bot.view;
 
 import cn.com.helei.bot.core.bot.base.AccountManageAutoBot;
-import cn.com.helei.bot.core.config.AutoBotConfig;
-import cn.com.helei.bot.core.constants.DepinBotStatus;
+import cn.com.helei.bot.core.dto.config.AutoBotConfig;
+import cn.com.helei.bot.core.bot.constants.BotStatus;
 import cn.com.helei.bot.core.util.exception.DepinBotStartException;
 import cn.com.helei.bot.core.supporter.commandMenu.CommandMenuNode;
 import lombok.Getter;
@@ -74,7 +74,7 @@ public abstract class CommandLineAutoBot {
     public void start() throws DepinBotStartException {
         bot.init();
 
-        bot.updateState(DepinBotStatus.STARTING);
+        bot.updateState(BotStatus.STARTING);
         log.info("正在启动Depin Bot");
         try {
             CountDownLatch startLatch = new CountDownLatch(1);
@@ -83,11 +83,11 @@ public abstract class CommandLineAutoBot {
 
             log.info("Depin Bot启动完毕");
 
-            bot.updateState(DepinBotStatus.RUNNING);
+            bot.updateState(BotStatus.RUNNING);
             startLatch.await();
 
         } catch (Exception e) {
-            bot.updateState(DepinBotStatus.SHUTDOWN);
+            bot.updateState(BotStatus.SHUTDOWN);
             throw new DepinBotStartException("启动CommandLineDepinBot发生错误", e);
         }
     }

@@ -1,4 +1,4 @@
-package cn.com.helei.bot.core.config;
+package cn.com.helei.bot.core.dto.config;
 
 
 import lombok.Data;
@@ -12,19 +12,15 @@ import java.util.Map;
 public class AutoBotConfig {
 
     /**
+     * 标识bot，不同于bot id， botKey是由用户定义的
+     */
+    private String botKey;
+
+    /**
      * 项目信息
      */
-    private String projectName;
+    private String botClassName;
 
-    /**
-     * 运行时设置
-     */
-    private AutoBotRuntimeConfig runtime = new AutoBotRuntimeConfig();
-
-    /**
-     * websocket 设置
-     */
-    private AutoBotWSConfig websocket = new AutoBotWSConfig();
 
     /**
      * 配置文件配置

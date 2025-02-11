@@ -40,6 +40,10 @@ public class AccountContext {
     @TableField("bot_id")
     private Integer botId;
 
+    @TableField("bot_key")
+    @ExcelProperty(value = "bot_key", converter = IntegerStringConverter.class)
+    private String botKey;
+
     @TableField("account_base_info_id")
     @ExcelProperty(value = "account_base_info_id", converter = IntegerStringConverter.class)
     private Integer accountBaseInfoId;
@@ -137,7 +141,7 @@ public class AccountContext {
     }
 
     public Boolean getSignUp() {
-        return status == 1;
+        return status != null && status == 1;
     }
 
     public void setSignUp(boolean b) {

@@ -1,7 +1,6 @@
 package cn.com.helei.bot.core.supporter.netty;
 
 import cn.com.helei.bot.core.constants.ConnectStatus;
-import cn.com.helei.bot.core.constants.MapConfigKey;
 import cn.com.helei.bot.core.entity.AccountContext;
 import cn.com.helei.bot.core.supporter.netty.base.AbstractWebsocketClient;
 import cn.com.helei.bot.core.supporter.netty.constants.WebsocketClientStatus;
@@ -15,7 +14,6 @@ import java.time.LocalDateTime;
 @Getter
 public abstract class BaseBotWSClient<Req, Resp> extends AbstractWebsocketClient<Req, Resp> {
 
-
     /**
      * client对应的账号
      */
@@ -23,9 +21,10 @@ public abstract class BaseBotWSClient<Req, Resp> extends AbstractWebsocketClient
 
     public BaseBotWSClient(
             AccountContext accountContext,
+            String connectUrl,
             BaseBotWSClientHandler<Req, Resp> handler
     ) {
-        super(accountContext.getParam(MapConfigKey.CONNECT_URL_KEY), handler);
+        super(connectUrl, handler);
 
         super.setName(accountContext.getName());
         super.setProxy(accountContext.getProxy());
@@ -37,15 +36,17 @@ public abstract class BaseBotWSClient<Req, Resp> extends AbstractWebsocketClient
     }
 
 
-    public abstract Req getHeartbeatMessage(BaseBotWSClient<Req, Resp> wsClient);
+    public abstract Req getHeartbeatMessage();
 
-    public abstract void whenAccountReceiveResponse(BaseBotWSClient<Req, Resp> wsClient, Object id, Resp response) ;
+    public abstract void whenAccountReceiveResponse(Object id, Resp response) ;
 
-    public abstract void whenAccountReceiveMessage(BaseBotWSClient<Req, Resp> wsClient, Resp message);
+    public abstract void whenAccountReceiveMessage(Resp message);
 
     public abstract Object getRequestId(Req request);
 
     public abstract Object getResponseId(Resp response);
+
+    public void whenAccountClientStatusChange(WebsocketClientStatus clientStatus) {}
 
     /**
      * ws客户端状态改变，同步更新账户状态
@@ -53,27 +54,29 @@ public abstract class BaseBotWSClient<Req, Resp> extends AbstractWebsocketClient
      * @param newClientStatus 最新的客户端状态
      */
     public void whenClientStatusChange(WebsocketClientStatus newClientStatus) {
-        accountContext.getConnectStatusInfo().setConnectStatus(
-                switch (newClientStatus) {
-                    case NEW -> {
-                        accountContext.getConnectStatusInfo().setStartDateTime(LocalDateTime.now());
-                        accountContext.getConnectStatusInfo().setUpdateDateTime(LocalDateTime.now());
-                        yield ConnectStatus.NEW;
-                    }
-                    case STARTING -> {
-                        accountContext.getConnectStatusInfo().setUpdateDateTime(LocalDateTime.now());
-                        yield ConnectStatus.STARTING;
-                    }
-                    case RUNNING -> {
-                        accountContext.getConnectStatusInfo().setUpdateDateTime(LocalDateTime.now());
-                        yield ConnectStatus.RUNNING;
-                    }
-                    case STOP, SHUTDOWN -> {
-                        accountContext.getConnectStatusInfo().setUpdateDateTime(LocalDateTime.now());
-                        yield ConnectStatus.STOP;
-                    }
-                }
-        );
+        ConnectStatus connectStatus = switch (newClientStatus) {
+            case NEW -> {
+                accountContext.getConnectStatusInfo().setStartDateTime(LocalDateTime.now());
+                accountContext.getConnectStatusInfo().setUpdateDateTime(LocalDateTime.now());
+                yield ConnectStatus.NEW;
+            }
+            case STARTING -> {
+                accountContext.getConnectStatusInfo().setUpdateDateTime(LocalDateTime.now());
+                yield ConnectStatus.STARTING;
+            }
+            case RUNNING -> {
+                accountContext.getConnectStatusInfo().setUpdateDateTime(LocalDateTime.now());
+                yield ConnectStatus.RUNNING;
+            }
+            case STOP, SHUTDOWN -> {
+                accountContext.getConnectStatusInfo().setUpdateDateTime(LocalDateTime.now());
+                yield ConnectStatus.STOP;
+            }
+        };
+
+        accountContext.getConnectStatusInfo().setConnectStatus(connectStatus);
+
+        whenAccountClientStatusChange(newClientStatus);
     }
 
 }

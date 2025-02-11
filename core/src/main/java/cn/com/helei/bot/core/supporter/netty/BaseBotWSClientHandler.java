@@ -14,15 +14,15 @@ public abstract class BaseBotWSClientHandler<Req, Resp> extends AbstractWebSocke
      */
     @Override
     protected void handleAllIdle(ChannelHandlerContext ctx) {
-        BaseBotWSClient<Req, Resp> depinWSClient = getDepinWSClient();
+        BaseBotWSClient<Req, Resp> botWSClient = getBotWSClient();
 
 
-        Req heartbeatMessage = depinWSClient.getHeartbeatMessage(depinWSClient);
+        Req heartbeatMessage = botWSClient.getHeartbeatMessage();
         if (heartbeatMessage != null) {
-            depinWSClient
+            botWSClient
                     .sendMessage(heartbeatMessage)
                     .whenCompleteAsync((unused, throwable) -> {
-                        ConnectStatusInfo connectStatusInfo = depinWSClient
+                        ConnectStatusInfo connectStatusInfo = botWSClient
                                 .getAccountContext()
                                 .getConnectStatusInfo();
 
@@ -35,37 +35,33 @@ public abstract class BaseBotWSClientHandler<Req, Resp> extends AbstractWebSocke
                         // 心跳计数
                         connectStatusInfo.getHeartBeat()
                                 .getAndIncrement();
-                    }, depinWSClient.getCallbackInvoker());
+                    }, botWSClient.getCallbackInvoker());
         }
     }
 
 
     @Override
     public Object getRequestId(Req request) {
-        return getDepinWSClient().getRequestId(request);
+        return getBotWSClient().getRequestId(request);
     }
 
     @Override
     public Object getResponseId(Resp response) {
-        return getDepinWSClient().getResponseId(response);
+        return getBotWSClient().getResponseId(response);
     }
 
 
     @Override
     protected void handleResponseMessage(Object id, Resp response) {
-        BaseBotWSClient<Req, Resp> depinWSClient = getDepinWSClient();
-
-        depinWSClient.whenAccountReceiveResponse(depinWSClient, id, response);
+        getBotWSClient().whenAccountReceiveResponse(id, response);
     }
 
     @Override
     protected void handleOtherMessage(Resp message) {
-        BaseBotWSClient<Req, Resp> depinWSClient = getDepinWSClient();
-
-        depinWSClient.whenAccountReceiveMessage(depinWSClient, message);
+        getBotWSClient().whenAccountReceiveMessage(message);
     }
 
-    private BaseBotWSClient<Req, Resp> getDepinWSClient() {
+    private BaseBotWSClient<Req, Resp> getBotWSClient() {
         return (BaseBotWSClient<Req, Resp>) websocketClient;
     }
 }

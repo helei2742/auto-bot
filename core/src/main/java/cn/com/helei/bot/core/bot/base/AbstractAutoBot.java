@@ -1,9 +1,8 @@
 package cn.com.helei.bot.core.bot.base;
 
-import cn.com.helei.bot.core.bot.anno.BotApplication;
-import cn.com.helei.bot.core.config.AutoBotConfig;
+import cn.com.helei.bot.core.dto.config.AutoBotConfig;
 import cn.com.helei.bot.core.config.SystemConfig;
-import cn.com.helei.bot.core.constants.DepinBotStatus;
+import cn.com.helei.bot.core.bot.constants.BotStatus;
 import cn.com.helei.bot.core.dto.AutoBotRuntimeInfo;
 import cn.com.helei.bot.core.entity.BotInfo;
 import cn.com.helei.bot.core.entity.ProxyInfo;
@@ -20,11 +19,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.File;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.*;
-        import java.util.function.Supplier;
+import java.util.function.Supplier;
 
 @Slf4j
 @Getter
@@ -45,7 +42,7 @@ public abstract class AbstractAutoBot {
     /**
      * 状态
      */
-    private DepinBotStatus status = DepinBotStatus.NEW;
+    private BotStatus status = BotStatus.NEW;
 
     /**
      * 代理并发控制
@@ -57,6 +54,16 @@ public abstract class AbstractAutoBot {
      */
     private final AutoBotRuntimeInfo autoBotRuntimeInfo;
 
+    /**
+     * 请求并发数量
+     */
+    @Getter
+    @Setter
+    private int requestConcurrentCount = 20;
+
+    /**
+     * bot api
+     */
     @Getter
     private final BotApi botApi;
 
@@ -64,36 +71,38 @@ public abstract class AbstractAutoBot {
      * bot信息
      */
     @Getter
-    @Setter
-    private BotInfo botInfo;
+    private final BotInfo botInfo;
 
-    public AbstractAutoBot(AutoBotConfig autoBotConfig, BotApi botApi) {
+    public AbstractAutoBot(
+            AutoBotConfig autoBotConfig,
+            BotApi botApi
+    ) {
+        if (StrUtil.isBlank(autoBotConfig.getBotKey())) {
+            throw new IllegalArgumentException("bot key不能为空");
+        }
+
         this.autoBotConfig = autoBotConfig;
         this.botApi = botApi;
+        this.botInfo = buildBotInfo();
 
         this.networkSyncControllerMap = new ConcurrentHashMap<>();
         this.autoBotRuntimeInfo = new AutoBotRuntimeInfo();
 
-        // 解析注解，添加botInfo
-        resolveAnnoAndFillBotInfo();
-
-        this.executorService = Executors.newThreadPerTaskExecutor(new NamedThreadFactory(botInfo.getName() + "-executor"));
+        this.executorService = Executors.newThreadPerTaskExecutor(
+                new NamedThreadFactory(botInfo.getName() + "-executor"));
     }
 
 
     public void init() {
-        updateState(DepinBotStatus.INIT);
+        updateState(BotStatus.INIT);
         try {
-            // 查询project是否存在
-//            if (isProjectExist()) return;
-
             doInit();
 
             //更新状态
-            updateState(DepinBotStatus.INIT_FINISH);
+            updateState(BotStatus.INIT_FINISH);
         } catch (Exception e) {
             log.error("初始化Bot[{}]发生错误", botInfo.getName(), e);
-            updateState(DepinBotStatus.INIT_ERROR);
+            updateState(BotStatus.INIT_ERROR);
         }
     }
 
@@ -150,7 +159,7 @@ public abstract class AbstractAutoBot {
         Semaphore networkController = networkSyncControllerMap
                 .compute(proxy == null ? DEFAULT_PROXY : proxy, (k, v) -> {
                     if (v == null) {
-                        v = new Semaphore(autoBotConfig.getRuntime().getConcurrentCount());
+                        v = new Semaphore(requestConcurrentCount);
                     }
                     return v;
                 });
@@ -202,34 +211,33 @@ public abstract class AbstractAutoBot {
      * @return String
      */
     public String getAppConfigDir() {
-        return FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_APP_PATH,
-                getAutoBotConfig().getProjectName() + File.separator + botInfo.getName());
+        return FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_APP_PATH, botInfo.getName());
     }
 
 
     /**
-     * 更新DepinBotStatus
+     * 更新BotStatus
      *
      * @param newStatus 新状态
      */
-    public synchronized void updateState(DepinBotStatus newStatus) throws DepinBotStatusException {
+    public synchronized void updateState(BotStatus newStatus) throws DepinBotStatusException {
         boolean b = true;
-        if (newStatus.equals(DepinBotStatus.SHUTDOWN)) {
-            status = DepinBotStatus.SHUTDOWN;
+        if (newStatus.equals(BotStatus.SHUTDOWN)) {
+            status = BotStatus.SHUTDOWN;
             b = false;
         } else {
             b = switch (status) {
                 //当前为NEW，新状态才能为NEW,SHUTDOWN
-                case NEW -> DepinBotStatus.INIT.equals(newStatus);
+                case NEW -> BotStatus.INIT.equals(newStatus);
                 //当前为INIT，新状态只能为INIT_FINISH、INIT_ERROR,SHUTDOWN
-                case INIT -> newStatus.equals(DepinBotStatus.INIT_FINISH)
-                        || newStatus.equals(DepinBotStatus.INIT_ERROR);
+                case INIT -> newStatus.equals(BotStatus.INIT_FINISH)
+                        || newStatus.equals(BotStatus.INIT_ERROR);
                 //当前为INIT_ERROR,新状态只能为ACCOUNT_LOADING, SHUTDOWN
-                case INIT_ERROR -> newStatus.equals(DepinBotStatus.INIT);
+                case INIT_ERROR -> newStatus.equals(BotStatus.INIT);
                 //当前状态为INIT_FINISH，新状态只能为ACCOUNT_LIST_CONNECT, SHUTDOWN
-                case INIT_FINISH -> newStatus.equals(DepinBotStatus.STARTING);
+                case INIT_FINISH -> newStatus.equals(BotStatus.STARTING);
                 //当前状态为STARING，新状态只能为RUNNING,SHUTDOWN
-                case STARTING -> newStatus.equals(DepinBotStatus.RUNNING);
+                case STARTING -> newStatus.equals(BotStatus.RUNNING);
                 //RUNNING，新状态只能为 SHUTDOWN
                 case RUNNING -> false;
                 case SHUTDOWN -> false;
@@ -246,36 +254,5 @@ public abstract class AbstractAutoBot {
     }
 
 
-    /**
-     * 解析注解，添加botInfo
-     */
-    private void resolveAnnoAndFillBotInfo() {
-        BotApplication annotation = this.getClass().getAnnotation(BotApplication.class);
-
-        if (annotation != null) {
-            String botName = annotation.name();
-            if (StrUtil.isBlank(botName)) throw new IllegalArgumentException("bot name 不能为空");
-
-            BotInfo dbBotInfo = botApi.getBotInfoService().query().eq("name", botName).one();
-
-            // 查询bot是否存在，不存在则创建
-            if (dbBotInfo == null) {
-                log.warn("不存在[{}]bot info, 自动创建...", botName);
-                botInfo = new BotInfo();
-                botInfo.setDescribe(annotation.describe());
-                botInfo.setLimitProjectIds(Arrays.toString(annotation.limitProjectIds()));
-                botInfo.setName(botName);
-                if (botApi.getBotInfoService().save(botInfo)) {
-                    log.info("自动创建[{}]bot info成功", botName);
-                } else {
-                    throw new RuntimeException("自动创建[" + botName + "]失败");
-                }
-            } else {
-                this.botInfo = dbBotInfo;
-            }
-        } else {
-            throw new IllegalArgumentException("bot 应该带有 @BotApplication注解");
-        }
-    }
-
+    protected abstract BotInfo buildBotInfo();
 }

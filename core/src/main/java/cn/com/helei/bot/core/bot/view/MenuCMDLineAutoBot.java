@@ -1,19 +1,20 @@
 package cn.com.helei.bot.core.bot.view;
 
 
-import cn.com.helei.bot.core.bot.base.AccountManageAutoBot;
-import cn.com.helei.bot.core.config.AutoBotConfig;
+import cn.com.helei.bot.core.bot.base.AnnoDriveAutoBot;
+import cn.com.helei.bot.core.dto.config.AutoBotConfig;
 import cn.com.helei.bot.core.supporter.AccountInfoPrinter;
 import cn.com.helei.bot.core.supporter.commandMenu.CommandMenuNode;
 import cn.com.helei.bot.core.supporter.commandMenu.DefaultMenuType;
 import cn.com.helei.bot.core.supporter.commandMenu.MenuNodeMethod;
+import com.alibaba.fastjson.JSON;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.function.Consumer;
+        import java.util.function.Consumer;
 
 import static cn.com.helei.bot.core.constants.MapConfigKey.*;
 
@@ -31,13 +32,23 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
     @Setter
     private Consumer<CommandMenuNode> addCustomMenuNode;
 
-    public MenuCMDLineAutoBot(AccountManageAutoBot bot, List<DefaultMenuType> defaultMenuTypes) {
+    public MenuCMDLineAutoBot(AnnoDriveAutoBot bot, List<DefaultMenuType> defaultMenuTypes) {
         super(bot);
         this.defaultMenuTypes = new ArrayList<>(defaultMenuTypes);
 
         this.defaultMenuTypes.add(DefaultMenuType.ACCOUNT_LIST);
         this.defaultMenuTypes.add(DefaultMenuType.PROXY_LIST);
         this.defaultMenuTypes.add(DefaultMenuType.BROWSER_ENV_LIST);
+
+        if (bot.getRegisterMethod() != null) {
+            this.defaultMenuTypes.add(DefaultMenuType.REGISTER);
+        }
+        if (bot.getLoginMethod() != null) {
+            this.defaultMenuTypes.add(DefaultMenuType.LOGIN);
+        }
+        if (bot.getBotJobNameList() != null) {
+            this.defaultMenuTypes.add(DefaultMenuType.START_ACCOUNT_CLAIM);
+        }
 
         // 解析MenuNodeMethod注解添加菜单节点
         for (Method method : bot.getClass().getDeclaredMethods()) {
@@ -106,50 +117,21 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
             getBotConfig().setConfig(INVITE_CODE_KEY, input);
         });
 
-        CommandMenuNode typeSelect = new CommandMenuNode(
-                "选择账户类型",
-                "请选择账户类型",
-                this::printCurrentRegisterConfig
-        );
-
-        List<String> typeList = new ArrayList<>(getBot().getTypedAccountMap().keySet());
-        for (String type : typeList) {
-            CommandMenuNode typeInput = new CommandMenuNode(
-                    true,
-                    type + " 账户",
-                    "type",
-                    () -> {
-                        getBotConfig().setConfig(REGISTER_TYPE_KEY, type);
-                        return "注册[" + type + "]类型账户，共：" + getBot().getTypedAccountMap().get(type).size();
-                    }
-            );
-
-            typeSelect.addSubMenu(typeInput);
-        }
-
-
         return registerMenu
                 .addSubMenu(interInvite)
-                .addSubMenu(typeSelect)
                 .addSubMenu(new CommandMenuNode(
                         true,
                         "开始注册",
                         "开始注册所有账号...",
                         () -> getBot()
-                                .registerTypeAccount(getBot().getAutoBotConfig()
-                                        .getConfig(REGISTER_TYPE_KEY))
+                                .registerAccount().toString()
                 ));
     }
 
     private CommandMenuNode buildVerifierMenuNode() {
-        CommandMenuNode verifier = new CommandMenuNode("验证邮箱", "请选择验证的账户类型",
-                () -> "当前的邮箱类型：" + getBotConfig().getConfig(EMAIL_VERIFIER_TYPE));
 
-        for (String type : getBot().getTypedAccountMap().keySet()) {
-            verifier.addSubMenu(new CommandMenuNode(true, type + " 类型", "",
-                    () -> getBot().verifierEmail(type)));
-        }
-        return verifier;
+        return new CommandMenuNode("验证邮箱", "请选择验证的账户类型",
+                () -> "当前的邮箱类型：" + getBotConfig().getConfig(EMAIL_VERIFIER_TYPE));
     }
 
 
@@ -159,18 +141,9 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
      * @return CommandMenuNode
      */
     private CommandMenuNode buildQueryTokenMenuNode() {
-        CommandMenuNode menuNode = new CommandMenuNode("获取token", "请选择邮箱类型", null);
-
-        for (String type : getBot().getTypedAccountMap().keySet()) {
-            CommandMenuNode typeInput = new CommandMenuNode(
-                    true,
-                    type + " 账户",
-                    "type",
-                    () -> getBot().loadTypedAccountToken(type)
-            );
-            menuNode.addSubMenu(typeInput);
-        }
-        return menuNode;
+        return new CommandMenuNode("获取token", "开始获取token",()->{
+            return JSON.toJSONString(getBot().loginAndTakeTokenAccount());
+        });
     }
 
     /**
@@ -208,7 +181,7 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
         CommandMenuNode accountListMenuNode = new CommandMenuNode(
                 "查看账号",
                 "当前账户详情列表:",
-                () -> AccountInfoPrinter.printAccountList(getBot().getTypedAccountMap())
+                () -> AccountInfoPrinter.printAccountList(getBot().getAccountContexts())
         );
 
         return accountListMenuNode
@@ -226,7 +199,7 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
         return new CommandMenuNode(
                 "查看账号收益",
                 "账号收益详情列表:",
-                () -> AccountInfoPrinter.printAccountReward(getBot().getTypedAccountMap())
+                () -> AccountInfoPrinter.printAccountReward(getBot().getAccountContexts())
         ).addSubMenu(REFRESH_NODE);
     }
 
@@ -239,7 +212,7 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
         return new CommandMenuNode(
                 "查看账号连接情况",
                 "账号连接情况列表:",
-                () -> AccountInfoPrinter.printAccountConnectStatusList(getBot().getTypedAccountMap())
+                () -> AccountInfoPrinter.printAccountConnectStatusList(getBot().getAccountContexts())
         ).addSubMenu(REFRESH_NODE);
     }
 
@@ -251,29 +224,20 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
      */
     private CommandMenuNode buildStartAccountConnectMenuNode() {
         CommandMenuNode menuNode = new CommandMenuNode(
-                "启动账号",
-                "选择启动账号类型",
+                "启动任务",
+                "选择任务类型",
                 null
         );
 
-        Set<String> typeSet = getBot().getTypedAccountMap().keySet();
-        for (String type : typeSet) {
-            CommandMenuNode typeInput = new CommandMenuNode(true, type + " 账户", "type",
-                    () -> getBot().startAccountsClaim(type, getBot().getTypedAccountMap().get(type))
+        Set<String> jobNameSet = getBot().getBotJobNameList();
+        for (String jobName : jobNameSet) {
+            CommandMenuNode typeInput = new CommandMenuNode(true, jobName + " 任务", "type",
+                    () -> JSON.toJSONString(getBot().startBotJob(jobName))
             );
 
             menuNode.addSubMenu(typeInput);
         }
-        menuNode.addSubMenu(new CommandMenuNode(true, "全部类型账户", "", () -> {
-            getBot().getTypedAccountMap().forEach(getBot()::startAccountsClaim);
 
-            return "开始全部类型" + typeSet + "账户";
-        }));
-
-        CommandMenuNode refresh = new CommandMenuNode(true, "刷新", "当前账户列表",
-                () -> AccountInfoPrinter.printAccountList(getBot().getTypedAccountMap()));
-
-        menuNode.addSubMenu(refresh);
         return menuNode;
     }
 
@@ -393,12 +357,12 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
     private CommandMenuNode buildImportBotAccountContextMenuNode() {
         return new CommandMenuNode(true, "导入bot运行账号", null, () -> {
 
-            getBot().getBotApi().getImportService().importBotAccountContextFromExcel(
-                    getBot().getBotInfo().getId(),
-                    getBotConfig().getAccountConfig().getProxyType(),
-                    getBotConfig().getAccountConfig().getProxyRepeat(),
-                    getBotConfig().getAccountConfig().getConfigFilePath()
-            );
+//            getBot().getBotApi().getImportService().importBotAccountContextFromExcel(
+//                    getBot().getBotInfo().getId(),
+//                    getBotConfig().getAccountConfig().getProxyType(),
+//                    getBotConfig().getAccountConfig().getProxyRepeat(),
+//                    getBotConfig().getAccountConfig().getConfigFilePath()
+//            );
 
             return "bot运行账号导入完成";
         });

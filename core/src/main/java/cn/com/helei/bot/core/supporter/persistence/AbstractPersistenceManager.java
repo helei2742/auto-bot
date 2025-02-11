@@ -30,25 +30,23 @@ public abstract class AbstractPersistenceManager implements AccountPersistenceMa
     /**
      * 注册持久化监听
      *
-     * @param type            type
      * @param accountContexts accountContexts
      */
     @Override
-    public void registerPersistenceListener(String type, List<AccountContext> accountContexts) {
+    public void registerPersistenceListener(List<AccountContext> accountContexts) {
         if (accountContexts == null || accountContexts.isEmpty()) return;
-        accountContexts.replaceAll(accountContext -> bindPersistenceAnnoListener(type, accountContext));
+        accountContexts.replaceAll(this::bindPersistenceAnnoListener);
     }
 
 
     /**
      * 对象属性添加变化监听
      *
-     * @param type   type
      * @param target target 目标对象
      * @param <T>    T
      * @return 添加监听后被动态代理的对象
      */
-    public <T> T bindPersistenceAnnoListener(String type, T target) {
+    public <T> T bindPersistenceAnnoListener(T target) {
         return doBindPersistenceAnnoListener(target, target);
     }
 

@@ -1,13 +1,12 @@
 package cn.com.helei.bot.core.util;
 
 import cn.com.helei.bot.core.config.SystemConfig;
-import org.apache.poi.ss.formula.functions.T;
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.rmi.MarshalledObject;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -64,8 +63,8 @@ public class YamlConfigLoadUtil {
         return (T) compute;
     }
 
-    public static List<Object> load(List<String> configDirBotPath, String browserEnvPoolConfig, String prefix) {
-        return load(configDirBotPath, browserEnvPoolConfig, List.of(prefix.split("\\.")));
+    public static List<Object> load(List<String> configDirBotPath, String fileName, String prefix) {
+        return load(configDirBotPath, fileName, List.of(prefix.split("\\.")));
     }
 
     public static List<Object> load(
@@ -96,6 +95,31 @@ public class YamlConfigLoadUtil {
         });
 
         return (List<Object>) compute;
+    }
+
+
+    public static <T> T load(File path, List<String> prefixList, Class<T> tClass) {
+        Object compute = LOADED_CONFIG_MAP.compute(path.getAbsolutePath(), (k, config) -> {
+            if (config == null) {
+                Yaml yaml = new Yaml();
+                try (InputStream inputStream = new FileInputStream(path)) {
+                    Map<String, Object> yamlData = yaml.load(inputStream);
+
+                    if (prefixList != null) {
+                        for (String prefix : prefixList) {
+                            yamlData = (Map<String, Object>) yamlData.get(prefix);
+                        }
+                    }
+
+                    return yaml.loadAs(yaml.dump(yamlData), tClass);
+                } catch (IOException e) {
+                    throw new RuntimeException(String.format("加载配置池文件[%s]发生错误", path), e);
+                }
+            }
+            return config;
+        });
+
+        return (T) compute;
     }
 
     public static void main(String[] args) {
