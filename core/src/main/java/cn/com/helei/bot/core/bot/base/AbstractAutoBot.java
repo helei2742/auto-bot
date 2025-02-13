@@ -18,7 +18,9 @@ import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.formula.functions.T;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
@@ -59,7 +61,7 @@ public abstract class AbstractAutoBot {
      */
     @Getter
     @Setter
-    private int requestConcurrentCount = 20;
+    private int requestConcurrentCount = 5;
 
     /**
      * bot api
@@ -155,6 +157,61 @@ public abstract class AbstractAutoBot {
             JSONObject body,
             Supplier<String> requestStart
     ) {
+        return syncCCHandler(proxy, requestStart, () -> {
+            try {
+                return RestApiClientFactory.getClient(proxy).request(
+                        url,
+                        method,
+                        headers,
+                        params,
+                        body
+                ).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * 同步请求，使用syncController控制并发
+     *
+     * @param proxy   proxy
+     * @param url     url
+     * @param method  method
+     * @param headers headers
+     * @param params  params
+     * @param body    body
+     * @return CompletableFuture<Response> String
+     */
+    public CompletableFuture<List<String>> syncStreamRequest(
+            ProxyInfo proxy,
+            String url,
+            String method,
+            Map<String, String> headers,
+            JSONObject params,
+            JSONObject body,
+            Supplier<String> requestStart
+    ) {
+        return syncCCHandler(proxy, requestStart, () -> {
+            try {
+                return RestApiClientFactory.getClient(proxy).streamRequest(
+                        url,
+                        method,
+                        headers,
+                        params,
+                        body
+                ).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    public <R> CompletableFuture<R> syncCCHandler(
+            ProxyInfo proxy,
+            Supplier<String> requestStart,
+            Supplier<R> request
+    ) {
 
         Semaphore networkController = networkSyncControllerMap
                 .compute(proxy == null ? DEFAULT_PROXY : proxy, (k, v) -> {
@@ -177,14 +234,8 @@ public abstract class AbstractAutoBot {
                 }
                 log.info("同步器允许发送请求-{}", str);
 
-                return RestApiClientFactory.getClient(proxy).request(
-                        url,
-                        method,
-                        headers,
-                        params,
-                        body
-                ).get();
-            } catch (InterruptedException | ExecutionException e) {
+                return request.get();
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             } finally {
                 networkController.release();

@@ -22,12 +22,6 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
     private final List<AccountContext> accountContexts = new ArrayList<>();
 
     /**
-     * 并发控制
-     */
-    @Getter
-    private final Semaphore ccSemaphore;
-
-    /**
      * 持久化管理器
      */
     private final AccountPersistenceManager persistenceManager;
@@ -37,7 +31,6 @@ public abstract class AccountManageAutoBot extends AbstractAutoBot {
         super(autoBotConfig, botApi);
 
         this.persistenceManager = new DBAccountPersistenceManager(botApi);
-        this.ccSemaphore = new Semaphore(getRequestConcurrentCount());
     }
 
 

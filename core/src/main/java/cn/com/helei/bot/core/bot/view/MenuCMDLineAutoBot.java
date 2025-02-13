@@ -357,12 +357,11 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
     private CommandMenuNode buildImportBotAccountContextMenuNode() {
         return new CommandMenuNode(true, "导入bot运行账号", null, () -> {
 
-//            getBot().getBotApi().getImportService().importBotAccountContextFromExcel(
-//                    getBot().getBotInfo().getId(),
-//                    getBotConfig().getAccountConfig().getProxyType(),
-//                    getBotConfig().getAccountConfig().getProxyRepeat(),
-//                    getBotConfig().getAccountConfig().getConfigFilePath()
-//            );
+            getBot().getBotApi().getImportService().importBotAccountContextFromExcel(
+                    getBot().getBotInfo().getId(),
+
+                    getBotConfig().getAccountConfig().getConfigFilePath()
+            );
 
             return "bot运行账号导入完成";
         });

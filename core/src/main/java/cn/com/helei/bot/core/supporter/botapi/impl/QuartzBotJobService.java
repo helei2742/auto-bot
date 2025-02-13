@@ -5,7 +5,7 @@ import cn.com.helei.bot.core.bot.job.AutoBotJobParam;
 import cn.com.helei.bot.core.dto.BotACJobResult;
 import cn.com.helei.bot.core.supporter.botapi.BotJobService;
 import org.quartz.*;
-        import org.slf4j.Logger;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -65,12 +65,23 @@ public class QuartzBotJobService implements BotJobService {
                         .storeDurably()
                         .build();
 
-                CronTrigger trigger = TriggerBuilder.newTrigger()
+                TriggerBuilder<Trigger> triggerBuilder = TriggerBuilder.newTrigger()
                         .withIdentity(jobParam.getJobName(), jobParam.getGroup())
-                        .withSchedule(CronScheduleBuilder.cronSchedule(jobParam.getCronExpression()))
-                        .build();
+                        .startNow();
 
-                scheduler.scheduleJob(jobDetail, trigger);
+                if (jobParam.getIntervalInSecond() != null) {
+                    triggerBuilder
+                            .withSchedule(SimpleScheduleBuilder
+                                    .simpleSchedule()
+                                    .withIntervalInSeconds(jobParam.getIntervalInSecond())
+                                    .repeatForever()
+                            );
+                } else if (jobParam.getCronExpression() != null) {
+                    triggerBuilder
+                            .withSchedule(CronScheduleBuilder.cronSchedule(jobParam.getCronExpression()));
+                }
+
+                scheduler.scheduleJob(jobDetail, triggerBuilder.build());
             }
         } catch (Exception e) {
             result.setSuccess(false);

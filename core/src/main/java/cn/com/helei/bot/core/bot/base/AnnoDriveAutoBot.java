@@ -28,8 +28,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -38,16 +37,36 @@ import static cn.com.helei.bot.core.constants.MapConfigKey.INVITE_CODE_KEY;
 @Slf4j
 public abstract class AnnoDriveAutoBot<T> extends AccountManageAutoBot {
 
+    /**
+     * jobName -> jobParam
+     */
     private final Map<String, AutoBotJobParam> autoBotJobMap;
 
+    /**
+     * ws client 启动器
+     */
     private final WebSocketClientLauncher webSocketClientLauncher;
 
+    /**
+     * job并发控制信号量， jobName -> semaphore
+     */
+    private final ConcurrentMap<String, Semaphore> jobCCSemaphoreMap;
+
+    /**
+     * 注册方法
+     */
     @Getter
     private Method registerMethod;
 
+    /**
+     * 登录方法
+     */
     @Getter
     private Method loginMethod;
 
+    /**
+     * 奖励更新方法
+     */
     @Getter
     private Method updateRewordMethod;
 
@@ -59,10 +78,16 @@ public abstract class AnnoDriveAutoBot<T> extends AccountManageAutoBot {
         super(autoBotConfig, botApi);
 
         this.webSocketClientLauncher = new WebSocketClientLauncher(this);
+        this.jobCCSemaphoreMap = new ConcurrentHashMap<>();
 
         this.autoBotJobMap = resolveBotMethodAnno();
     }
 
+    /**
+     * 构建bot info， 会解析注解查询db，给上层父类调用
+     *
+     * @return BotInfo
+     */
     @Override
     protected BotInfo buildBotInfo() {
         return resolveAnnoBotInfo(getBotApi());
@@ -86,7 +111,7 @@ public abstract class AnnoDriveAutoBot<T> extends AccountManageAutoBot {
 
         return asyncForACList(
                 accountContext -> {
-                    if (BooleanUtil.isTrue(accountContext.getSignUp())) {
+                    if (BooleanUtil.isTrue(accountContext.isSignUp())) {
                         // 账户注册过，
                         String errorMsg = String.format("[%s]账户[%s]-email[%s]注册过", accountContext.getId(), accountContext.getName(),
                                 accountContext.getAccountBaseInfo().getEmail());
@@ -105,7 +130,7 @@ public abstract class AnnoDriveAutoBot<T> extends AccountManageAutoBot {
                     // 登录成功
                     if (BooleanUtil.isTrue(result.getSuccess())) {
                         //注册成功
-                        accountContext.setSignUp(true);
+                        AccountContext.signUpSuccess(accountContext);
                     }
                     return result;
                 },
@@ -184,9 +209,9 @@ public abstract class AnnoDriveAutoBot<T> extends AccountManageAutoBot {
     /**
      * 异步遍历账户
      *
-     * @param buildResultFuture buildResultFuture
-     * @param resultHandler     resultHandler
-     * @return CompletableFuture<Result>
+     * @param buildResultFuture buildResultFuture   具体执行的方法
+     * @param resultHandler     resultHandler   处理结果的方法
+     * @return CompletableFuture<ACListOptResult>
      */
     public CompletableFuture<ACListOptResult> asyncForACList(
             Function<AccountContext, CompletableFuture<Result>> buildResultFuture,
@@ -195,11 +220,12 @@ public abstract class AnnoDriveAutoBot<T> extends AccountManageAutoBot {
     ) {
         List<AccountContext> accountContexts = getAccountContexts();
 
+        // Step 1 遍历账户，获取执行结果
         List<CompletableFuture<BotACJobResult>> futures = accountContexts.stream()
                 .map(accountContext -> {
                     try {
                         // 获取信号量
-                        getCcSemaphore().acquire();
+                        getCcSemaphore(jobName).acquire();
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
@@ -218,18 +244,18 @@ public abstract class AnnoDriveAutoBot<T> extends AccountManageAutoBot {
                         future = buildResultFuture.apply(accountContext);
 
                     } catch (Exception e) {
-                        getCcSemaphore().release();
+                        getCcSemaphore(jobName).release();
                         throw new RuntimeException(e);
                     }
 
                     return future.thenApplyAsync(botACJobResult::setResult, getExecutorService())
                             .whenComplete((result, throwable) -> {
                                 // 释放信号量
-                                getCcSemaphore().release();
+                                getCcSemaphore(jobName).release();
                             });
                 }).toList();
 
-
+        // Step 2 等待执行完成，转换执行结果
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
                 .thenApplyAsync(unused -> {
                     List<BotACJobResult> results = new ArrayList<>();
@@ -469,7 +495,7 @@ public abstract class AnnoDriveAutoBot<T> extends AccountManageAutoBot {
                 }});
 
                 // 添加到jobMap
-                jobMap.put("[WS]-" + jobParam.getJobName(), jobParam);
+                jobMap.put(jobParam.getJobName(), jobParam);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -489,12 +515,25 @@ public abstract class AnnoDriveAutoBot<T> extends AccountManageAutoBot {
         AutoBotJobParam autoBotJobParam = null;
 
         try {
+            Integer intervalInSecond = null;
+            CronExpression cronExpression = null;
+
+            if (botJobMethodAnno.intervalInSecond() != 0) {
+                intervalInSecond = botJobMethodAnno.intervalInSecond();
+            } else if (StrUtil.isNotBlank(botJobMethodAnno.cronExpression())) {
+                cronExpression = new CronExpression(botJobMethodAnno.cronExpression());
+            } else {
+                throw new IllegalArgumentException("定时任务需设置时间间隔或cron表达式");
+            }
+
             autoBotJobParam = new AutoBotJobParam(
                     this,
                     StrUtil.isBlank(botJobMethodAnno.jobName()) ? method.getName() : botJobMethodAnno.jobName(),
                     botJobMethodAnno.description(),
                     method,
-                    new CronExpression(botJobMethodAnno.cronExpression()),
+                    cronExpression,
+                    intervalInSecond,
+                    botJobMethodAnno.concurrentCount(),
                     botJobMethodAnno.bowWsConfig(),
                     null,
                     null
@@ -535,4 +574,20 @@ public abstract class AnnoDriveAutoBot<T> extends AccountManageAutoBot {
         }, getExecutorService());
     }
 
+
+    /**
+     * 获取并发控制的信号量
+     *
+     * @param jobName jobName
+     * @return Semaphore
+     */
+    private Semaphore getCcSemaphore(String jobName) {
+        return jobCCSemaphoreMap.computeIfAbsent(jobName, key -> {
+            AutoBotJobParam autoBotJobParam = autoBotJobMap.get(key);
+            if (autoBotJobParam == null) {
+                return new Semaphore(getRequestConcurrentCount());
+            }
+            return new Semaphore(autoBotJobParam.getConcurrentCount());
+        });
+    }
 }

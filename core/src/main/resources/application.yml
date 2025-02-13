@@ -1,7 +1,7 @@
 # 应用程序名称
 spring:
   application:
-    name: my-spring-boot-app
+    name: auto_bot_plant_from
   datasource:
     url: "jdbc:sqlite://Users/helei/develop/ideaworkspace/depinbot/DepinBot/core/botData/db/auto_bot.db"
     driver-class-name: org.sqlite.JDBC
@@ -20,7 +20,7 @@ spring:
 
 mybatis-plus:
   configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     cache-enabled: true
     map-underscore-to-camel-case: false
   global-config:

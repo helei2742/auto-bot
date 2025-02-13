@@ -10,7 +10,7 @@ import com.alibaba.excel.annotation.ExcelProperty;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.baomidou.mybatisplus.annotation.*;
 
-        import java.time.LocalDateTime;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +30,7 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 @AllArgsConstructor
-@PropertyChangeListenClass
+@PropertyChangeListenClass(isDeep = true)
 public class AccountContext {
 
 
@@ -41,7 +41,7 @@ public class AccountContext {
     private Integer botId;
 
     @TableField("bot_key")
-    @ExcelProperty(value = "bot_key", converter = IntegerStringConverter.class)
+    @ExcelProperty(value = "bot_key")
     private String botKey;
 
     @TableField("account_base_info_id")
@@ -75,6 +75,11 @@ public class AccountContext {
     @TableField("reward_id")
     private Integer rewardId;
 
+    /**
+     * 账号状态
+     * 0 表示初始状态
+     * 1 表示已注册
+     */
     @TableField("status")
     @PropertyChangeListenField
     private Integer status;
@@ -124,7 +129,7 @@ public class AccountContext {
         return String.valueOf(params.get(key));
     }
 
-    public void setParam(String key, String value) {
+    public void setParam(String key, Object value) {
         params.put(key, value);
     }
 
@@ -140,15 +145,15 @@ public class AccountContext {
         return String.format("%s-账户[%s]-代理[%s]", getAccountBaseInfo().getId(), getName(), getProxy() == null ? "NO_PROXY" : getProxy().getAddressStr());
     }
 
-    public Boolean getSignUp() {
+    public Boolean isSignUp() {
         return status != null && status == 1;
-    }
-
-    public void setSignUp(boolean b) {
-        status = 1;
     }
 
     public String getType() {
         return accountBaseInfo == null ? null : accountBaseInfo.getType();
+    }
+
+    public static void signUpSuccess(AccountContext accountContext) {
+        accountContext.setStatus(1);
     }
 }

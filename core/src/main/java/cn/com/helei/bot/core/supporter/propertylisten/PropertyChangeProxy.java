@@ -70,7 +70,6 @@ public class PropertyChangeProxy implements MethodInterceptor {
             // 是代理的目标
             invoke = methodProxy.invoke(target, args);
 
-
             Object oldValue = fieldValues.get(fieldName);
             Object newValue = args[0];
 

@@ -1,6 +1,7 @@
 
 package cn.com.helei.bot.core.entity;
 
+import cn.com.helei.bot.core.supporter.propertylisten.PropertyChangeListenClass;
 import cn.com.helei.bot.core.util.typehandler.LocalDateTimeTypeHandler;
 import com.baomidou.mybatisplus.annotation.*;
 
@@ -21,6 +22,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @TableName("t_reword_info")
+@PropertyChangeListenClass
 public class RewordInfo {
 
     @TableId(value = "project_account_id", type = IdType.INPUT)

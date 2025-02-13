@@ -4,7 +4,7 @@ package cn.com.helei.bot.core.util;
 import cn.com.helei.bot.core.config.SystemConfig;
 
 import java.io.*;
-        import java.nio.file.Path;
+import java.nio.file.Path;
 import java.util.List;
 
 public class FileUtil {
@@ -22,7 +22,7 @@ public class FileUtil {
     }
 
     public static String getBotAppConfigPath() {
-        return RESOURCE_ROOT_DIR +File.separator + String.join(File.separator, SystemConfig.CONFIG_DIR_APP_PATH);
+        return RESOURCE_ROOT_DIR + File.separator + String.join(File.separator, SystemConfig.CONFIG_DIR_APP_PATH);
     }
 
     /**

@@ -9,7 +9,6 @@ import cn.com.helei.bot.core.entity.RewordInfo;
 import cn.com.helei.bot.core.util.tableprinter.CommandLineTablePrintHelper;
 
 import java.util.List;
-import java.util.Map;
 
 public class AccountInfoPrinter {
 
@@ -34,7 +33,7 @@ public class AccountInfoPrinter {
                     .name(accountContext.getName())
                     .proxyInfo(proxy == null ? "NO_PROXY" : proxy.getId() + "-" + proxy.getAddressStr())
                     .browserEnvInfo(String.valueOf(browserEnv == null ? "NO_ENV" : browserEnv.getId()))
-                    .signUp(accountContext.getSignUp())
+                    .signUp(accountContext.isSignUp())
                     .build();
         }).toList();
 

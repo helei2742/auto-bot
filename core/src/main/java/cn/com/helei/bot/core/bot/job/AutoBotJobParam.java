@@ -3,7 +3,7 @@ package cn.com.helei.bot.core.bot.job;
 import cn.com.helei.bot.core.bot.anno.BotWSMethodConfig;
 import cn.com.helei.bot.core.bot.base.AnnoDriveAutoBot;
 import lombok.*;
-        import org.quartz.CronExpression;
+import org.quartz.CronExpression;
 
 import java.lang.reflect.Method;
 
@@ -22,6 +22,11 @@ public class AutoBotJobParam {
 
     @Getter
     private final CronExpression cronExpression;
+
+    @Getter
+    private final Integer intervalInSecond;
+
+    private final int concurrentCount;
 
     private final BotWSMethodConfig botWSMethodConfig;
 

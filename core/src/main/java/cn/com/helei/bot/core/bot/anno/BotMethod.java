@@ -39,6 +39,19 @@ public @interface BotMethod {
      */
     String cronExpression() default "";
 
+    /**
+     * 运行间隔
+     *
+     * @return int
+     */
+    int intervalInSecond() default 0;
+
+    /**
+     * 并发数
+     *
+     * @return int
+     */
+    int concurrentCount() default 20;
 
 
     BotWSMethodConfig bowWsConfig() default @BotWSMethodConfig();

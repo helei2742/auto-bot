@@ -50,7 +50,7 @@ public class DBImportService implements ImportService {
 
 
     @Override
-    public Integer importBotAccountContextFromExcel(Integer botId, ProxyType proxyType, Boolean proxyRepeat, String fileBotConfigPath) {
+    public Integer importBotAccountContextFromExcel(Integer botId, String fileBotConfigPath) {
         String proxyFilePath = FileUtil.getConfigDirResourcePath(SystemConfig.CONFIG_DIR_APP_PATH, fileBotConfigPath);
 
         try {
@@ -58,6 +58,7 @@ public class DBImportService implements ImportService {
 
             List<AccountContext> accountContexts = rawLines.stream().map(map -> AccountContext.builder()
                             .botId(botId)
+                            .botKey(autoCast(map.remove("bot_key")))
                             .accountBaseInfoId(toInteger(map.remove("account_base_info_id")))
                             .twitterId(toInteger(map.remove("twitter_id")))
                             .discordId(toInteger(map.remove("discord_id")))
@@ -70,7 +71,7 @@ public class DBImportService implements ImportService {
                     .toList();
 
             // 没设置代理的根据配置填充代理
-            tryFillProxy(accountContexts, proxyRepeat, proxyType);
+//            tryFillProxy(accountContexts, proxyRepeat, proxyType);
 
             // 没设置浏览器环境的根据设置填充环境
             tryFillBrowserEnv(accountContexts);
