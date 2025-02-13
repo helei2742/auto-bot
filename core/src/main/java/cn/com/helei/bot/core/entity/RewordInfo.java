@@ -1,4 +1,3 @@
-
 package cn.com.helei.bot.core.entity;
 
 import cn.com.helei.bot.core.supporter.propertylisten.PropertyChangeListenClass;
@@ -6,7 +5,7 @@ import cn.com.helei.bot.core.util.typehandler.LocalDateTimeTypeHandler;
 import com.baomidou.mybatisplus.annotation.*;
 
 
-        import lombok.Getter;
+import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
@@ -49,7 +48,6 @@ public class RewordInfo {
     @TableField(value = "is_valid", fill = FieldFill.INSERT)
     @TableLogic
     private Integer isValid;
-
 
 
     public RewordInfo newInstance() {

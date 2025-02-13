@@ -1,9 +1,11 @@
 package cn.com.helei.bot.core.mvc.service;
 
+import cn.com.helei.bot.core.dto.Result;
 import cn.com.helei.bot.core.entity.TelegramAccount;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -19,4 +21,5 @@ public interface ITelegramAccountService extends IService<TelegramAccount> {
 
     Integer insertOrUpdateBatch(List<TelegramAccount> telegramAccounts);
 
+    Result saveTelegrams(List<Map<String, Object>> rawLines);
 }

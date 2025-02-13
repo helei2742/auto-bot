@@ -1,9 +1,11 @@
 package cn.com.helei.bot.core.mvc.service;
 
+import cn.com.helei.bot.core.dto.Result;
 import cn.com.helei.bot.core.entity.AccountContext;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -14,8 +16,9 @@ import java.util.List;
  * @since 2025-02-05
  */
 public interface IBotAccountContextService extends IService<AccountContext> {
-    public Integer insertOrUpdate(AccountContext accountBaseInfo);
+    Integer insertOrUpdate(AccountContext accountBaseInfo);
 
     Integer insertOrUpdateBatch(List<AccountContext> twitterAccounts);
 
+    Result saveBotAccountContext(Integer botId, String botKey, List<Map<String, Object>> acKVMap);
 }

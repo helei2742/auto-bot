@@ -1,14 +1,19 @@
 package cn.com.helei.bot.core.mvc.service.impl;
 
+import cn.com.helei.bot.core.dto.Result;
 import cn.com.helei.bot.core.entity.ProxyInfo;
 import cn.com.helei.bot.core.mvc.mapper.ProxyInfoMapper;
 import cn.com.helei.bot.core.mvc.service.IProxyInfoService;
+import cn.com.helei.bot.core.supporter.botapi.ImportService;
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -21,6 +26,10 @@ import java.util.List;
 @Slf4j
 @Service
 public class ProxyInfoServiceImpl extends ServiceImpl<ProxyInfoMapper, ProxyInfo> implements IProxyInfoService {
+
+    @Autowired
+    private ImportService importService;
+
     @Override
     public Integer insertOrUpdate(ProxyInfo proxyInfo) {
         proxyInfo.setInsertDatetime(LocalDateTime.now());
@@ -43,5 +52,19 @@ public class ProxyInfoServiceImpl extends ServiceImpl<ProxyInfoMapper, ProxyInfo
         }
 
         return successCount;
+    }
+
+    @Override
+    public Result saveProxyInfos(List<Map<String, Object>> rawLines) {
+        if (rawLines == null || rawLines.isEmpty()) {
+            return Result.fail("导入数据不能为空");
+        }
+
+        try {
+            importService.importProxyFromRaw(rawLines);
+            return Result.ok();
+        } catch (Exception e) {
+            return Result.fail("导入代理信息失败," + e.getMessage());
+        }
     }
 }

@@ -1,8 +1,8 @@
 package cn.com.helei.bot.core.mvc.controller;
 
 import cn.com.helei.bot.core.dto.Result;
-import cn.com.helei.bot.core.entity.BrowserEnv;
 import cn.com.helei.bot.core.mvc.service.IBrowserEnvService;
+import cn.com.helei.bot.core.mvc.vo.BotImportVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,12 +26,8 @@ public class BrowserEnvController {
     private IBrowserEnvService browserEnvService;
 
     @PostMapping("/batchAdd")
-    public Result batchAdd(@RequestBody List<BrowserEnv> browserEnvs) {
-        if (browserEnvs == null) {
-            return Result.fail("参数不能为空");
-        }
-        boolean b = browserEnvService.saveBatch(browserEnvs);
-        return b ? Result.ok() : Result.fail("批量添加浏览器环境失败");
+    public Result batchAdd(@RequestBody BotImportVO importVO) {
+        return browserEnvService.saveBrowserEnvs(importVO.getRawLines());
     }
 
 }

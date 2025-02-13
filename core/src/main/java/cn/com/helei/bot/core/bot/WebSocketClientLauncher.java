@@ -132,6 +132,9 @@ public class WebSocketClientLauncher {
         try {
             wsClient = wsClientBuilder.build(accountContext);
 
+            if (wsClient == null) {
+                return CompletableFuture.completedFuture(Result.fail("ws client create failed"));
+            }
             launchedWSClientMap.put(key, wsClient);
         } catch (InvocationTargetException | IllegalAccessException e) {
             log.error("build account ws client error", e);

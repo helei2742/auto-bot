@@ -5,6 +5,7 @@ import cn.com.helei.bot.core.entity.BrowserEnv;
 import cn.com.helei.bot.core.entity.DiscordAccount;
 import cn.com.helei.bot.core.mvc.service.IBrowserEnvService;
 import cn.com.helei.bot.core.mvc.service.IDiscordAccountService;
+import cn.com.helei.bot.core.mvc.vo.BotImportVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,11 +29,7 @@ public class DiscordAccountController {
     private IDiscordAccountService discordAccountService;
 
     @PostMapping("/batchAdd")
-    public Result batchAdd(@RequestBody List<DiscordAccount> discordAccounts) {
-        if (discordAccounts == null) {
-            return Result.fail("参数不能为空");
-        }
-        boolean b = discordAccountService.saveBatch(discordAccounts);
-        return b ? Result.ok() : Result.fail("批量添加discord账号失败");
+    public Result batchAdd(@RequestBody BotImportVO importVO) {
+        return discordAccountService.saveDiscordAccounts(importVO.getRawLines());
     }
 }

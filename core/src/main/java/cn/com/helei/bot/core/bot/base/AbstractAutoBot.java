@@ -15,15 +15,15 @@ import cn.com.helei.bot.core.util.RestApiClientFactory;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
+import io.netty.handler.codec.http.HttpMethod;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.formula.functions.T;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
-import java.util.function.Supplier;
+        import java.util.function.Supplier;
 
 @Slf4j
 @Getter
@@ -129,7 +129,7 @@ public abstract class AbstractAutoBot {
     public CompletableFuture<String> syncRequest(
             ProxyInfo proxy,
             String url,
-            String method,
+            HttpMethod method,
             Map<String, String> headers,
             JSONObject params,
             JSONObject body
@@ -151,7 +151,7 @@ public abstract class AbstractAutoBot {
     public CompletableFuture<String> syncRequest(
             ProxyInfo proxy,
             String url,
-            String method,
+            HttpMethod method,
             Map<String, String> headers,
             JSONObject params,
             JSONObject body,
@@ -186,7 +186,7 @@ public abstract class AbstractAutoBot {
     public CompletableFuture<List<String>> syncStreamRequest(
             ProxyInfo proxy,
             String url,
-            String method,
+            HttpMethod method,
             Map<String, String> headers,
             JSONObject params,
             JSONObject body,

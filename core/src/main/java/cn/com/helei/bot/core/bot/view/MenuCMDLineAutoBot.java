@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-        import java.util.function.Consumer;
+import java.util.function.Consumer;
 
 import static cn.com.helei.bot.core.constants.MapConfigKey.*;
 
@@ -359,7 +359,7 @@ public class MenuCMDLineAutoBot<C extends AutoBotConfig> extends CommandLineAuto
 
             getBot().getBotApi().getImportService().importBotAccountContextFromExcel(
                     getBot().getBotInfo().getId(),
-
+                    getBotConfig().getBotKey(),
                     getBotConfig().getAccountConfig().getConfigFilePath()
             );
 

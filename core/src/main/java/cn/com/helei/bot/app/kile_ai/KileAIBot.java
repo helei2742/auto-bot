@@ -7,11 +7,13 @@ import cn.com.helei.bot.core.bot.constants.BotJobType;
 import cn.com.helei.bot.core.dto.config.AutoBotConfig;
 import cn.com.helei.bot.core.entity.AccountContext;
 import cn.com.helei.bot.core.entity.ProxyInfo;
+import cn.com.helei.bot.core.entity.RewordInfo;
 import cn.com.helei.bot.core.supporter.botapi.BotApi;
 import cn.com.helei.bot.core.util.FileUtil;
 import cn.com.helei.bot.core.util.pool.IdMarkPool;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
+import io.netty.handler.codec.http.HttpMethod;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
@@ -35,6 +37,8 @@ public class KileAIBot extends AnnoDriveAutoBot<KileAIBot> {
             "deployment-ecz5o55dh0dbqagkut47kzyc",
             "deployment-sofftlsf9z4fya3qchykaanq"
     );
+
+    private static final String QUESTION_ASK_URL_FORMAT = "https://%s.stag-vxzy.zettablock.com/main";
 
     private static final String QUESTION_CONFIRM_URL = "https://quests-usage-dev.prod.zettablock.com/api/report_usage";
 
@@ -117,10 +121,15 @@ public class KileAIBot extends AnnoDriveAutoBot<KileAIBot> {
                             return false;
                         }
                     });
-
             try {
                 if (future.get()) {
                     log.info("{} - 问题提交成功, [{}/{}]", accountContext.getSimpleInfo(), i + 1, queryCount);
+
+                    accountContext.setParam(TODAY_TOTAL_KEY, queryCount - i);
+
+                    RewordInfo rewordInfo = accountContext.getRewordInfo();
+
+                    rewordInfo.setDailyPoints(rewordInfo.getDailyPoints() + 10);
                 }
             } catch (InterruptedException | ExecutionException e) {
                 errorCount++;
@@ -157,6 +166,7 @@ public class KileAIBot extends AnnoDriveAutoBot<KileAIBot> {
         } else {
             String todayTotalStr = accountContext.getParam(TODAY_TOTAL_KEY);
             Integer todayTotal = null;
+
             if (todayTotalStr == null) {
                 accountContext.setParam(TODAY_TOTAL_KEY, getDailyQueryCount());
             } else if ((todayTotal = Integer.valueOf(todayTotalStr)) == 0) {
@@ -190,7 +200,7 @@ public class KileAIBot extends AnnoDriveAutoBot<KileAIBot> {
         headers.put("connection", "keep-alive");
         headers.put("Accept", "text/event-stream");
 
-        String url = "https://%s.stag-vxzy.zettablock.com/main".formatted(agent);
+        String url = QUESTION_ASK_URL_FORMAT.formatted(agent);
 
         headers.put("Host", url.replace("/main", "")
                 .replace("https://", ""));
@@ -198,15 +208,28 @@ public class KileAIBot extends AnnoDriveAutoBot<KileAIBot> {
         return syncStreamRequest(
                 accountContext.getProxy(),
                 url,
-                "post",
+                HttpMethod.POST,
                 headers,
                 null,
                 body,
-                () -> accountContext.getSimpleInfo() + " 询问Agent - " + question
-        ).thenApplyAsync(responseList->{
+                () -> "%s 询问Agent%s[{}], 问题: %s".formatted(accountContext.getSimpleInfo(), agent, question)
+        ).thenApplyAsync(responseList -> {
+            StringBuilder answer = new StringBuilder();
 
-            log.warn(responseList.toString());
-            return "";
+            for (String chunk : responseList) {
+                String res = chunk.substring(5);
+
+                if ("[DONE]".equals(res)) {
+                    break;
+                }
+
+                JSONObject jsonObject = JSONObject.parseObject(res);
+                String content = jsonObject.getJSONArray("choices").getJSONObject(0).getString("content");
+
+                answer.append(content);
+            }
+
+            return answer.toString();
         });
     }
 
@@ -245,7 +268,7 @@ public class KileAIBot extends AnnoDriveAutoBot<KileAIBot> {
                     String resultStr = syncRequest(
                             proxy,
                             QUESTION_CONFIRM_URL,
-                            "post",
+                            HttpMethod.POST,
                             accountContext.getBrowserEnv().getHeaders(),
                             null,
                             body,

@@ -4,6 +4,7 @@ import cn.com.helei.bot.core.entity.ProxyInfo;
 import cn.com.helei.bot.core.util.RestApiClientFactory;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
+import io.netty.handler.codec.http.HttpMethod;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,7 +37,7 @@ public class CloudFlareResolver {
         log.info("url[{}] start CloudFlare resolve，create task id...", websiteUrl);
         return RestApiClientFactory.getClient(proxy).request(
                 CREATE_TASK_URL,
-                "post",
+                HttpMethod.POST,
                 null,
                 null,
                 body
@@ -66,7 +67,7 @@ public class CloudFlareResolver {
             try {
                 String resultStr = RestApiClientFactory.getClient(proxy).request(
                         GET_RESULT_URL,
-                        "post",
+                        HttpMethod.POST,
                         null,
                         null,
                         body

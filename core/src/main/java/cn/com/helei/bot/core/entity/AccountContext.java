@@ -126,7 +126,7 @@ public class AccountContext {
     private final ConnectStatusInfo connectStatusInfo = new ConnectStatusInfo();
 
     public String getParam(String key) {
-        return String.valueOf(params.get(key));
+        return params.get(key) == null ? "" : params.get(key).toString();
     }
 
     public void setParam(String key, Object value) {

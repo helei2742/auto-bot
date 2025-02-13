@@ -1,14 +1,18 @@
 package cn.com.helei.bot.core.mvc.service.impl;
 
+import cn.com.helei.bot.core.dto.Result;
 import cn.com.helei.bot.core.entity.TelegramAccount;
 import cn.com.helei.bot.core.mvc.mapper.TelegramAccountMapper;
 import cn.com.helei.bot.core.mvc.service.ITelegramAccountService;
+import cn.com.helei.bot.core.supporter.botapi.ImportService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -21,6 +25,10 @@ import java.util.List;
 @Slf4j
 @Service
 public class TelegramAccountServiceImpl extends ServiceImpl<TelegramAccountMapper, TelegramAccount> implements ITelegramAccountService {
+
+    @Autowired
+    private ImportService importService;
+
     @Override
     public Integer insertOrUpdate(TelegramAccount telegramAccount) {
         telegramAccount.setInsertDatetime(LocalDateTime.now());
@@ -43,5 +51,19 @@ public class TelegramAccountServiceImpl extends ServiceImpl<TelegramAccountMappe
         }
 
         return successCount;
+    }
+
+    @Override
+    public Result saveTelegrams(List<Map<String, Object>> rawLines) {
+        if (rawLines == null || rawLines.isEmpty()) {
+            return Result.fail("导入数据不能为空");
+        }
+
+        try {
+            importService.importTelegramFormRaw(rawLines);
+            return Result.ok();
+        } catch (Exception e) {
+            return Result.fail("导入telegram账号失败," + e.getMessage());
+        }
     }
 }

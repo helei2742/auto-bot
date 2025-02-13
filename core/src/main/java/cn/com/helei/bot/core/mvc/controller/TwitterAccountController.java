@@ -3,6 +3,7 @@ package cn.com.helei.bot.core.mvc.controller;
 import cn.com.helei.bot.core.dto.Result;
 import cn.com.helei.bot.core.entity.TwitterAccount;
 import cn.com.helei.bot.core.mvc.service.ITwitterAccountService;
+import cn.com.helei.bot.core.mvc.vo.BotImportVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,11 +27,7 @@ public class TwitterAccountController {
     private ITwitterAccountService twitterAccountService;
 
     @PostMapping("/batchAdd")
-    public Result batchAdd(@RequestBody List<TwitterAccount> twitterAccounts) {
-        if (twitterAccounts == null) {
-            return Result.fail("参数不能为空");
-        }
-        boolean b = twitterAccountService.saveBatch(twitterAccounts);
-        return b ? Result.ok() : Result.fail("批量添加twitter账号失败");
+    public Result batchAdd(@RequestBody BotImportVO importVO) {
+        return twitterAccountService.saveTwitters(importVO.getRawLines());
     }
 }

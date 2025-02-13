@@ -70,7 +70,7 @@ public class DBAccountPersistenceManager extends AbstractPersistenceManager {
 
     @Override
     protected void propertyChangeHandler(PropertyChangeInvocation invocation) {
-        log.info("对象属性改变了{} {}->{}", invocation.getPropertyName(), invocation.getOldValue(), invocation.getNewValue());
+        log.debug("对象属性改变了{} {}->{}", invocation.getPropertyName(), invocation.getOldValue(), invocation.getNewValue());
 
         Object target = invocation.getTarget();
         if (target instanceof AccountContext) {

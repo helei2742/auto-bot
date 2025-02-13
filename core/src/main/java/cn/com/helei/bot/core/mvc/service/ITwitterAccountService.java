@@ -1,9 +1,11 @@
 package cn.com.helei.bot.core.mvc.service;
 
+import cn.com.helei.bot.core.dto.Result;
 import cn.com.helei.bot.core.entity.TwitterAccount;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -19,4 +21,5 @@ public interface ITwitterAccountService extends IService<TwitterAccount> {
 
     Integer insertOrUpdateBatch(List<TwitterAccount> twitterAccounts);
 
+    Result saveTwitters(List<Map<String, Object>> rawLines);
 }

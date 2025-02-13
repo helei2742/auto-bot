@@ -10,7 +10,9 @@ import cn.com.helei.bot.core.entity.AccountContext;
 import cn.com.helei.bot.core.supporter.botapi.BotApi;
 import cn.com.helei.bot.core.util.captcha.CloudFlareResolver;
 import cn.com.helei.bot.core.util.exception.RegisterException;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
+import io.netty.handler.codec.http.HttpMethod;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
@@ -39,6 +41,7 @@ public class NodeGoBot extends AnnoDriveAutoBot<NodeGoBot> {
 
     private static final int KEEP_ALIVE_INTERVAL = 60;
 
+    private static final int DAILY_CHECK_IN_INTERVAL = 60 * 60 * 6;
 
     private String twoCaptchaApiKey = "";
 
@@ -90,7 +93,7 @@ public class NodeGoBot extends AnnoDriveAutoBot<NodeGoBot> {
                         return syncRequest(
                                 accountContext.getProxy(),
                                 REGISTER_API,
-                                "post",
+                                HttpMethod.POST,
                                 headers,
                                 null,
                                 body,
@@ -176,7 +179,7 @@ public class NodeGoBot extends AnnoDriveAutoBot<NodeGoBot> {
                         return syncRequest(
                                 accountContext.getProxy(),
                                 LOGIN_API,
-                                "post",
+                                HttpMethod.POST,
                                 headers,
                                 null,
                                 body,
@@ -204,7 +207,7 @@ public class NodeGoBot extends AnnoDriveAutoBot<NodeGoBot> {
                 .exceptionallyAsync(throwable -> {
                     log.error("{} 登录发生异常, {}", accountContext.getSimpleInfo(), throwable.getMessage());
                     return Result.fail("登录发生异常," + throwable.getMessage());
-                });;
+                });
 
         try {
             return future.get();
@@ -212,5 +215,79 @@ public class NodeGoBot extends AnnoDriveAutoBot<NodeGoBot> {
             return Result.fail("未知错误, " + e.getMessage());
         }
     }
-}
 
+
+    @BotMethod(
+            jobType = BotJobType.TIMED_TASK,
+            intervalInSecond = KEEP_ALIVE_INTERVAL,
+            concurrentCount = 25
+    )
+    public void keepAlivePing(AccountContext accountContext) {
+        String token = accountContext.getParam(ACCESS_TOKEN_KEY);
+        if (StrUtil.isBlank(token) || "null".equals(token)) {
+            log.error("{} 没有登录", accountContext.getSimpleInfo());
+            return;
+        }
+
+        Map<String, String> headers = accountContext.getBrowserEnv().getHeaders();
+        headers.put("Origin", "chrome-extension://jbmdcnidiaknboflpljihfnbonjgegah");
+        headers.put("authorization", "Bearer " + token);
+
+        JSONObject body = new JSONObject();
+        body.put("type", "extension");
+        // 发送心跳
+        String result = null;
+        try {
+            result = syncRequest(
+                    accountContext.getProxy(),
+                    KEEP_ALIVE_API,
+                    HttpMethod.POST,
+                    headers,
+                    null,
+                    body,
+                    () -> accountContext.getSimpleInfo() + " send keep alive ping"
+            ).get();
+            log.info("{} ping success, {}", accountContext.getSimpleInfo(), result);
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("{} send keep alive field", accountContext.getSimpleInfo(), e.getCause());
+        }
+    }
+
+    @BotMethod(
+            jobType = BotJobType.TIMED_TASK,
+            intervalInSecond = DAILY_CHECK_IN_INTERVAL,
+            concurrentCount = 5
+    )
+    public void checkIn(AccountContext accountContext) throws ExecutionException, InterruptedException {
+        String token = accountContext.getParam(ACCESS_TOKEN_KEY);
+        if (StrUtil.isBlank(token)) {
+            log.error("{} 没有登录", accountContext.getSimpleInfo());
+            return;
+        }
+
+        Map<String, String> headers = accountContext.getBrowserEnv().getHeaders();
+        headers.put("Origin", "https://app.nodego.ai");
+        headers.put("Referer", "https://app.nodego.ai/");
+        headers.put("authorization", "Bearer " + token);
+
+        // 发送心跳
+        syncRequest(
+                accountContext.getProxy(),
+                CHECK_IN_API,
+                HttpMethod.POST,
+                headers,
+                null,
+                new JSONObject(),
+                () -> accountContext.getSimpleInfo() + " daily check in"
+        ).exceptionallyAsync(throwable -> {
+            String message = throwable.getMessage();
+
+            if (message != null && message.contains("{\"message\":\"You can only check in once per day\",\"error\":\"Bad Request\",\"statusCode\":400}")) {
+                log.warn("{} checked today", accountContext.getSimpleInfo());
+            }
+
+            log.error("{} check in field", accountContext.getSimpleInfo(), throwable);
+            return null;
+        }).get();
+    }
+}

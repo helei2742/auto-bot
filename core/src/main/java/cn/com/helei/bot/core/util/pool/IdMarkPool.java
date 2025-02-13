@@ -14,6 +14,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Getter
 public class IdMarkPool<T> {
 
+    private static Random random = new Random();
+
     private final Class<T> tClass;
 
     @Getter
@@ -74,6 +76,24 @@ public class IdMarkPool<T> {
         return compute.data;
     }
 
+
+    /**
+     * 随机获取
+     *
+     * @param count count
+     * @return List<T>
+     */
+    public synchronized List<T> getRandomItem(int count) {
+        List<T> res = new ArrayList<>(count);
+
+        List<IdMarkPoolItem<T>> values = new ArrayList<>(getIdMapItem().values());
+
+        for (int i = 0; i < count; i++) {
+            res.add(values.get(random.nextInt(0, values.size())).data);
+        }
+
+        return res;
+    }
 
     /**
      * 获取最少使用的

@@ -1,14 +1,18 @@
 package cn.com.helei.bot.core.mvc.service.impl;
 
+import cn.com.helei.bot.core.dto.Result;
 import cn.com.helei.bot.core.entity.DiscordAccount;
 import cn.com.helei.bot.core.mvc.mapper.DiscordAccountMapper;
 import cn.com.helei.bot.core.mvc.service.IDiscordAccountService;
+import cn.com.helei.bot.core.supporter.botapi.ImportService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -21,6 +25,10 @@ import java.util.List;
 @Slf4j
 @Service
 public class DiscordAccountServiceImpl extends ServiceImpl<DiscordAccountMapper, DiscordAccount> implements IDiscordAccountService {
+
+    @Autowired
+    private ImportService importService;
+
     @Override
     public Integer insertOrUpdate(DiscordAccount discordAccount) {
         discordAccount.setInsertDatetime(LocalDateTime.now());
@@ -43,5 +51,19 @@ public class DiscordAccountServiceImpl extends ServiceImpl<DiscordAccountMapper,
         }
 
         return successCount;
+    }
+
+    @Override
+    public Result saveDiscordAccounts(List<Map<String, Object>> rawLines) {
+        if (rawLines == null || rawLines.isEmpty()) {
+            return Result.fail("导入数据不能为空");
+        }
+
+        try {
+            importService.importDiscordFromRaw(rawLines);
+            return Result.ok();
+        } catch (Exception e) {
+            return Result.fail("导入discord账号失败," + e.getMessage());
+        }
     }
 }

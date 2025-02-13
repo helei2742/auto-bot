@@ -3,10 +3,11 @@ package cn.com.helei.bot.core.util;
 import cn.com.helei.bot.core.entity.ProxyInfo;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
+import io.netty.handler.codec.http.HttpMethod;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
-import okio.BufferedSource;
+        import okio.BufferedSource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -72,7 +73,7 @@ public class RestApiClient {
      */
     public CompletableFuture<String> request(
             String url,
-            String method,
+            HttpMethod method,
             Map<String, String> headers,
             JSONObject params,
             JSONObject body
@@ -86,7 +87,7 @@ public class RestApiClient {
 
     public CompletableFuture<List<String>> streamRequest(
             String url,
-            String method,
+            HttpMethod method,
             Map<String, String> headers,
             JSONObject params,
             JSONObject body
@@ -113,7 +114,7 @@ public class RestApiClient {
     }
 
     @NotNull
-    private static Request buildRequest(String url, String method, Map<String, String> headers, JSONObject params, JSONObject body) {
+    private static Request buildRequest(String url, HttpMethod method, Map<String, String> headers, JSONObject params, JSONObject body) {
         // 创建表单数据
         StringBuilder queryString = new StringBuilder();
 
@@ -143,11 +144,11 @@ public class RestApiClient {
 
         // 创建 POST 请求
         builder.url(requestUrl);
-        String upperCase = method.toUpperCase();
-        if (upperCase.equals("GET")) {
+
+        if (HttpMethod.GET.equals(method)) {
             builder.get();
         } else {
-            builder.method(upperCase, requestBody);
+            builder.method(method.name(), requestBody);
         }
 
         if (headers != null) {
@@ -181,7 +182,7 @@ public class RestApiClient {
 
 
     @Nullable
-    private String normalRequest(String url, String method, Request request) {
+    private String normalRequest(String url, HttpMethod method, Request request) {
         log.debug("创建请求 url[{}], method[{}]成功，开始请求服务器", url, method);
 
         Exception exception = null;
